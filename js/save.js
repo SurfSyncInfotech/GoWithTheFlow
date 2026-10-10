@@ -18,6 +18,7 @@ function readSaved(key) {
     if (!data || typeof data !== "object") return null;
     return data;
   } catch (error) {
+    // A truncated write (laptop died mid-round) is not a usable file. Try the spare.
     return null;
   }
 }
@@ -38,12 +39,21 @@ function openSave() {
   if (!data.rounds) data.rounds = {};
   if (!data.preflows) data.preflows = {};
   if (!data.settings) data.settings = startSettings();
-  if (!data.settings.durations) data.settings.durations = timerTimes();
+  data.settings.durations = mendClocks(data.settings.durations);
   names = Object.keys(data.rounds);
   for (i = 0; i < names.length; i++) {
+    mendRound(data.rounds[names[i]]);
     stopTimerOnOpen(data.rounds[names[i]]);
   }
+  names = Object.keys(data.preflows);
+  for (i = 0; i < names.length; i++) mendPreflow(data.preflows[names[i]]);
   return data;
+}
+
+function storageFull(error) {
+  if (!error) return false;
+  if (error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED") return true;
+  return error.code === 22 || error.code === 1014;
 }
 
 function writeSave(store) {
@@ -53,12 +63,23 @@ function writeSave(store) {
     settings: store.settings,
     lastRoundId: store.lastRoundId || null
   };
+  var json;
   try {
-    var json = JSON.stringify(copy);
-    localStorage.setItem(STORE_KEY, json);
-    localStorage.setItem(BACKUP_KEY, json);
-    return "";
+    json = JSON.stringify(copy);
   } catch (error) {
+    return "This round couldn't be written. Copy the cards out before you close the tab.";
+  }
+  try {
+    localStorage.setItem(STORE_KEY, json);
+  } catch (error) {
+    if (storageFull(error)) return "Browser storage is full. Export this round, then delete an old one.";
     return "Could not save — export a copy";
   }
+  try {
+    // The spare copy is optional. If only the backup doesn't fit, the round itself is already in.
+    localStorage.setItem(BACKUP_KEY, json);
+  } catch (error) {
+    return "";
+  }
+  return "";
 }

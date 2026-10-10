@@ -1,3 +1,6 @@
+// Verbatim/Docs cards: keep the highlight and the underline, flatten a table or a screenshot
+// down to the quote. A <font color> from Word becomes a span. script/iframe never makes it in.
+
 var SAFE_TAGS = {
   B: true, STRONG: true, I: true, EM: true, U: true, S: true, STRIKE: true, DEL: true,
   BR: true, P: true, DIV: true, SPAN: true, UL: true, OL: true, LI: true, A: true,
@@ -63,6 +66,7 @@ function cleanTag(node, notice) {
     text = node.tagName === "IMG" ? "" : (node.textContent || "");
     return text ? document.createTextNode(text) : null;
   }
+  // A citation link is fine. A script or embedded frame from a messy Docs paste is not a card.
   if (node.tagName === "SCRIPT" || node.tagName === "STYLE" || node.tagName === "IFRAME" || node.tagName === "OBJECT") {
     return null;
   }

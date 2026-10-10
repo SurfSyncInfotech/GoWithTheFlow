@@ -1,0 +1,4420 @@
+GO WITH THE FLOW
+Line-by-line reading of every source file
+==========================================
+
+How to use this file
+--------------------
+Line numbers match the files as they stand. A range such as 20-22 is one
+statement that wraps. Blank lines and a lone closing brace are called out
+once at the end of that function when they carry no extra meaning.
+
+Scripts load in this order on every page:
+  js/rounds.js, js/lineup.js, js/clean.js, js/save.js, js/helpers.js, js/app.js
+Later files may call earlier ones. app.js is the only file that talks to the page.
+
+There is no server. Opening index.html in a browser is the whole app.
+Saved data lives in localStorage. Which round is open lives in sessionStorage.
+
+
+========================================================================
+js/helpers.js  (55 lines)
+Small DOM helpers. No debate rules live here.
+========================================================================
+
+1-3   cloneTpl(id)
+1     Declares the function. id is the id of a hidden template box in the HTML
+      (sample-round, card-sample, and so on).
+2     Finds that box, takes its first child element, and deep-clones it
+      (cloneNode(true) copies the element and everything inside it).
+      The original template stays in the page. The clone is what gets filled
+      in and appended. Returns the clone.
+3     End of function.
+
+5-7   unhide(node)
+5     Takes a DOM node.
+6     If the node exists, removes the class "hide". page.css makes .hide
+      display:none !important, so removing it shows the node.
+7     End.
+
+9-11  foldAway(node)
+9     Takes a DOM node.
+10    If it exists, adds class "hide", which hides it.
+11    End.
+
+13-16 clearNode(node)
+13    Takes a parent node.
+14    If there is no node, stop. Nothing to empty.
+15    While the node still has a first child, remove that child. Repeats until
+      the parent is empty. Used before redrawing a list so old cards do not stack.
+16    End.
+
+18-23 setLine(node, text)
+18    Takes a node and a string.
+19    If there is no node, stop.
+20    Sets the node's text to text, or to an empty string if text is missing.
+      textContent is plain text, so HTML in the string is not interpreted.
+21    If text is truthy, show the node.
+22    Otherwise hide it. Empty meta lines on a round card disappear.
+23    End.
+
+25-33 objList(box)
+25    Turns an object whose values are the records (rounds, notes, preflows)
+      into a plain array.
+26    Starts an empty array.
+27    Declares k, the loop variable.
+28    If box is missing, return the empty array.
+29    for-in walks every key on the object.
+30    hasOwnProperty skips anything inherited from Object.prototype.
+      Only the object's own values are pushed.
+31    End of the if and the loop.
+32    Returns the array of values. Order is the object's key order, not date order.
+33    End.
+
+35-43 joinSkipEmpty(parts, gap)
+35    Joins an array of strings with gap, skipping blanks.
+36    out starts empty.
+37    i is the index.
+38    Loop from the first part to the last.
+39    If this part is empty, null, or undefined, skip it.
+40    If out already has text, append gap then this part. Otherwise this part
+      is the start, coerced to a string.
+41    End of loop.
+42    Returns the joined string. Used for "Tournament · Round 3 · vs North".
+43    End.
+
+45    Comment: home and preflow lists. ISO date strings sort correctly as text
+      because they look like 2026-10-10T..., so a string compare is a date compare.
+
+46-54 sortRecent(list)
+46    Sorts a list in place, newest updatedAt first, and returns that same array.
+47    Array.sort comparator.
+48    x is a's updatedAt, or "" if missing.
+49    y is b's updatedAt, or "".
+50    If y is later than x, return 1, which puts b before a (newest first).
+51    If y is earlier, return -1.
+52    Equal dates stay tied (return 0).
+53    End of comparator.
+54    End of function. The closing of the file is line 55, a blank line.
+
+
+========================================================================
+js/save.js  (86 lines)
+Read and write the one saved file in the browser.
+========================================================================
+
+1     STORE_KEY = "goWithTheFlow"
+      The localStorage key for the live save.
+
+2     BACKUP_KEY = "goWithTheFlowBackup"
+      A second copy of the same JSON, written after the main key succeeds.
+
+4-11  blankSave()
+4     Builds a brand-new save when nothing is stored yet.
+5     Returns an object.
+6     rounds: empty object. Keys will be round ids.
+7     preflows: empty object. Keys will be preflow ids.
+8     settings: whatever startSettings() returns (font size, sound, clock times).
+      startSettings is defined in rounds.js, which loads first.
+9     lastRoundId: null until a round is saved from the workspace.
+10    End of the object.
+11    End of the function.
+
+13-24 readSaved(key)
+13    Reads one localStorage key and parses it. Returns the object or null.
+14    try starts. JSON.parse throws if the string is cut off.
+15    raw is the stored string, or null if that key was never written.
+16    No string means there is no save. Return null. This is not an error.
+17    Parse the string into data.
+18    If parse produced null, a number, or a string, it is not a save. Return null.
+19    Otherwise return the object.
+20    catch runs when parse throws (truncated write, laptop died mid-save).
+21    Comment: that broken string is not usable. The caller will try the backup.
+22    Return null so openSave can fall through to the spare key.
+23    End of catch.
+24    End of function.
+
+26-51 openSave()
+26    Loads the save the app will actually use. Called once, at the top of app.js.
+27    data is the main key, or null.
+28    backup is the spare key, or null.
+29    names will hold object keys.
+30    i is a loop index.
+31    If the main key is missing or unreadable:
+32-34   and a backup exists, use the backup and set data.recovered = true.
+        The home page reads that flag and shows the orange banner.
+35-36   If neither exists, start from blankSave().
+38    End of the missing-data branch.
+39    If rounds is missing, put an empty object there so later code can index it.
+40    Same for preflows.
+41    If settings is missing, install the defaults.
+42    Run the stored speech/prep lengths through mendClocks so a bad number
+      cannot stay in the file. mendClocks is in rounds.js.
+43    names = every round id.
+44-47 For each round: mendRound repairs a broken shape, then stopTimerOnOpen
+      freezes a clock that was still "running" when the tab last closed.
+      A sleeping laptop must not keep burning prep.
+48    names = every preflow id.
+49    mendPreflow each one. Preflows have no timer.
+50    Return the repaired object. This becomes db in app.js.
+51    End.
+
+53-57 storageFull(error)
+53    Decides whether a failed write is "the disk quota is full".
+54    No error object means it is not a quota error.
+55    Chrome calls it QuotaExceededError. Firefox calls it NS_ERROR_DOM_QUOTA_REACHED.
+56    Older browsers use numeric codes 22 or 1014 for the same failure.
+57    End. Returns true only for those cases.
+
+59-85 writeSave(store)
+59    Writes db to localStorage. Returns "" on success, or a sentence to show
+      the user on failure.
+60-65 copy is a plain object with only rounds, preflows, settings, and
+      lastRoundId. Fields like db.recovered are not written back, so the
+      banner does not stick forever. lastRoundId falls back to null.
+66    json will hold the string.
+67    try to stringify.
+68    JSON.stringify walks the whole save.
+69-70 If stringify throws (a circular reference, or a value JSON cannot hold),
+      return a message telling the user to copy cards out before closing.
+      Nothing was written.
+71    End of that try.
+72    try to write the main key.
+73    setItem replaces the previous main save with this string.
+74    catch if setItem throws.
+75    Quota full: tell the user to export, then delete an old round.
+76    Any other write error: a shorter "could not save" line.
+77    End of catch.
+78    Second try: the backup.
+79    Comment: the spare is optional. If only the backup does not fit, the
+      round is already in the main key, so this is not a failure.
+80    Write the same json under the backup key.
+81-82 If that throws, return "" anyway. The main save succeeded.
+83    End of backup try.
+84    Both writes succeeded. Return "" so the caller shows "Saved in this browser".
+85    End.
+
+
+========================================================================
+js/lineup.js  (156 lines)
+Puts cards on the page so a response sits on the same horizontal line
+as the card it answers, and later cards move down when a line gets tall.
+========================================================================
+
+1-14  cardHeight(note, heights)
+1     How many pixels tall this card should be.
+2     value is a measured height already stored for this note id, if any.
+      heights comes from the live textareas in app.js (measurePoints).
+3-5   lines, visual, i are working variables.
+6     If a real measurement exists and it is at least 40px, use it.
+      40 is the minimum card. A smaller number would be a bad measurement.
+7     Otherwise estimate from the text: split on newline.
+8     visual counts wrapped lines.
+9-11  Each source line is at least 1 visual line. About 32 characters fit
+      on a card, so a long line counts as ceil(length/32) lines.
+12    An empty card still counts as one line.
+13    22px per visual line plus 16px of padding, and never under 40.
+14    End.
+
+16-32 repliesInColumn(round, parentId, speechId)
+16    Every card whose parent is parentId and that lives in speech column speechId.
+17    parent is the card being answered. If it is gone, line 22 returns [].
+18-21 names, list, i, note.
+23-24 Walk every note id.
+25    note is that record.
+27    Keep it only when three things match: it answers this parent, it is in
+      this speech, and it is on the same contention as the parent.
+      A same-named column on the other case is a different contention, so it
+      is excluded by the contentionId check.
+28    Push the match.
+30    sortByOrder (rounds.js) orders them by the order field, then by id.
+31    End of loop.
+32    End of function. Returns the sorted list.
+
+34-35 Comments: a summary card has to clear the rebuttal stack on that line
+      or it paints on top of it. After a card has been answered, later speeches
+      answer that response. A blank reply box is only drawn on the first speech
+      that has not touched the line yet.
+
+36-60 spaceForPoint(round, note, caseSide, heights, saved)
+36    How much vertical room this card's whole thread needs.
+37-43 own, later, maxStack, s, siblings, stack, i.
+44    saved is a cache on note id. If this card was already measured in this
+      pass, return that number. Stops infinite recursion on a bad parent loop
+      only if the cache was filled; mendRound is what actually breaks loops.
+45    own is this card's own height.
+46    later is every speech after this one on this case (speechesAfter).
+47    maxStack is the tallest pile of replies in any one later column.
+48    For each later speech:
+49    siblings = replies to this card in that speech.
+50    No replies in that column: it does not make the thread taller.
+51    stack adds up the space each sibling thread needs.
+52-55 Recurse into each sibling. 8px gap between siblings, not after the last.
+56    Keep the larger of the stacks. Columns are side by side, so the thread
+      is as tall as the tallest column, not the sum of all columns.
+58    Cache it. The reserved height is the card itself or the tallest child
+      stack, whichever is bigger. That is why a short shell still "holds"
+      room for a long rebuttal under it.
+59    Return that number.
+
+62-83 placePoint(round, note, top, caseSide, heights, saved, positions)
+62    Writes pixel positions. top is where this card's thread starts.
+63    own = this card's height (not the reserved thread height).
+64    later speeches again.
+65-68 loop variables.
+69-74 positions[note.id] stores top, the card's own height, the reserved
+      thread height, and which speech it is in. The card is drawn at top;
+      reserved is what the next shell uses to know where to start.
+75    For each later speech:
+76    siblings in that column.
+77    y starts at the same top as the parent, so the first answer lines up
+      with the card it answers.
+78-80 Place each sibling at y, then move y down by that sibling's reserved
+      space plus 8px.
+81-82 End of loops.
+83    End. Children of children are placed by the recursive call.
+
+85-94 hasEarlierReply(round, noteId, speechId, caseSide)
+85    True if some speech before speechId already has a reply to noteId.
+86    list is the speech columns on this case, in order.
+87    limit is the index of the speech we are asking about.
+88    s is the loop index.
+89    Speech is not on this case: treat it as "no earlier reply".
+90-91 Walk columns before this one. Any reply there means the line was
+      already answered, so a later column should not also grow a blank box
+      aimed at the original card.
+92-93 End of loop, return false if none were found.
+
+96-155 lineUpGroup(round, contention, caseSide, heights)
+96    One contention's layout: positions for real cards, slots for blank
+      reply boxes, and the total height of the row.
+97    saved caches thread heights for this contention only.
+98    positions will be filled by placePoint. It also gets a _threads list.
+99    slots will be the blank "Response" boxes.
+100   y is the running top of the next shell. Shells stack downward.
+101-111 working variables.
+112   _threads starts empty. It is not a card id; later code skips this key.
+114   For each starting point (a shell: a card with no parent) in order:
+115   id of that shell.
+116   The note record.
+117   If the id is in the list but the note was deleted, skip it.
+118   Measure the thread (fills saved).
+119   Place the shell and all of its replies, starting at y.
+120   threadSpace is the reserved height.
+121   Remember this thread's top and reserved height.
+122   Next shell starts 8px below this thread.
+123   End of shell loop.
+
+125   names = every key now on positions, including "_threads" and every card id.
+126   For each key:
+127   Skip the _threads bookkeeping key.
+128   item is that card's position.
+129   later = speeches after the card's own speech.
+130   For each later speech:
+131   speechId.
+132   siblings = real replies already in that column.
+133-135 Comment restates the rule: once answered, later speeches answer the
+      response. A blank box only goes on the first untouched speech.
+135   If this column already has replies, or any earlier column already replied,
+      do not add a blank box.
+136-140 Otherwise record a slot: which parent, which speech, and the same top
+      as the parent card so the box lines up with it.
+141-142 End of loops.
+
+144   bottom starts as y, which is just past the last shell.
+145-147 A blank box is about 48px tall. If one hangs below the last shell,
+      grow bottom so the box is not clipped.
+150-154 Return positions, slots, and height (at least 48 so an empty contention
+      still has a little room).
+
+
+========================================================================
+js/clean.js  (152 lines)
+Turns a Google Docs or Word paste into HTML that is safe to put in a card.
+========================================================================
+
+1-2   Comments: keep bold, italic, underline, highlight. Flatten a table or
+      an image down to its text. A Word <font color> becomes a span.
+      script and iframe are dropped.
+
+4-8   SAFE_TAGS
+      An object used as a set. These tag names (uppercase, as node.tagName
+      returns them) may be kept: bold, strong, italic, em, underline, strike,
+      delete, br, p, div, span, lists, links, mark, sub, sup, blockquote,
+      h1-h3, and font. Anything else is unwrapped (its children may survive).
+
+10    SAFE_STYLES
+      The only CSS properties copied off a pasted element: color, background
+      (the Docs highlight), font size, family, weight, style, underline, align.
+
+12-19 styleIsSafe(value)
+12    Rejects a CSS value that could pull in code or a remote resource.
+13    lower is the value in lowercase.
+14    url( could be a tracking image or a script-bearing resource.
+15    expression( is old IE CSS that runs script.
+16    javascript anywhere in the value.
+17    @import pulls in another stylesheet.
+18    Otherwise the value is allowed.
+19    End.
+
+21-32 keepStyle(style)
+21    Copies only the safe properties off a live CSSStyleDeclaration.
+22    out collects "property:value" pieces.
+23-24 i, value.
+25    No style object: return an empty string.
+26    For each name in SAFE_STYLES:
+27    Read that property. Inline style only; a stylesheet rule is not here.
+28    Skip if the element did not set it.
+29    Skip if styleIsSafe says no.
+30    Keep "color:#ff0" style text.
+31    Join with semicolons. This string is what gets written to the attribute.
+32    End.
+
+34-42 keepLink(href)
+34    Allows a link only when it is http, https, or mailto.
+35    Trimmed string.
+36    Lowercased copy, used only for the prefix test.
+37-40 Those three prefixes pass the original (not lowercased) value through,
+      so a mixed-case URL is preserved.
+41    Anything else, including javascript: links, becomes "".
+42    End.
+
+44-54 cleanInside(node, notice, fragment)
+44    Cleans every child of node and appends the safe copies onto fragment.
+      notice is an array; cleanTag pushes "simplified" into it when it flattens
+      a table or image.
+45    child starts at the first child.
+46-47 next and cleaned.
+48    Loop while a child exists.
+49    Remember the next sibling first, because cleaning does not remove the
+      original, but the walk must not depend on the copy.
+50    cleanTag returns a safe node, a fragment, or null.
+51    Only append when there is something to append.
+52    Advance.
+53-54 End.
+
+56-98 cleanTag(node, notice)
+56    Returns a safe copy of one node, or null if it should vanish.
+57-61 copy, style, href, text, plain.
+62    A text node (nodeType 3) is copied as text. No HTML in it.
+63    If it is not an element (nodeType 1), drop it. Comments and the like go.
+64    TABLE, IMG, and IMAGE are not cards. They get flattened.
+65    Push "simplified" once. indexOf avoids repeating the word.
+66    An image has no useful text. A table uses its textContent, which is the
+      words in the cells run together.
+67    Return a text node, or null if there was nothing to keep.
+69    Comment: a citation link is fine. A script or frame is not a card.
+70-71 SCRIPT, STYLE, IFRAME, OBJECT are dropped entirely, children included.
+      A style block's text is CSS, not evidence, so it is not unwrapped.
+73    If the tag is not in SAFE_TAGS:
+74-76 Unwrap it. Children are cleaned into a fragment and that fragment is
+      returned, so a <table> already handled above never gets here, but a
+      <section> or <article> disappears and its paragraphs remain.
+78    FONT from Word becomes a span. The color is copied below.
+79    H1, H2, H3 become paragraphs so a pasted heading does not blow up the
+      card's type size.
+80    Any other safe tag is recreated with the lowercase name (b, p, a, ...).
+81    style = the filtered inline style.
+82-85 FONT's color attribute and size attribute are old HTML, not CSS.
+      size is a 1-7 scale; size * 4 + 8 turns it into a rough pixel size.
+      Appended onto the style string.
+86    If any style survived, set it on the copy.
+87    If the copy is a link:
+88    href must pass keepLink.
+89-93 No safe href: unwrap the link to its text. The words stay, the link goes.
+94    A safe href is set.
+96    BR has no children. Everything else gets cleanInside.
+97    Return the copy.
+98    End.
+
+100-111 cleanHtml(html)
+100   The function the paste handler calls.
+101   notice starts empty. cleanTag may push "simplified".
+102   DOMParser reads the paste inside a wrapper div, as a document.
+      The wrapper keeps the parser from dropping a bare text node.
+103   source is that wrapper, the first element in the body.
+104   wrap is an empty div the safe nodes are appended to.
+105   If the parser produced the wrapper, clean its children into wrap.
+106-110 Return three fields:
+      html: the safe inner HTML.
+      plain: the same content as text, used for search and for "is this empty?".
+      notice: a sentence if anything was simplified, otherwise "".
+111   End.
+
+113-124 linesToHtml(text)
+113   Plain-text paste has no HTML. This turns newlines into <br> without
+      letting the text be read as tags.
+114   Split on newline.
+115   parts collects escaped lines.
+116-117 i, lineBox.
+118   For each line:
+119-120 Put the line in a div via textContent, which escapes < and &.
+121   Take that div's innerHTML, which is the escaped line.
+122   Join the lines with <br>.
+123-124 End.
+
+126-151 putHtmlHere(html)
+126   Inserts HTML at the caret inside the evidence box.
+127-132 selection, range, node, parsed, fragment, holder.
+133   Nothing to insert: stop.
+134   The current selection.
+135   No caret: stop. The evidence box should be focused when this runs.
+136   The first range.
+137   Delete whatever was selected, so paste replaces a selection.
+138   Parse the already-cleaned HTML inside a div.
+139   An empty fragment to move nodes into.
+140   holder is the wrapper div.
+141   Move each child of the wrapper onto the fragment.
+      (appendChild moves the node; it does not copy.)
+142   node remembers the last moved child, so the caret can be placed after it.
+143   Insert the fragment at the range. After insert, the fragment is empty
+      and the nodes are in the document.
+144-149 If there was a last node, collapse a new range just after it and make
+      that the selection, so the next keystroke goes at the end of the paste.
+150-151 End.
+
+
+========================================================================
+js/rounds.js  (1064 lines)
+Public Forum rules and the shape of a round. No page drawing.
+========================================================================
+
+1-10  SPEECHES
+      Eight speech ids. Each value has:
+        team: "pro" or "con"
+        type: constructive, rebuttal, summary, or final
+              (type is also the key into the timer settings)
+        short: the column header used in print ("Pro Constr.")
+        full: the header on the flow ("Pro Constructive")
+      Final focus is stored as type "final" and labeled "Pro FF" / "Pro Final Focus".
+      Crossfire is not in this map. Crossfire is notes plus a timer step, not a column.
+
+12-18 MARKERS
+      The labels a debater can put on a card. id "" is "None", which clears it.
+      answered, extend, dropped, turn. The app never assigns these by itself.
+
+20-22 uid(prefix)
+20    Builds an id like "note-m1abc-k3f".
+21    prefix, then the current time in base 36, then a random integer under
+      100000 also in base 36. Two calls in the same millisecond still differ
+      because of the random part. Not a UUID, but unique enough for one browser.
+22    End.
+
+24-25 Comment: NSDA PF times stored in seconds. 4 constructive, 4 rebuttal,
+      3 summary, 2 final focus, 3 and 3 crossfire, 3 grand cross, 3 prep
+      per team for the whole round (not per speech).
+
+26-36 timerTimes()
+26    The default clock.
+27-35 constructive 240, rebuttal 240, summary 180, final 120,
+      crossfire 180, grand 180, prep 180. All seconds.
+36    End.
+
+38    Comment: the settings boxes are seconds. Typing 4 in constructive is
+      treated as "4 minutes", the usual slip.
+
+39-55 pfClock(kind, raw)
+39    Checks one settings number before it is stored.
+40    n = numeric value. Number("") is 0. Number("abc") is NaN.
+41    label starts as the kind name ("constructive", "rebuttal", ...).
+42-44 Friendlier words for the message: "final focus", "grand cross", "prep".
+45    Not a finite number, or zero or negative: reject.
+      Message is "<label> has to be a positive time."
+46    Over 20 minutes (1200 seconds): reject. That is not a PF clock.
+47    1 through 15: treat as minutes. 4 becomes 240.
+      Message tells the user what was saved, e.g.
+      "constructive: 4 min saved as 240 seconds."
+48-52 That success object: ok, seconds, message.
+54    Anything from 16 up to 20 minutes is already seconds. Round to an integer.
+      message is "" so the settings page can leave for home.
+55    End.
+
+57-69 mendClocks(durations)
+57    Repairs a durations object already in a save. Unlike pfClock, this does
+      not convert 4 into 240. A stored 4 would be illegal (under the "must be
+      a real second count" repair) only if it fails the range check...
+      Look carefully:
+64    n = Number(stored value).
+65    If it is not finite, or <= 0, or over 20 minutes, replace it with the
+      default for that key.
+66    Otherwise keep it, rounded. So a stored 240 stays 240. A stored 4 stays 4
+      because 4 is finite, positive, and under 1200. pfClock is what converts
+      minutes at the moment you press Save settings. mendClocks only throws
+      out impossible numbers on load.
+62    If durations is missing or not an object, return a fresh timerTimes().
+63    keys are the seven names.
+67    After the loop, return the same object, repaired.
+69    End.
+
+71-77 startSettings()
+71    The settings object on a brand-new save.
+73    fontSize 14 (pixels). The toolbar offers 12, 14, 16, 18.
+74    sound false. No beep when a clock hits zero until the user turns it on.
+75    durations is a new timerTimes() object.
+76-77 End.
+
+79-93 sortByOrder(list)
+79    Sorts cards by their order field, smallest first. Insertion-style swaps,
+      not Array.sort. Returns the same array.
+80-82 i, j, temp.
+83    Outer index.
+84    Inner index, everything after i.
+85    Swap when j should come first: smaller order, or the same order and a
+      smaller id (so the order is stable when two cards share an order number).
+86-88 The swap.
+90    After the inner loop, position i is the next smallest.
+92    Return the sorted list.
+93    End.
+
+95-97 Comment: NSDA dropped the old rebuttal flip. The first constructive speaker
+      also gives the first rebuttal, the first summary, and the first final focus.
+      Tournaments that still swap rebuttal speakers are not modeled.
+      Pro's sheet starts at Pro constructive even when Con won the flip.
+      Con constructive lives on the Con case.
+
+98-112 speechOrder(firstSide)
+98    The eight speech ids in the order they are given.
+99-104 pairs are the four blocks. Each block is [pro speech, con speech].
+105   list is the result.
+106   i.
+107   For each block:
+108   If Con speaks first, push the Con speech then the Pro speech.
+109   Otherwise push Pro then Con.
+110   End of loop.
+111   Example, Con first:
+      con-constructive, pro-constructive,
+      con-rebuttal, pro-rebuttal,
+      con-summary, pro-summary,
+      con-final, pro-final.
+112   End.
+
+114-122 speechesOnSide(round, caseSide)
+114   The columns drawn on one case sheet.
+115-116 all, start.
+117   A preflow is only that side's constructive. One column.
+118   all = the full speech order for whoever speaks first.
+119   start = the index of this side's constructive.
+120   If that speech is somehow missing, return a copy of the whole order.
+121   Otherwise return from that constructive to the end.
+      Pro's sheet, even in a Con-first round, starts at pro-constructive.
+      The columns before it (Con constructive, in that example) are not on
+      the Pro sheet. They are on the Con sheet.
+122   End.
+
+124-128 speechName(id, full)
+124   Label for a speech id.
+125   info = the SPEECHES entry.
+126   Unknown id: return the id itself.
+127   full true means the long name, false means the short one.
+128   End.
+
+130-132 teamWord(side)
+130   "Pro" if side is "pro". Anything else, including "con", becomes "Con".
+      Callers only pass pro or con into this.
+132   End.
+
+134-151 timerSteps(firstSide, durations)
+134   The eleven countdown steps, in NSDA order. This is the speech clock,
+      not the flow columns. Crossfire sits between speeches here.
+135   first is "con" only when firstSide is "con", otherwise "pro".
+136   second is the other team.
+137   times is the settings durations, or the defaults.
+138-150 The list:
+      1 first constructive
+      2 second constructive
+      3 first crossfire          (the two first speakers)
+      4 first rebuttal           (same team that gave first constructive)
+      5 second rebuttal
+      6 second crossfire         (the two second speakers)
+      7 first summary
+      8 second summary
+      9 grand crossfire          (all four)
+      10 first final focus
+      11 second final focus
+      Each item has id, label, and seconds from the matching duration.
+      Reflections are not a step. They are untimed notes.
+151   End.
+
+153-154 Comment: first CX is the two first speakers, second CX the two second
+      speakers, grand is all four. Reflections sit after the round.
+
+155-163 crossNotesFrom(notes)
+155   Always returns all four note strings, even if notes was missing.
+156   notes becomes {} if it was null or undefined.
+157-162 firstCrossfire, secondCrossfire, grandCrossfire, reflections.
+      Each falls back to "".
+163   End.
+
+165-185 newTimer(firstSide, durations)
+165   A fresh clock object for a new round.
+166   plan = the eleven steps.
+167   allotted will map step id to seconds.
+168   times = durations or defaults, used for the two prep pots.
+169-170 Copy each step's seconds into allotted.
+171-184 The timer record:
+      index: 0, so the clock starts on the first constructive.
+      running: false.
+      mode: null. Later "speech" or "prep".
+      prepSide: "pro" as a default; it only matters while mode is "prep".
+      deadline: null. While running, this is a timestamp (Date.now() plus the
+        milliseconds left). The tick compares deadline to now.
+      remainingMs: the first step's length in milliseconds.
+      allotted: the map above. Reset uses this, not the settings, so changing
+        settings later does not rewrite a round already created.
+      prepLeft: pro and con each get times.prep seconds, in milliseconds.
+        One pot per team for the whole round.
+      timeUp: false. Set true when a countdown hits zero.
+185   End.
+
+187-194 newGroup(name)
+187   One contention.
+189   id from uid("cont").
+190   name as given ("Contention 1", or whatever the user typed).
+191   collapsed false. A collapsed contention hides its columns but keeps the data.
+192   startingPointIds: the shell cards, in visual order. Replies are not in
+      this list; they hang off parentId.
+193-194 End.
+
+196-202 newCase()
+196   A case starts with one contention so the constructive has somewhere to sit.
+197   That contention is named "Contention 1".
+198-201 Return contentionIds (just that id) and the contention object itself.
+      The caller files the object into the round's contentions map.
+202   End.
+
+204-237 newRound(fields, settings)
+204   A blank round. fields is the new-round form. settings supplies clock lengths.
+205-206 A Pro case and a Con case, each with its own Contention 1.
+207   times from settings, or the defaults.
+208-210 groups is the contentions map, both contentions stored by id.
+211-236 The round:
+      id from uid("round").
+      title, topic, tournament, roundLabel, opponent. Empty strings if missing.
+      title falls back to "Untitled round".
+      yourSide: pro, con, or observer. Defaults to pro if missing.
+      firstSide: "con" only when the form says con, otherwise "pro".
+        Observer is not a legal first speaker.
+      createdAt and updatedAt: ISO strings from the current time.
+      cases.pro and cases.con each hold only their contentionIds.
+      contentions: the map.
+      notes: empty. Cards are added later.
+      evidence: empty.
+      crossNotes: the four empty strings.
+      timers: a new clock for this firstSide and these times.
+      columnFocus: per case, count null means "show every column", start 0.
+      scroll: per case, pixel scroll of the flow. Restored when you switch cases.
+237   End.
+
+239-256 newOpening(fields)
+239   A preflow: a reusable constructive, not a round.
+240   side is con or, for anything else, pro. No observer preflow.
+241-243 One contention named Contention 1, stored in groups.
+244-255 id from uid("preflow"), title, topic, side, timestamps,
+      contentionIds, contentions, notes, evidence.
+      No timers, no cross notes, no firstSide. Those belong to a round.
+256   End.
+
+258-287 openingAsRound(preflow)
+258   Wraps a preflow so the workspace can draw it with the same flow code.
+259-262 cases: the other side gets an empty contentionIds list. This side gets
+      a copy of the preflow's contention ids (slice, so the array is not shared).
+264-286 A round-shaped object:
+      Same id as the preflow, so saves can find db.preflows[id].
+      title and topic copied. Tournament, round label, opponent are "".
+      yourSide and firstSide are the preflow's side. The one column is that
+      side's constructive (speechesOnSide checks isPreflow).
+      isPreflow true. preflowSide remembers the side.
+      contentions, notes, evidence are the SAME objects as the preflow, not
+      copies. Editing the wrapper edits the preflow. saveThisRound copies the
+      fields back onto db.preflows[id].
+      crossNotes and timers exist so shared code does not crash, but the
+      preflow screen hides the timer.
+      columnFocus and scroll are fresh.
+287   End.
+
+289-293 whoseCont(round, contentionId)
+289   Which case owns this contention.
+290   If the id is in the Pro list, "pro".
+291   If it is in the Con list, "con".
+292   Otherwise null. A contention that lost its case is ignored by callers.
+293   End.
+
+295-303 cardsOn(round, contentionId)
+295   Every note on that contention, unsorted.
+296   All note ids.
+297   list starts empty.
+298-301 Push each note whose contentionId matches.
+302   Return the list.
+303   End.
+
+305-313 replyNotes(round, parentId, speechId)
+305   Replies to one card in one speech. Same idea as repliesInColumn, but it
+      starts from cardsOn instead of every note in the round.
+306   notes = cards on the parent's contention. This throws if the parent note
+      is missing, because it reads round.notes[parentId].contentionId.
+      Callers only use it when the parent exists.
+307-310 Keep notes that answer parentId and sit in speechId.
+311   Sort by order.
+312-313 End.
+
+315-320 speechesAfter(round, caseSide, speechId)
+315   Columns after speechId on this case.
+316   The case's column list.
+317   index of this speech.
+318   Not on this case: empty list.
+319   slice(index + 1) is everything after it, not including it.
+320   End.
+
+322-329 nextNumber(list)
+322   The next order value for a new sibling. One past the highest order.
+323   max starts at 0, so the first card gets order 0.
+324-327 If a card's order is >= max, max becomes order + 1.
+328   Return max.
+329   End.
+
+331-342 newPoint(contentionId, speechId, parentId, order, text)
+331   One card, not yet stored on the round.
+333   id from uid("note").
+334   contentionId.
+335   speechId, one of the eight SPEECHES keys.
+336   parentId, or null if this is a shell. The `|| null` also turns "" into null.
+337   order, the sort key among its siblings.
+338   text, or "".
+339   marker "". No label until the user picks one.
+340   evidenceId null. Set when a card gets evidence.
+341-342 End.
+
+344-355 addShell(round, contentionId, speechId, text, afterId)
+344   Adds a card with no parent (a new line) on a contention.
+345   contention is the group.
+346   The new point's order is the current number of shells. It gets rewritten
+      only by position in startingPointIds; shells are ordered by that array,
+      and the order field is still set so other code has a number.
+347   index defaults to "append at the end".
+348   If afterId was passed (Enter in the middle of a card, or duplicate):
+349   index = the position just after afterId.
+350   If afterId was not in the list, indexOf returns -1, plus 1 is 0, and
+      `index <= 0` then sends it to the end. A real hit at position 0 gives
+      index 1, which is kept.
+352   splice inserts the new id at index.
+353   Store the note on the round.
+354   Return the note.
+355   End.
+
+357-364 addAns(round, parentId, speechId, text, afterId)
+357   Adds a reply under parentId, in column speechId.
+358   parent must exist.
+359   siblings already answering that parent in that speech.
+360   The new point's contention is the parent's. parentId is the parent.
+      order is nextNumber(siblings), so it sorts after them.
+361   If afterId is a real note, set order to that note's order plus 0.5,
+      which sorts the new card just after afterId even if the numbers are
+      not whole. sortByOrder uses numeric <.
+362   Store it.
+363   Return it.
+364   End.
+
+366-374 underLine(round, noteId, list)
+366   Collects noteId and every card that descends from it, at any depth.
+367   All note ids.
+368   i.
+369   Push this id first.
+370-371 Any note whose parentId is noteId is a child. Recurse.
+      The walk is depth-first. It does not care which speech the child is in.
+372   Return the same list that was passed in.
+373-374 End.
+
+376-378 Comment: empty string means the link is legal. Any other return value
+      is a sentence for the menu, and the card is not moved. The checks run
+      in this order on purpose.
+
+379-400 whyNotLink(round, noteId, parentId)
+379   Can noteId be re-parented under parentId?
+380-386 note, parent, under, side, cols, parentCol, cardCol.
+387   Either card is gone: "That card isn't on this flow anymore."
+388   Same id: "A card can't answer itself."
+389   Different contentions: "Stay on this contention. Another contention is a different sheet."
+390   under = this card and everything under it.
+391   If the proposed parent is inside that set, the link would loop.
+      "That loops the line — the extension would be answering itself."
+392   side = which case this contention is on.
+393   cols = that case's speech order.
+394   parentCol = index of the parent's speech.
+395   cardCol = index of this card's speech.
+396   The parent must sit in an earlier column. Same column, a later column,
+      or a speech that is not on this sheet: reject.
+397   "Answers go in a later column. A constructive shell can't hang under rebuttal."
+399   All checks passed. Return "" so canConnect is true.
+400   End.
+
+402-404 canConnect(round, noteId, parentId)
+402   True only when whyNotLink returns the empty string.
+404   End.
+
+406    Comment: the labels are the user's. These warnings catch the ones that
+      do not mean what they say on a PF flow. They do not block; the confirm
+      dialog still has an "Add label" button.
+
+407-423 markerWarn(round, note, markerId)
+407   Returns a warning sentence, or "" if there is nothing to warn about.
+408-409 info, side.
+410   No card, or marker id "" (None): no warning.
+411   info is the speech record, or undefined if the speech id is bad.
+412   side is pro or con for this contention.
+413-415 Dropped on a constructive: that speech is making the argument, so
+      nothing has gone unanswered yet.
+416-418 Turn on your own constructive, and you are not an observer:
+      a turn is their argument flipped back on them. yourSide observer skips
+      this, because an observer has no "your" constructive.
+      The check also requires the card's contention to be on yourSide.
+419-421 Extend with no parent: extend means you are kicking an earlier line
+      back up, and this card is not under anything.
+422   Any other marker, including Answered, and any marker on a legal card: "".
+423   End.
+
+425-432 dropId(list, id)
+425   A new array with that id removed. Does not mutate the input list...
+      wait, it builds `kept` and returns it. The caller assigns the result back.
+426-430 Copy every id that is not the one being removed.
+431   Return the copy.
+432   End.
+
+434-459 connectPoint(round, noteId, parentId)
+434   Moves a card onto a parent, or back to being a shell when parentId is falsy.
+435   note.
+436-437 contention, siblings declared for later branches.
+438   Missing note: return false. Nothing changed.
+439-442 If the card is currently a shell, take its id out of startingPointIds
+      before it grows a parent. A card should not be both.
+443-447 parentId empty: make it a shell. parentId null, and push the id onto
+      startingPointIds if it is not already there. Return true.
+      This branch is not used by the link menu. It is the "unlink" shape.
+449   If whyNotLink fails, return false and do not change parentId.
+      The removal from startingPointIds above already happened when the card
+      was a shell. A failed link of a shell therefore leaves it off the shell
+      list until mendRound puts parentless cards back. The menu refuses to
+      call connectPoint when whyNotLink is non-empty, so this path is the
+      safety net, and the next load repairs it.
+450   Set the parent.
+451-456 siblings = the other replies already under that parent in this speech,
+      not counting this card. order becomes nextNumber of those, so the moved
+      card sorts last among them.
+457   Return true.
+458-459 End.
+
+461-505 cutCard(round, noteId)
+461   Deletes one card. Children stay.
+462   note.
+463-468 names, children, contention, index, i, child.
+469   Missing note: stop.
+470-475 children = notes whose parentId is this card. Direct children only.
+      Grandchildren stay attached to those children.
+476-483 Sort those children by order, ascending, with a swap loop.
+485   If the card had evidence and that record exists, delete the evidence.
+      The children's evidence is not touched.
+486-487 Comment: strike this card, keep the extension. The next speech's answer
+      stays on the same line.
+488-492 If this card itself had a parent: each child is re-parented to that
+      grandparent. Their order is the deleted card's order plus a fraction,
+      (i+1)/(children.length+2), so they sit where the deleted card sat,
+      in their previous order, without colliding with a sibling's whole number.
+493-502 If this card was a shell: pull it out of startingPointIds, remember the
+      index, and promote each child to a shell inserted at that index and the
+      slots after it. Those children become their own lines.
+504   Delete the note record.
+505   End.
+
+507-526 dupeCard(round, noteId)
+507   Copies one card, not its children.
+508-510 note, copy, evidence.
+511   Missing note: return null.
+512   A reply is duplicated with addAns, placed just after the original
+      because afterId is noteId (order + 0.5).
+513   A shell is duplicated with addShell, inserted just after the original
+      in startingPointIds.
+514   The copy keeps the same marker.
+515-524 If the original has evidence, the copy gets a new evidence id and a
+      new evidence record with the same html and plain text. The two cards
+      do not share one evidence object.
+525   Return the copy.
+526   End.
+
+528-562 nudgeCard(round, noteId, direction)
+528   Moves a card up (direction -1) or down (direction 1) among its siblings.
+529   note.
+530-536 list, index, swap, ids, i, temp, order.
+537   Missing note: stop.
+538   A reply's siblings are replyNotes of the same parent and speech.
+539-545 A shell's siblings are the notes named by startingPointIds, in that
+      array's order, skipping ids whose notes are gone.
+546-549 Find this card's index in that list.
+550   swap = index + direction.
+551   Out of range, or the card was not in the list: stop.
+552-557 Shells swap places inside startingPointIds. Their order fields are
+      not what the layout uses; the array order is. Return after the swap.
+559-561 Replies swap their order numbers. sortByOrder then draws them swapped.
+562   End.
+
+564-571 roundHasWords(round)
+564   True when the round has any card text, any evidence pointer on a card,
+      or any evidence record. Used to lock "who speaks first".
+565-569 Walk notes. text or evidenceId is enough.
+570   Also true if the evidence map is non-empty.
+571   End.
+
+573-589 addCont(round, caseSide)
+573   Adds the next contention on a case.
+574   ids already on that case.
+575   n starts at 1. The new name will be "Contention " + n, and n moves past
+      any existing "Contention N" so you do not get two "Contention 1"s
+      after a rename... actually it only looks at names that are exactly
+      "Contention <digits>". A renamed contention does not raise n.
+576-578 i, name, num, contention.
+580-584 For each existing contention, if the name matches /^Contention (\d+)$/
+      and that number is >= n, n becomes that number plus 1.
+585   Create "Contention " + n.
+586   Store it.
+587   Append its id to the case.
+588   Return it.
+589   End.
+
+591-611 cutCont(round, contentionId)
+591   Deletes a contention, its cards, and their evidence.
+      This function will delete the last contention. The button handler in
+      app.js refuses to call it when only one contention is left, because the
+      UI wants a case to keep a place for the constructive. useOpening calls
+      cutCont in a loop to clear a case before pasting a preflow in, and that
+      path is allowed to empty the case for a moment.
+592   caseSide = who owns it.
+593-596 notes, ids, kept, i.
+597   Unknown contention: return false.
+598-602 For each card: delete its evidence record if any, then delete the card.
+603   Delete the contention object.
+604-609 Rebuild that case's id list without this id.
+610   Return true.
+611   End.
+
+613-625 bumpCont(round, contentionId, direction)
+613   Moves a contention up or down in the case list.
+614   caseSide.
+615-617 ids, index, temp.
+618   Unknown contention: stop.
+619   The case's id list. Order in this array is the order on the page.
+620   index of this contention.
+621   Stop if it is missing or the move would leave the list.
+622-624 Swap with the neighbor at index + direction.
+625   End.
+
+627-634 groupHasWords(round, contentionId)
+627   True if any card on this contention has text or an evidence id.
+      The delete button skips the confirm dialog when this is false.
+628-633 Walk cardsOn. Return true on the first hit, false if none.
+634   End.
+
+636-652 shownSpeeches(round, caseSide)
+636   Which columns are on screen. columnFocus can hide the rest.
+637   all = every column on this case.
+638   focus = that case's { count, start }, or a default that shows everything.
+639   count null means "all".
+640   start defaults to 0.
+641-643 No count, or a count that covers the whole sheet: visible is a copy of
+      all, start 0, count is the full length.
+644   A negative start is clamped to 0.
+645   If the window would run past the end, pull start back so the window
+      still shows `count` columns.
+646-650 Return all, the visible slice, the clamped start, and count.
+652   End.
+
+654-658 freshId(map, oldId)
+654   Used while copying. The same old id must become the same new id every
+      time it is seen (a note id appears on the note, on its parent, and in
+      startingPointIds).
+655   No old id: return null. Keeps parentId null and evidenceId null.
+656   First time this old id is seen, mint uid("id") and store it on map.
+657   Return the mapped id.
+658   End.
+
+660-719 copyParts(source)
+660   Deep-copies contentions, notes, and evidence with new ids.
+661   map from old id to new id. One map covers contentions, notes, and evidence,
+      which is safe because their id prefixes differ and freshId keys on the
+      old id string.
+662-664 groups, notes, evidence, the new maps.
+665-674 working variables.
+675   For each old contention:
+676-678 Mint a new id. Read the old group.
+680-682 startingPointIds are remapped. freshId on a note id here runs before
+      the note loop, so the note loop's freshId call returns the same new id.
+683-688 The new contention: new id, same name, collapsed forced false, new shell ids.
+690   For each old note:
+692-704 New note. contentionId, parentId, and evidenceId go through the same map.
+      speechId, order, text, and marker are copied as values.
+      marker falls back to "".
+706   For each evidence record:
+710-716 New evidence. noteId is remapped. html and plain are copied.
+      If the note was copied first, freshId already has the evidence id from
+      the note's evidenceId field, so they match.
+718   Return map plus the three new objects.
+719   End.
+
+721-726 copyIdList(ids, map)
+721   Remaps an array of ids (a case's contentionIds).
+722-725 Push map[old] for each. If an id was never mapped, the slot is undefined.
+726   End.
+
+728-752 copyRound(round, settings)
+728   A full round duplicate for the home-page Duplicate button.
+729   cloned = copyParts of the source round.
+730-738 newRound builds a blank round with "(copy)" on the title and the same
+      meta fields, plus fresh timers from settings. The blank contentions
+      from newRound are thrown away on the next lines.
+739-742 cases are rebuilt from the remapped contention ids.
+743-745 contentions, notes, evidence are the copies.
+746   crossNotes is a fresh object with the same four strings.
+747-750 columnFocus is copied (count and start for each side). Scroll is left
+      at the newRound default of 0. Timers are the new ones, not a copy of
+      a running clock.
+751   Return the copy. It has a new round id from newRound.
+752   End.
+
+754-755 Comment: a preflow is the case you read. Practice answers in later
+      columns stay in the preflow file. A round only receives constructive
+      shells and their evidence.
+
+756-798 useOpening(round, preflow)
+756   Copies a preflow onto one side of a round, replacing that side's case.
+757-761 copyParts of the preflow's contentions, notes, and evidence.
+762   side = the preflow's side. A Con preflow lands on the Con case even if
+      you are Pro.
+763   kept will be the note ids that survive (constructive shells only).
+764-769 names, i, note, oldIds, newIds, n.
+770-779 For each copied note: if it is not on this side's constructive, or it
+      has a parent (it is a practice answer), delete its evidence and delete
+      the note. Otherwise remember the id in kept.
+780-788 For each copied contention, startingPointIds is filtered down to kept,
+      so a shell that was dropped does not leave a dangling id.
+789   oldIds = a copy of the case's current contention ids.
+790   cutCont each of them. That deletes the old case, its cards, and evidence.
+      The case is empty for a moment.
+791   The case's contention ids become the remapped preflow ids.
+792-797 Copy the new contentions, surviving notes, and surviving evidence
+      onto the round.
+798   End.
+
+800-801 Comment: only the constructive column becomes a reusable case.
+      Rebuttal ink from the round is not the shell you want next time.
+
+802-847 caseToOpening(round, caseSide, title)
+802   The reverse of useOpening: save this case's constructive as a new preflow.
+803   preflow = a blank opening with the given title, the round's topic, and
+      this side. That blank already contains one empty Contention 1.
+804   speech = "pro-constructive" or "con-constructive".
+805-813 groupIds, i, source, contention, starts, n, note, copy, blank.
+814-815 Throw away the blank Contention 1. The loop below copies the real ones.
+      If the case somehow has no contentions, lines 841-845 put a blank back.
+816   groupIds = this case's contention ids, in order.
+817   For each:
+818   source = the live contention.
+819-821 A new contention with the same name, stored on the preflow.
+822   starts = the shell ids.
+823-829 For each shell: skip if the note is missing or it is not on the
+      constructive (a shell should be, but a bad save might disagree).
+      Otherwise make a new point with the same text and marker, parent null,
+      and append it.
+830-838 If that shell has evidence, copy html and plain onto a new evidence id.
+840   End of contention loop.
+841-845 If nothing was copied, put one empty Contention 1 back so the preflow
+      is still openable.
+846   Return the preflow. The caller stores it on db.preflows.
+847   End.
+
+849-853 parkOnShell(round, note)
+849   Repair helper. Turns a broken reply back into a shell so it is not lost.
+850   cont = its contention, which may be missing.
+851   parentId null.
+852   If the contention exists and the id is not already a shell, append it.
+853   End.
+
+855-857 Comment: old saves and a half-written blob can come back missing a case,
+      with a reply pointing at a deleted card, or with a parent loop.
+      A case with no contention gets a blank one, because the constructive
+      has to sit somewhere.
+
+858-997 mendRound(round)
+858   Repairs one round in place. Called on every round at load.
+859-874 A long list of working variables.
+875   Not an object: stop. Nothing to repair.
+876   yourSide must be pro, con, or observer. Anything else becomes pro.
+877   firstSide must be con or it becomes pro. Observer is not a speaking slot.
+878-882 cases.pro and cases.con exist, and each has a contentionIds array.
+883-885 contentions, notes, and evidence exist.
+886   crossNotes is rebuilt so all four keys exist.
+887-889 columnFocus for both sides.
+890-892 scroll.pro and scroll.con are numbers. A missing scroll becomes 0.
+893   If timers or prepLeft is missing, replace the whole clock with a fresh
+      one for this firstSide and the default times (not the settings).
+894-898 Otherwise clamp a negative or missing prep pot to 0, and make sure
+      allotted exists.
+
+900-928 For pro, then con:
+902   ids = that case's contention ids.
+903-904 kept is the ids that survive. seen blocks a duplicate id.
+905   For each id:
+907   A repeated id is skipped.
+908   An id with no contention object is skipped.
+909   Mark it seen.
+910   A missing name becomes "Contention 1", "Contention 2", ... based on how
+      many have been kept so far.
+912   A missing startingPointIds becomes [].
+913-918 Shell ids that do not point at a real note, that point at another
+      contention, or that point at a card which already has a parent, are
+      dropped.
+920   The contention is kept.
+922-926 If a case ended with zero contentions, create Contention 1 and keep it.
+927   Write the cleaned id list back.
+
+930-943 For each note:
+933-936 No note, or its contention is gone: delete its evidence if any, delete
+      the note, continue.
+938-941 A speech id that is not one of the eight becomes that side's constructive
+      (or pro-constructive if the contention's side cannot be found).
+942   A missing marker becomes "".
+
+945-978 Second pass, parent chains:
+946-948 For each surviving note:
+949   seen tracks ids already walked, to catch a loop.
+950   id starts at this note.
+951   n counts steps, capped at 40 so a huge chain cannot hang the load.
+952   while id is set and n < 40:
+953-956 If this id was already walked, the chain loops. Park this note on a
+      shell and stop walking.
+957   Mark id seen.
+958   parent = the note at id.
+959   id = that note's parentId, or undefined if the note is gone.
+960   n increases.
+962-965 If parentId points at a missing note, park it as a shell and continue
+      to the next note.
+966   A shell (no parent) needs no more checks.
+967   parent is now the real parent note.
+968-971 Parent on a different contention: park as a shell.
+972   side of this contention.
+973   order = the speech columns on that side.
+974-977 Comment: an answer that sits in an earlier speech than its parent was
+      linked backwards. If either speech is not on this sheet, or the parent
+      is not strictly earlier, park the card as a shell.
+
+980-986 Third pass: every parentless note must appear in its contention's
+      startingPointIds. parkOnShell and the loop breaker can leave a shell
+      that was not appended; this pass appends any that are still missing.
+
+988-996 Evidence pass:
+990   For each evidence record:
+991-994 No record, no noteId, or the note is gone: delete the evidence.
+995   Otherwise point that note's evidenceId at this record, so a note and
+      its card cannot disagree about which evidence belongs to it.
+997   End of mendRound.
+
+999-1048 mendPreflow(pre)
+999    Same idea for a preflow, which has a flatter shape.
+1000-1008 kept, seen, i, id, cont, starts, n, note, names.
+1009    Not an object: stop.
+1010    side must be con or it becomes pro.
+1011-1014 contentions, notes, evidence, and contentionIds exist.
+1015-1029 For each contention id: skip duplicates and missing objects, fill in a
+       name, keep only shell ids that point at a parentless note on this
+       contention.
+1030-1034 If none survived, add Contention 1.
+1035    Write the cleaned id list.
+1036-1043 Delete notes whose contention is gone, and their evidence pointer.
+1044-1047 Delete evidence whose note is gone.
+1048    End. A preflow is not checked for parent loops. useOpening already
+       throws away anything that is not a constructive shell.
+
+1050-1051 Comment: prep and speech clocks are a deadline. If the laptop slept,
+       do not keep burning time that already passed. Freeze what was left.
+
+1052-1063 stopTimerOnOpen(round)
+1052   Called on each round while opening the save.
+1053   left will be milliseconds remaining.
+1054   If there is no timer, or it was not running, or it has no deadline, stop.
+       A paused clock is stored as remainingMs and prepLeft, not as a deadline.
+1055   left = deadline minus now.
+1056   A deadline already in the past becomes 0. The time is up.
+1057   Prep mode writes that leftover into the team's prep pot.
+       prepSide is the team that was prepping.
+1058   Any other running mode writes leftover into remainingMs (the speech clock).
+1059   running false.
+1060   mode null.
+1061   deadline null. The clock is paused.
+1062   timeUp is true only when nothing was left.
+1063   End of rounds.js.
+
+
+========================================================================
+js/app.js  (2177 lines)
+The page. Reads db, holds state, draws, and handles every button.
+========================================================================
+
+1     db = openSave()
+      The saved file, repaired. This runs as soon as the script loads,
+      before startApp. Every page shares this one variable.
+
+2-22  state
+      Live UI, not written as its own object. Pieces of it are copied into
+      the round or into sessionStorage.
+2     view: "home" until startApp reads data-page off the body.
+3     round: the open round, or a preflow wrapped by openingAsRound, or null.
+4     caseSide: "pro" or "con". Which sheet is on screen.
+5     selectedId: the card that is highlighted, or null.
+6     evidenceOpen: whether the evidence panel is showing.
+7     saveState: the words next to the save dot.
+8     saveTimer: the debounce timeout id for saveSoon.
+9     typingTimer: clears the "user is still typing" flag after 1 second.
+10    history: past and future are JSON strings of the flow for undo/redo.
+      typing is true while a single typing burst should count as one undo step.
+11    heights: measured pixel height of each card, keyed by note id.
+12    popover: the menu or small popup currently open, or null.
+13    findText: the find box contents.
+14    findHits: the current result list.
+15    findAt: index into findHits, or -1 before the user steps.
+16    tourStep: -1 means no tour. 0 and up is the step index.
+17    demo: true during the feature tour. Saves go to sessionStorage, not db.
+18    navOpen: the phone sidebar is open.
+19    query: the home-page search string.
+20    composing: true while an IME (Japanese, Chinese, and similar) is composing,
+      so Enter does not split a card mid-composition.
+21    End of the object.
+
+23    confirmRun
+      The function the confirm dialog's OK button will call, or null.
+      Only one confirm is live at a time.
+
+24    JUMP_COLORS
+      Three colors cycled onto the contention jump dots in the sidebar.
+
+25-29 CONTENTION_COLORS
+      Three palettes for contention headers: head (background), ink (text),
+      accent (the left bar and the dot). Index in the case list picks the color,
+      wrapping with modulo 3.
+
+30-41 TOUR
+      Ten steps. Each has a CSS selector (target) and the sentence shown.
+      0 cases switch
+      1 add contention
+      2 a point (Enter / Shift+Enter). The first card's textarea gets
+        data-tour="point" when it is drawn, because no such node exists in the HTML.
+      3 a reply box or a card
+      4 the clip button. The first clip gets data-tour="clip-btn" the same way.
+      5 the evidence panel. Step index 5 also opens evidence in showTour.
+      6 the column-count select
+      7 the Notes link
+      8 the timer
+      9 the save label
+      "version 1 does not import" is stated in the last step on purpose.
+
+43-48 sideName(side)
+43    Display word for a side.
+44    "con" -> "Con"
+45    "pro" -> "Pro"
+46    "observer" -> "Observer"
+47    Anything else, including a missing side, returns "".
+      Callers that need a fallback (the home pill, the ballot line) add their own.
+48    End.
+
+50-55 clock(ms)
+50    Milliseconds to a m:ss string.
+51    total seconds, rounded up, never negative. ceil means 1ms left still
+      shows 0:01, and 0 shows 0:00.
+52    minutes = whole minutes.
+53    seconds = the remainder.
+54    Pad seconds with a leading zero when under 10.
+55    End.
+
+57-59 activeCase()
+57    Which case the flow should draw.
+58    A preflow always uses preflowSide, ignoring state.caseSide.
+      A round uses state.caseSide.
+59    End.
+
+61-63 textSize()
+61    The font size string for card textareas, from settings, default 14.
+62    Returns like "14px".
+63    End.
+
+65-69 markerLabel(id)
+65    The human label for a marker id, from the MARKERS list in rounds.js.
+66-67 Walk MARKERS. Return the label on the first id match.
+68    Unknown id: "".
+69    End.
+
+71-74 resetHistory()
+71    Called when a tour round replaces the live one.
+72    Empty undo stacks, typing false.
+73    Forget measured heights so the new cards are measured fresh.
+74    End.
+
+76-77 Comment: undo covers contentions, cards, and evidence. Crossfire notes
+      and the speech clock stay put. Undoing a rebuttal card does not rewind prep.
+
+78-85 copyFlow()
+78    Snapshot of the undoable part of the open round, as a JSON string.
+79-84 cases, contentions, notes, evidence. Not timers, not crossNotes,
+      not title, not column focus.
+85    End.
+
+87-100 putFlowBack(json)
+87    Restores a snapshot onto state.round. Returns false if the string is bad.
+88    data will be the parsed object.
+89-93 JSON.parse inside try. A thrown parse returns false and leaves the
+      round as it is.
+94    The snapshot must have cases, contentions, and notes. evidence may be
+      missing and then becomes {}.
+95-98 Assign the four fields onto the live round. Same object identity for
+      the round itself; the inner objects are the parsed ones.
+99    Return true.
+100   End.
+
+102-107 rememberStep()
+102   Push the current flow onto the undo stack before a change.
+103   past gets a new JSON string.
+104   Cap at 100. shift drops the oldest.
+105   future is cleared. A new edit after an undo throws away the redo branch.
+106   Enable or disable the Undo and Redo buttons.
+107   End.
+
+109-114 showUndoButtons()
+109   Finds the toolbar buttons. They exist on the workspace and notes pages only.
+110-111 querySelector of data-action undo and redo.
+112   Undo is disabled when past is empty.
+113   Redo is disabled when future is empty.
+114   End. If the buttons are not on this page, the ifs skip them.
+
+116-123 beginTyping()
+116   Called on each keystroke in a card, a contention name, crossfire, or evidence.
+117   If this keystroke is the start of a burst (typing is false):
+118   Take one snapshot now. The whole burst will undo as one step.
+119   Mark typing true so the next keystrokes do not snapshot again.
+121   Reset the 1 second timer.
+122   When a second passes with no call, typing becomes false.
+      The next keystroke starts a new undo step.
+123   End.
+
+125-130 rememberBeforeChange()
+125   Used before a structural change (add, delete, link, marker) that should
+      be its own undo step even if the user was just typing.
+126-128 If a typing burst is open, snapshot again (so the typed text is saved
+      as its own step) and close the burst. Then... the if branch calls
+      rememberStep once. The else also calls rememberStep once.
+      So this function always takes exactly one snapshot. The if exists to
+      clear the typing flag when a burst was open.
+130   End.
+
+132-144 undo()
+132   Pop one snapshot and apply it.
+133-134 current will be the present, prior the snapshot.
+135   Nothing to undo, or no round: stop.
+136   Snapshot the present first, so redo can put it back.
+137   Pop the previous snapshot.
+138   If it does not parse, stop. The popped string is not pushed back, so a
+      corrupt entry is dropped. current was not pushed yet.
+139   The present goes onto future.
+140   Close any typing burst.
+141   If the selected card no longer exists in the restored notes, clear the selection.
+142   Save immediately (saveSoon(true) uses a 0ms timer).
+143   Redraw.
+144   End.
+
+146-157 redo()
+146   The mirror of undo. Pop future, push the present onto past.
+147-157 Same guards, same selected-id check, same save and redraw.
+      redo does not clear the typing flag. undo does.
+
+159-162 updateSaveLabel()
+159   Writes state.saveState into #save-text, or "Tour only — not saved" when
+      state.demo is true.
+160   The node exists on the workspace and notes pages.
+161   Set its text.
+162   End.
+
+164-186 saveThisRound()
+164   Writes the open round into db and then to localStorage.
+165   No round, or the tour demo: do nothing. The tour must not touch db.
+166   If the open "round" is a preflow wrapper:
+167   pre = the stored preflow with the same id.
+168-176 If it is still in db: copy title, topic, side, contentions, notes,
+      evidence, and that side's contention ids back onto it.
+      updatedAt is now. The wrapper and the stored preflow already share
+      the notes object (openingAsRound), so this assignment keeps them aligned
+      and also updates the fields the wrapper does not share, like title.
+178-182 Else if this id is a real round in db: stamp updatedAt, store the round
+      object (same reference already in db.rounds, so this is mostly the
+      timestamp and lastRoundId), and remember lastRoundId.
+      A round that is not in db (should not happen) is not inserted here.
+183   writeSave returns "" or an error sentence.
+184   saveState becomes that sentence, or "Saved in this browser".
+185   Update the label.
+186   End.
+
+188-199 saveSoon(now)
+188   Debounced save. now true means "on the next tick", false means "in 400ms".
+189-193 Demo: do not write db. Set the tour label and stash the whole round JSON
+      in sessionStorage under tourRound, so a refresh mid-tour keeps it.
+      Return before the debounce.
+195   Show "Saving…".
+196   Update the label immediately.
+197   Cancel a pending save so rapid edits collapse into one write.
+198   After 0ms or 400ms, call saveThisRound.
+199   End.
+
+201-205 saveNow()
+201   Used by go() before leaving the page, when a debounce might not fire.
+202   Cancel the pending timer.
+203   Demo: write tourRound only.
+204   Otherwise saveThisRound immediately.
+205   End.
+
+207-220 saveTypedWords()
+207   Copies textarea values into the round before a redraw or navigation
+      destroys the DOM nodes.
+208   No round: stop.
+209   Every card textarea.
+210   Every crossfire textarea.
+211-212 i, note.
+213-216 For each card textarea, if that note still exists, copy the value
+      into note.text. A deleted note's textarea is ignored.
+217-219 For each crossfire box, write into crossNotes under data-cross
+      (firstCrossfire, secondCrossfire, grandCrossfire, reflections).
+220   End.
+
+222-239 rememberRound()
+222   Stashes which round and which case are open, so the next page can reload them.
+223   No round: stop.
+224   caseSide always goes to sessionStorage.
+225-229 Demo: set tourDemo to "1", store the round JSON, store the step, and
+      return without touching the real open-round ids.
+231   Not a demo: remove tourDemo so a later page does not reopen the tour.
+232-234 A preflow: store openPreflowId and clear openRoundId.
+235-238 A round: store openRoundId and clear openPreflowId.
+239   End.
+
+241-247 go(url)
+241   Leave this page for another html file.
+242   Close any open menu so it does not flash.
+243   Pull textarea text into the data.
+244   Write the save now, not on a timer.
+245   Remember which round is open.
+246   Navigate. This ends the page. The next page loads the scripts again,
+      and loadOpenRound reads sessionStorage.
+247   End.
+
+249-271 loadOpenRound()
+249   Called on workspace and notes. Returns true if a round was loaded.
+250   tourDemo "1":
+251   state.demo true.
+252   Parse tourRound back into state.round. This JSON.parse is not guarded.
+      A broken tourRound would throw and the page would stop.
+253   caseSide from session, or pro.
+254   tourStep from session, or 0.
+255   Return true. db is not involved.
+257   preId = openPreflowId.
+258-261 If that preflow still exists, wrap it with openingAsRound and force
+      caseSide to the preflow's side. Return true.
+263   id = openRoundId.
+264-267 If that round exists, use the object already inside db.rounds
+      (not a copy). caseSide is con only when session says con, else pro.
+      Return true.
+269   Nothing to open: send the user home.
+270   Return false. startApp sees false and does not render, because the
+      navigation is already underway.
+271   End.
+
+273-279 openRound(id)
+273   From the home list. Sets the session keys and goes to the workspace.
+274   openRoundId.
+275   Clear any preflow id so loadOpenRound does not prefer a preflow.
+276   caseSide pro. Opening a round always starts on the Pro sheet.
+277   Clear tourDemo.
+278   Navigate to workspace.html.
+279   End.
+
+281-286 openOpening(id)
+281   Same pattern for a preflow.
+282   openPreflowId.
+283   Clear openRoundId.
+284   Clear tourDemo.
+285   workspace.html. loadOpenRound will wrap the preflow.
+286   End.
+
+288-293 updateSideMenu()
+288   Phone sidebar. Toggles classes; phone.css shows the drawer when they are on.
+289   shell is .workspace.
+290   side is .sidebar.
+291   menu-open on the shell shows the dark cover (at the 899px breakpoint).
+292   open on the sidebar shows the sidebar itself (it is display:none until then).
+293   End.
+
+295-300 closePopups()
+295   Hides every full-screen dialog (class popup-cover).
+296-298 querySelectorAll, then foldAway each.
+299   confirmRun null, so a stale OK cannot fire after the dialog is closed
+      by Cancel or by opening another flow. The OK button also clears it.
+300   End.
+
+302-308 askConfirm(title, text, okLabel, run)
+302   Opens the yes/no dialog.
+303   Title text.
+304   Body text.
+305   OK button label, or "OK" if okLabel is empty.
+306   Remember the function to run on OK. null is allowed: the "keep this
+      contention" dialog passes null, so OK only closes.
+307   Show #confirm-box.
+308   End.
+
+310-315 timerStepNow()
+310   The speech-clock step the round is on.
+311   plan from timerSteps, using the round's firstSide and the current settings
+      durations. Labels use settings; the milliseconds left use the round's
+      own allotted map.
+312   index from the timer, or 0.
+313   If index has run past the end, clamp to the last step.
+314   Return the plan, the current item, and the index.
+315   End.
+
+317-324 timerLabel()
+317   The text on the timer chip in the title bar.
+318   timers.
+319   No timer: "Timer".
+320   Running prep: "Pro prep 2:10" style, from the deadline.
+321   Running speech: the step label plus the live countdown.
+322   Not running, timeUp, remainingMs already 0, mode null: the word "Time".
+323   Otherwise the current step's label plus the paused remainingMs.
+324   End.
+
+326-334 updateTimerButton()
+326   Refreshes the chip and, if the popover is open, the big clock inside it.
+327   chip = #timer-btn.
+328   Only on a real round. A preflow has no chip text updates (the chip is hidden).
+329   clockNode = #popover-clock.
+330   Only update it when the timer popover is not hidden.
+331   timers.
+332   While a speech is running, show deadline minus now. If time is up, show
+      "Time". Otherwise show the paused remainingMs.
+      Prep's live countdown is on the chip (timerLabel), not in this big number.
+      The big number is the speech clock.
+334   End.
+
+336-351 beep()
+336   Short tone when a clock hits zero.
+337   settings.sound false: do nothing.
+338   try, because AudioContext can throw if audio is blocked.
+339   New context. webkit prefix for older Safari.
+340   Oscillator.
+341   Gain node.
+342   880 Hz.
+343   Very quiet, gain 0.04.
+344-345 Connect oscillator to gain to the speakers.
+346   Start now.
+347   Stop 0.12 seconds later.
+348-349 catch: ignore. A missing audio device should not break the clock.
+350-351 End.
+
+353-384 kickClock(mode, side)
+353   Starts a countdown. mode is "prep" or "speech". side is only for prep.
+354   timers, if there is a round.
+355-356 left and amount, filled below.
+357   No timer object: stop.
+358-359 Comment and guard: prep only for pro or con. Observer is not a prep pot.
+      An observer's own side never reaches this with mode prep, but a bad
+      data-side would. Return without starting.
+360   If something is already running, stop it first. Only one countdown.
+361   left = what remains of the running clock.
+362   A bad or negative leftover becomes 0.
+363   If the thing being stopped is prep for a real team, store leftover in
+      that team's pot. The check refuses to write prepLeft["observer"] or similar.
+364   If it is a speech, store leftover in remainingMs.
+365-367 Mark it not running, clear deadline and mode.
+      timeUp is not set here. Stopping early is a pause, not "time".
+369   Now start the requested mode.
+370-371 Prep: if that team's pot is missing, stop. amount is the pot.
+372-375 Anything other than prep is forced to "speech". amount is remainingMs.
+376   Not a finite number, or already zero: do not start. A finished clock
+      stays finished until Reset or Next.
+377   mode is stored.
+378   Prep remembers which team.
+379   running true.
+380   timeUp false.
+381   deadline is now plus amount. The interval compares this to Date.now().
+382   Save immediately so a refresh can freeze the right leftover.
+383   Redraw the chip.
+384   End.
+
+386-393 columnSize(pane, count)
+386   Pixel width of one speech column.
+387   space is the scroller's width, at least 1.
+388   n is how many columns are visible, at least 1.
+389   Under 900px of pane, each column is the full pane width. The row scrolls
+      sideways. This is the phone layout, where columns are not squeezed.
+390   minCol = 260. Desktop columns should not get thinner than that.
+391   If the pane can give every column at least 260, divide evenly.
+392   Otherwise use 260 and let the row scroll.
+393   End.
+
+395-413 anchorMenu(anchor, node)
+395   Opens a dropdown or small popup under a button.
+396-400 rect, width, height, left, top.
+401   Close whatever menu is already open. dropMenu hides state.popover.
+402   No anchor, no node, or the anchor is not an element: stop.
+      This is the guard that used to be missing when a click had no button.
+403   Show the node so offsetWidth is real.
+404   The anchor's rectangle in the viewport.
+405   Width is the node's width, capped so it stays 16px inside the window.
+406   Height after it is shown.
+407   left lines up with the anchor's left, clamped so the menu stays on screen.
+408   top is 6px below the anchor.
+409   If that would fall off the bottom, flip to 6px above the anchor,
+      and never higher than 8px from the top.
+410-411 Write top and left as pixel strings. position:fixed is in the CSS.
+412   Remember this node as the open popover, so a later outside click can close it.
+413   End.
+
+415-418 dropMenu()
+415   Hides the open popover, if any.
+416   foldAway adds class hide.
+417   popover null.
+418   End. Does not close popup-cover dialogs. Those use closePopups.
+
+420-429 render()
+420   Draws the current page from state and db.
+421   page = body data-page: home, settings, preflows, help, notes, workspace.
+422   state.view follows it.
+423   home: the round list.
+424   settings: fill the number boxes.
+425   preflows: the preflow list.
+426   notes: the crossfire page.
+427   workspace: the flow.
+428   If we are on the workspace and a tour step is active, draw the tour.
+      Help and home start a tour by navigating; they do not draw it themselves.
+429   End.
+
+431-483 listRounds()
+431   Home page.
+432   banner = #recovered-banner.
+433-436 Show it only when openSave set db.recovered.
+437   rounds = every saved round, as an array.
+438   q = the search box, trimmed and lowercased.
+439   matched starts empty.
+440-441 i, words.
+442   For each round:
+443   One lowercase string of title, topic, tournament, and opponent.
+444   Keep it if the query is empty or that string contains the query.
+      This is a substring match, not word-by-word.
+446   Sort matches newest first.
+447-448 empty state node and the list browser node.
+449-452 No rounds and no query: show the empty illustration, hide the browser, return.
+      A query that matches nothing falls through so "no match" can show.
+454   Hide the empty state.
+455   Show the browser.
+456-457 "1 round" or "N rounds" plus "in this browser".
+458   The search input.
+459   If the user is not typing in it, set its value from state.query.
+      Skipping it while focused avoids moving the caret on every keystroke.
+460-461 The card list is emptied.
+462-464 No matches: show #no-match. Otherwise hide it.
+465-466 buttons, b, for the loop.
+467   For each match:
+468   Clone the hidden sample-round card.
+469   Title.
+470   The side pill.
+471   Text is sideName, or "Pro" if sideName returned "".
+472   Strip any tag class the template might have, then:
+473-475 con-tag, obs-tag, or pro-tag.
+476   Tournament and round label joined with " · ", or hide the line if both empty.
+477   Topic, or hide.
+478   "Edited " plus the locale date of updatedAt.
+479-480 Every button on the card gets data-id of this round, so Open, Rename,
+      Duplicate, Export, and Delete know which round.
+481   Append the card.
+482-483 End.
+
+485-493 clockForm()
+485   Settings page. Does not save; it only fills the form.
+486-487 #font-size-note tells the user the size is chosen in the workspace,
+      and prints the current pixel size.
+488   Every input with data-preset (the seven clocks).
+489   i.
+490   Each input's value is the stored seconds for that preset name.
+491-492 The sound checkbox mirrors settings.sound.
+493   End.
+
+495-510 listPreflows()
+495   Preflows page.
+496   The list element.
+497   All preflows, newest first.
+498-500 i, b, buttons.
+501   Empty the list.
+502   For each:
+503   Clone sample-pf.
+504   Title.
+505   "Pro" or "Con", plus " · topic" when there is a topic.
+506-507 Both buttons (Edit, Delete) get the preflow id.
+508   Append.
+509-510 End.
+
+512-527 ballotLine()
+512   The gray line under the round title.
+513   round.
+514   you = "Pro", "Con", "Observer", or "".
+515   first starts empty.
+516   If sideName returned "", show "Pro". A repaired round should not hit this;
+      mendRound forces yourSide to pro, con, or observer.
+517-519 Comment and branches: only pro or con can "speak first".
+      "Con speaks first" or "Pro speaks first". Any other firstSide adds nothing.
+520-526 Join, with "  ·  ", the tournament, the round label, "vs Opponent" if any,
+      "You: Pro", and the speaks-first phrase. Empty pieces are skipped.
+527   End.
+
+529-536 roundStamp()
+529   Title bar: the title input, the ballot line, the save label, the timer chip.
+530   The title input.
+531   If it exists, the user is not typing in it, and its value differs, set it.
+      The focus check keeps a keystroke from being overwritten by render.
+532-533 #title-note gets ballotLine().
+534   Save label.
+535   Timer chip.
+536   End.
+
+538-556 contJumps()
+538   Sidebar links that scroll to a contention.
+539   #jump-links. Notes and workspace both have it.
+540   Missing: stop (help and home do not have it).
+541   Empty the list.
+542   The case currently drawn.
+543   That case's contention ids.
+544-546 i, contention, jump.
+547   For each id:
+548   The contention.
+549   Skip a missing one.
+550   Clone jump-sample.
+551   data-id so the click handler can scroll to it.
+552   Dot color cycles through JUMP_COLORS.
+553   The contention's name.
+554   Append.
+555-556 End.
+
+558-561 markOneLink(id, on)
+558   Adds or removes class "active" on one sidebar or switcher button.
+559   The node, which may not exist on every page.
+560   toggle second argument forces the class on or off.
+561   End.
+
+563-572 markCaseLinks()
+563   Which of Pro / Con / Notes looks selected.
+564   onNotes when the body says this is the notes page.
+565-566 Pro buttons are active when not on notes and caseSide is pro.
+      Both the sidebar link and the phone switcher are updated.
+567-568 Same for Con.
+569-570 Notes buttons are active only on the notes page.
+571-572 End.
+
+573-612 rdBar()
+573   The chrome around the flow: what to show for a round versus a preflow.
+574   preflow flag.
+575-582 The nodes: case links, phone switcher, preflow label, timer chip,
+      round menu button, preflow menu button, column tools, toolbar timer.
+583   If this is a preflow:
+584-589 Hide case switching, both timers, the round menu, and column tools.
+      A preflow is one constructive column. There is nothing to switch.
+590   Show the preflow "···" menu (back to preflows, back to rounds).
+591-594 The label reads "Pro preflow" or "Con preflow".
+595   Else it is a round:
+596-601 Show the round chrome.
+602   Hide the preflow menu.
+603   Hide the preflow label.
+605   Mark the active case.
+606   Fill the title.
+607   Rebuild jump links.
+608-609 Font-size select shows the saved size.
+610   Undo buttons.
+611   Phone sidebar classes.
+612   End.
+
+614-646 colWindow()
+614   The column-count controls and the "Showing columns 2–4 of 7" bar.
+615   Only on a real round's workspace. A preflow returns immediately.
+616   caseSide.
+617   all columns on that case.
+618   That case's focus, or a default.
+619-620 The count select: "all" or the number.
+621   The "Start at" select.
+622-632 Rebuild its options from the speeches on this case.
+      Each option value is the index. The current start is selected.
+      Label is "Start at: Pro Constr." using the short name.
+634   view = what shownSpeeches actually displays after clamping.
+635   #column-bar.
+636-641 If the window is smaller than the full sheet, show the bar,
+      "Showing columns A–B of N", and disable Move left on the first window
+      and Move right on the last.
+641   Otherwise hide the bar.
+642-645 The arrow buttons inside the toolbar get the same disabled state.
+      When count is null, focus.count is missing, so the right check uses
+      all.length and the arrows disable at the ends.
+646   End.
+
+648-671 showFlow()
+648   The workspace page.
+649   .workspace.
+650   proof-open class shows the evidence panel (evidence.css).
+651   Chrome.
+652   Column controls.
+653   Draw the cards.
+654   If evidence is open, fill the panel. buildFlow may have wiped card nodes;
+      showProof reads the data, not the old nodes.
+655-656 Restore this case's scroll position.
+657   jumpTo was set by a sidebar click on the notes page, which then navigated here.
+658   Consume it so a refresh does not jump again.
+659-661 Scroll that contention to the top of the view.
+663   focusNote was set by Find when the hit was on the other page.
+664   Consume it.
+665-668 Select that card, and open evidence if openEvidence was "1".
+669   After 30ms, focus the textarea. The delay lets the new DOM exist.
+670-671 End.
+
+673-688 showCx()
+673   The notes page.
+674   The four textareas.
+675-676 i, value.
+677   Chrome (title, jumps, undo). Column controls no-op because the page is not workspace.
+678-681 Fill each textarea from crossNotes unless the user is currently in it.
+682   focusCross was set by Find.
+683   Consume it.
+684-686 Focus that textarea.
+687-688 End.
+
+690-732 buildFlow()
+690   Draws the speech headers and the contentions into .flow-paper.
+691   sheet.
+692   scroller, for width.
+693   No sheet, no round, or not the workspace: stop.
+      showCx must not wipe a flow that is not on the page. The notes page
+      has no .flow-paper, so the first check already returns.
+694   caseSide.
+695   Which columns are visible.
+696   pane width, or 800 if the scroller has no width yet.
+697   width of one column.
+698   paneWidth is a pixel string used to cap the sticky contention header.
+699   Wipe the sheet.
+700   A header row from head-row.
+701   Short type labels for the small line under the speech name.
+702-707 Loop variables.
+708   For each visible speech:
+709   speechId.
+710   info from SPEECHES.
+711   Clone speech-chip.
+712   Class "pro" or "con" for the header color.
+713   Width.
+714   Full name ("Pro Constructive").
+715   "3. Reb." style: position in the full case order, not just the visible window.
+717   Seconds from settings for this speech type, or 240.
+718   Shown as whole minutes ("4 min").
+719   Append the chip to the header row.
+721   Append the header row to the sheet.
+722   For each contention on this case:
+723   The contention object.
+724   If it exists, append drawGroup's section.
+726-727 Every contention header's maxWidth is the pane, so a wide flow does not
+      stretch the header off the sticky area. The columns can still be wider
+      and scroll under it.
+728   Measure the textareas that were just created. This fills state.heights.
+729   Place cards using those real heights. drawGroup already placed them once
+      with the previous heights or an estimate; this second pass corrects it.
+730-731 The selected card gets class "picked" if it is on screen.
+732   End.
+
+734-807 drawGroup(contention, caseSide, view, width)
+734   One contention section.
+735   Clone cont-block.
+736   data-id is the contention id.
+737   index in this case, for the color.
+738   tone from CONTENTION_COLORS, wrapping every 3.
+739   The header element.
+740-742 Background, text color, and a 4px left border in the accent color.
+743   The dot matches the accent.
+744   The fold button.
+745   A collapsed contention shows ▸. An open one shows ▾.
+746   The title attribute matches, for the hover tooltip.
+747-749 The name input gets the name and the ink color.
+750-753 Every data-action button, and the name input, get data-id of this contention
+      so clicks know which group.
+754   grid is the row of columns.
+755-758 Collapsed: hide the row and return. No cards are built. The data stays.
+759   layout = lineUpGroup with the current heights (estimates on the first pass).
+760-770 Loop variables.
+771   For each visible speech:
+772   speechId.
+773-775 A column, fixed width, data-speech set.
+776   The canvas is the positioned area cards sit in.
+777   Its height is the layout height, so absolute cards have a containing block.
+778-779 data-group and data-speech so placePoints can find this canvas later.
+780   Every note id.
+781-785 If the note belongs to this contention and this speech, and the layout
+      has a position for it (a note that failed lineup is not drawn), append
+      drawPoint.
+787   For each blank reply slot:
+788   slot.
+789   Only slots for this speech.
+790   The parent note.
+791   Skip if the parent is missing or on another contention.
+792-797 Clone ans-slot, set font size, an aria-label that names the parent text,
+      data-parent, and data-speech.
+798   Append the box. It is position:absolute; placePoints sets top.
+799   The "New point" textarea at the bottom of the column. CSS makes .new-box
+      position:relative so it sits under the canvas, not on top of a card.
+800-803 Font size, data-starter = contention id, data-speech, aria-label.
+804   Append the column to the row.
+805   End of speech loop.
+806   Return the section. The caller appends it.
+807   End.
+
+809-838 drawPoint(note)
+809   One card.
+810   Clone card-sample.
+811   data-id = note id.
+812   If it is the selection, add "picked". buildFlow also adds this after
+      the fact; doing it here covers the first paint.
+813   The marker span.
+814-818 If the note has a marker, set the label, set class "point-tag tag-<id>"
+      (tag-dropped, tag-turn, tag-extend, tag-answered), and show it.
+818   No marker: hide the span.
+819   The textarea.
+820   Font size from settings.
+821   The note's text.
+822   data-id so input and keydown know which note.
+823   aria-label is the speech's full name plus "point".
+824   The first card drawn that finds no existing [data-tour=point] claims it,
+      so the tour has a target. Later cards do not overwrite it.
+825   The clip button.
+826   data-id.
+827-830 If the note has evidence: class has-proof, aria-label "Open evidence",
+      and the little "1" is shown.
+831-834 Otherwise aria-label "Add evidence" and the number is hidden.
+835   The first clip similarly claims data-tour="clip-btn".
+836   The ··· button gets the note id.
+837   Return the card. top and height are set later by placePoints.
+838   End.
+
+840-858 measurePoints()
+840   Reads each card textarea's scroll height and stores it.
+841   All card textareas currently in the document.
+842-846 i, area, textHeight, box, boxHeight.
+847   For each:
+848   area.
+849   height auto, so scrollHeight is the content height rather than the old pixel height.
+850   At least 24px.
+851   Set the textarea to that height.
+852   box is the .point, the textarea's parent.
+853   height auto so the box can grow around the textarea and the clip row.
+854   At least 44px, from the box's scrollHeight.
+855   Store it under the note id. cardHeight will use this on the next lineup.
+856   Lock the box to that height so the absolute layout matches.
+857-858 End.
+
+860-895 placePoints(width)
+860   Second pass: set top and height from a fresh lineUpGroup that sees the
+      measurements measurePoints just stored.
+861   caseSide.
+862   visible speeches. Only used when width was not passed.
+863-866 If the caller did not pass width, recompute it from the scroller.
+867   Contention ids.
+868-875 i, n, contention, layout, canvases, names, point, box.
+876   For each contention:
+877   The object.
+878   Missing or collapsed: nothing is on screen to place.
+879   Fresh layout with the new heights.
+880-881 Every canvas for this contention grows or shrinks to layout.height.
+882   For each position key:
+884   Skip _threads.
+885   The .point with this id.
+886   Not on screen (different case, or a hidden column): skip.
+887-888 top and height from the layout. height here is the card's own height,
+      not the reserved thread height.
+890   For each blank slot:
+891   The reply box with that parent and speech.
+892   If it is on screen, set its top. The box's height stays the CSS 36px.
+893-895 End.
+
+897-927 showProof()
+897   Fills the evidence panel for the selected card's contention.
+898   The list.
+899   The breadcrumb (contention name > point).
+900   Missing list or round: stop.
+901   selected note, or undefined.
+902   Empty the list.
+903-906 No selection: hide the breadcrumb and show the "Select a note" line.
+908   Show the breadcrumb.
+909   The contention, for its name.
+910   First line of the card text, or "Point".
+911   Longer than 25 characters: cut and add "...".
+912-913 Write the two crumbs.
+914   proofList walks shells then replies, in reading order.
+915   found becomes true once any card is drawn.
+916-917 i, has.
+918   For each note in that order:
+919   has = this note has evidence with some plain text.
+920   Skip notes that have no evidence, unless this note is the selection.
+      The selected card's box is shown even when it is empty, so you can paste.
+921   found true.
+922   Append the card. current=true highlights the selection.
+924   If nothing was drawn (the walk missed the selection), draw the selection anyway.
+925-926 Scroll the list so the current card is near the top.
+927   End.
+
+929-948 proofList(contentionId, caseSide)
+929   Cards on a contention in flow order: each shell, then its replies in
+      speech order, depth-first.
+930   The contention. Callers pass an id that exists.
+931   ordered starts empty.
+932   walk(note):
+933   later speeches after this card.
+934-936 i, replies, r.
+937   Push this card first.
+938-940 For each later speech, for each reply in that speech, walk the reply.
+      A reply's own replies are visited before the next sibling.
+943-946 Start the walk from each shell in startingPointIds.
+947   Return the flat list.
+948   End.
+
+950-964 drawProofCard(note, current)
+950   One evidence editor.
+951   Clone ev-card.
+952   current adds class "current" for the highlight and the scroll target.
+953   First line of the card, or "Empty point".
+954   That line plus the speech's full name.
+955   The contenteditable div.
+956   data-evidence = the note id. The paste and input handlers use this,
+      not the evidence id.
+957   stored evidence, if the note points at one.
+958   If there is stored HTML, run it through cleanHtml again before innerHTML,
+      so a bad save cannot inject a script on display.
+959   The first evidence body claims data-tour="proof-panel" for the tour.
+960-962 The notice line shows a stored notice ("simplified", or the paste-cap
+      message) or nothing.
+963   Return the card.
+964   End.
+
+966-977 selectNote(id, openEvidence)
+966   Highlights a card and optionally opens evidence.
+967-968 All .point nodes, i.
+969   Remember the id.
+970   picked class only on the matching card.
+971   openEvidence true forces the panel open. false leaves it as it was.
+972-976 If the panel is open, add proof-open and redraw the evidence list.
+      Selecting a different card while the panel is open moves the panel.
+977   End.
+
+979-985 focusNote(id, caret)
+979   Puts the caret in a card's textarea.
+980   The textarea with that data-id.
+981   Not on screen: stop.
+982   Focus it.
+983   caret is a number, or else the end of the text.
+984   Collapse the selection there.
+985   End.
+
+987-994 typeReply(slot, text)
+987   The user typed into a blank "Response" box.
+988   Snapshot undo first.
+989   addAns under the box's parent, in the box's speech, with the typed text.
+990   Save now.
+991   Select the new card.
+992   Redraw. The blank box is gone; a real card is in its place.
+993   Focus it, with the caret at the end of what they typed.
+994   End.
+
+996-1009 typeNewPoint(starter)
+996   The user typed into "New point" at the bottom of a column.
+997   The text.
+998   The speech id.
+999   Empty: stop. The input handler also checks value, so this is a second guard.
+1000-1001 Comment and guard: a preflow only grows shells on its constructive.
+       A rebuttal column should not exist on a preflow; if one did, ignore the type.
+1002   Snapshot.
+1003   addShell on the contention (data-starter) in that speech.
+1004   Clear the starter. buildFlow would destroy it anyway; this keeps a
+       half-redraw from showing the old text.
+1005   Save.
+1006   Select the new card.
+1007   Redraw.
+1008   Focus it at the end of the text.
+1009   End.
+
+1011-1030 splitNote(area)
+1011   Enter inside a card. Text before the caret stays. Text after becomes a new card.
+1012   The note.
+1013   Missing: stop.
+1014   before = text before the selection start.
+1015   after = text after the selection end. A selection in the middle is removed
+       from both, so it is deleted by the split.
+1016-1020 Both empty: the card was empty and the caret is in it. Focus the
+       "New point" box in the same column instead of creating another empty card.
+1021   Snapshot.
+1022   The original card keeps only `before`.
+1023-1025 If it is a reply, the new card is a sibling reply inserted just after it.
+       If it is a shell, the new card is the next shell.
+1026   Save.
+1027   Select the new card.
+1028   Redraw.
+1029   Focus the new card at the start, so you keep typing the new point.
+1030   End.
+
+1032-1054 saveProof(body, pasteNotice)
+1032   Writes the evidence editor back onto the note.
+1033   The note id is data-evidence.
+1034   Missing note: stop.
+1035   cleanHtml of the current innerHTML. This is the safety pass on every keystroke.
+1036   previous notice already stored, or "".
+1037   shown = the notice from a paste, or the cleaner’s notice, or the old one.
+1038-1039 The notice <p> for this note, if it is on screen, shows that sentence.
+1040-1043 If the plain text is only whitespace: delete the evidence record and
+       clear evidenceId. An empty box does not keep an evidence object.
+       Return before creating one.
+1045-1048 No evidence yet: mint an id and an empty record, then fill it below.
+1049   record is that object.
+1050-1053 html, plain, notice, and noteId. noteId is rewritten in case the record
+       was repaired to point elsewhere.
+1054   End.
+
+1056-1077 findWords()
+1056   Builds the hit list for the find box. Does not draw it.
+1057   query, trimmed and lowercased.
+1058   hits.
+1059-1062 names, i, note, keys.
+1063   Empty query or no round: no hits.
+1064-1067 Every note whose text contains the query is a hit with evidence:false.
+1068-1070 If that note's evidence plain text also contains it, a second hit with
+       evidence:true. One card can produce two hits.
+1072-1075 Each crossfire field that contains the query is a hit with cross set
+       to the field name.
+1076   Return hits.
+1077   End.
+
+1079-1105 openHit(hit)
+1079   Jumps to one hit.
+1080   No hit: stop.
+1081   Close the find popover. Navigation and focus should not sit under it.
+1082   A crossfire hit:
+1083   Store focusCross so the notes page can focus that box.
+1084   If we are not already on notes, go there. go() saves and navigates.
+1085-1088 If we are already there, focus the box directly.
+1089   Return. The card path is below.
+1091   The note. A hit always has a noteId when it is not a cross hit.
+1092   caseSide becomes whichever case owns that contention.
+1093   column focus for that case is reset to "all columns", so a card in a
+       hidden column can be shown.
+1094   Unfold that contention.
+1095   Select it.
+1096   An evidence hit opens the panel.
+1097-1101 If we are not on the workspace, stash focusNote and maybe openEvidence,
+       then go to workspace.html. showFlow consumes those keys.
+1102   Return.
+1103   Already on the workspace: render, which redraws the right case.
+1104   After 30ms, focus the card.
+1105   End.
+
+1107-1129 showFoundWords()
+1107   Draws the hit buttons inside the find popover.
+1108   #find-hits.
+1109   Missing: stop.
+1110   Recompute hits from the current findText.
+1111   findAt reset to -1. Next/Previous starts from the top.
+1112-1114 i, button, label.
+1115   Empty the list.
+1116   For each hit:
+1117   A button from menu-btn-sample.
+1118   Cross hits are labeled "Notes". Card hits use the first line of the text,
+       or "Evidence" if the text is empty.
+1119   The button text.
+1120   data-hit is the index.
+1121   Append.
+1123-1128 Clicking a button sets findAt and opens that hit.
+       closest("button") so a click on the text still counts.
+1129   End.
+
+1131-1138 openFind(anchor)
+1131   Opens the find popover under the Find button.
+1132   The popover node.
+1133   The text input inside it.
+1134   Puts state.findText into the input. Nothing else in the file ever assigns
+       state.findText, so this is always the empty string it started as.
+1135   Positions the popover under the button.
+1136   showFoundWords runs findWords. findWords reads state.findText, which is
+       still "", so the query check on line 1063 returns no hits.
+       The input's own typing is not copied into state.findText. The input
+       listener later in this file does not mention #find-input. Next and
+       Previous only walk state.findHits, which stays empty.
+1137   Focus the input.
+1138   End.
+
+1140-1152 openTimer(anchor)
+1140   Opens the timer popover.
+1141   A missing round, or a preflow, has no clock UI. Return.
+1142   The round's timer object.
+1143   The current speech step.
+1144   The activity line is that step's label ("Pro Constructive", "First crossfire", ...).
+1145   The big number is the live speech countdown if a speech is running,
+       otherwise the paused remainingMs. Prep's number is on the two team rows.
+1146   The start button says "Pause" only while a speech (not prep) is running.
+1147   "Pro" plus that team's prep left, formatted m:ss.
+1148   Same for Con.
+1149   Pro's button says "Pause" only when prep is running for Pro.
+1150   Same for Con.
+1151   Position the popover under the button that was clicked.
+1152   End.
+
+1154-1169 markerClick(note, markerId)
+1154   Returns a click handler for one marker menu item. The handler closes over
+       this note and this marker id.
+1155   The function that will run when the menu item is clicked.
+1156   warn is "" or a sentence from markerWarn.
+1157   apply is the actual write:
+1158   Snapshot undo.
+1159   Set the marker. "" clears it.
+1160   Save.
+1161   Redraw the flow so the tag appears or disappears.
+1162   End of apply.
+1163-1166 No warning: apply immediately and return.
+1167   Otherwise ask. Title "Label this card?", the warning as the body,
+       the OK button says "Add label", and OK runs apply. Cancel leaves the marker.
+1168-1169 End of the handler and of markerClick.
+
+1171-1208 openPointMenu(anchor, noteId)
+1171   The ··· menu on a card.
+1172   The note. The caller passes an id that exists.
+1173   #note-menu, emptied and refilled every time.
+1174   clearNode.
+1175   item(label, run) builds one button.
+1176   Clone menu-btn-sample.
+1177   The label.
+1178-1181 On click, close the menu first, then run the action.
+       Closing first matters because some actions open another menu.
+1182   Append the button.
+1183   End of item.
+1184   "Insert point below":
+1185   The card's textarea.
+1186   Missing: stop.
+1187   Focus it.
+1188   Put the caret at the end.
+1189   splitNote then treats everything as `before` and `after` as empty, so the
+       new card is an empty sibling under the same parent (or the next shell).
+1191   "Link response" opens the link menu, using the same anchor.
+1192   "Move up": snapshot, nudgeCard direction -1, save, redraw.
+1193   "Move down": direction 1.
+1194-1201 "Duplicate": snapshot, dupeCard, select the copy, save, redraw, focus it.
+1202   m, the marker loop index.
+1203   "Delete" calls removeNote, which may confirm.
+1204-1206 One menu row per MARKERS entry, including "Marker: None".
+       Each row's handler is markerClick for that id.
+1207   Show the menu under the ··· button.
+1208   End.
+
+1210-1251 openLinkMenu(anchor, note)
+1210   Lists earlier cards on this contention that this card could answer.
+1211   Which case the contention is on.
+1212   That case's speech order.
+1213   limit = this card's column index. Candidates must be strictly before it.
+1214   blocked = this card and its descendants. Linking to one of those would loop.
+1215   #link-menu.
+1216   #link-choices, the button list.
+1217   The gray intro line.
+1218   Every note, as an array.
+1219-1221 choices, i, button.
+1222   Empty the choice list.
+1223   For each note:
+1224   Keep it when it is on this contention, its speech is on this case, that
+       speech is earlier than this card, and it is not in the blocked set.
+1226   Push it.
+1228   Intro text: the normal sentence, or "No earlier point in this contention."
+1229   For each choice:
+1230   A button.
+1231   "Pro Reb.: first line of text", or "Empty point".
+1232   data-link is the candidate's id.
+1233   Append.
+1235   Click handler on the box:
+1236   The button that was clicked.
+1237   why will be the refusal sentence, if any.
+1238   Not a button, or no data-link: ignore.
+1239   whyNotLink again at click time. The list was filtered, but the flow may
+       have changed, and this is the check that actually blocks the move.
+1240-1242 If there is a reason, write it into the intro and do not move the card.
+       No undo snapshot is taken.
+1244   Legal: snapshot.
+1245   connectPoint re-parents the card.
+1246   Close the menu.
+1247   Save.
+1248   Redraw. The card leaves its old column and appears under the parent.
+1249   End of the click handler.
+1250   Show the menu.
+1251   End.
+
+1253-1275 removeNote(note)
+1253   Delete a card, with a confirm when it has text, evidence, or children.
+1254   All note ids.
+1255   children will be ids, not objects.
+1256   i.
+1257-1259 Direct children: notes whose parentId is this card.
+1260   run is the actual delete:
+1261   Snapshot.
+1262   If this card was selected, clear the selection.
+1263   cutCard. Children stay, re-parented.
+1264   Save.
+1265   Redraw the flow.
+1266   Redraw evidence, so a deleted card's box disappears from the panel.
+1267   End of run.
+1268-1271 An empty card with no evidence and no children is deleted without asking.
+1272   Otherwise confirm.
+1273   If there are children, the text says responses stay, with their text and
+       evidence unchanged. cutCard does that.
+1274   If there are no children, the shorter sentence.
+       OK label is "Delete". OK runs run.
+1275   End.
+
+1277-1293 switchCase(side)
+1277   Pro Case or Con Case.
+1278   No round, or a preflow (the preflow screen hides these buttons): stop.
+1279-1282 On the notes page, remember the side and go to the workspace.
+       go() stores caseSide. The notes page itself does not draw a flow.
+1284   Already on that side: stop. No redraw.
+1285   Copy textareas into the data before the DOM is rebuilt.
+1286   The scroller.
+1287   Remember this case's scroll position on the round.
+1288   Switch caseSide.
+1289   Clear the selection. The other case has different cards.
+1290   Close evidence. It was about a card on the other case.
+1291   Save, including the scroll.
+1292   render draws the other sheet and restores its scroll.
+1293   End.
+
+1295-1336 showTour()
+1295   Draws the current tour step.
+1296   Anything that still has class highlight.
+1297   i.
+1298-1299 notes and withEvidence, used only on the evidence step.
+1300   Strip highlight off the previous target.
+1301   Step out of range: stop. The tour box is not hidden here; closeTour does that
+       by navigating away.
+1302   The step object from TOUR.
+1303   On a phone-width window, the cases, notes, and jumps targets live in the
+       sidebar, which is hidden. needsMenu is true for those steps.
+       The jumps selector is written in this check, but no TOUR step's target
+       string contains "jumps". The three that contain "cases" or "notes" do.
+1304   Open or close the sidebar to match.
+1305   Apply the classes.
+1306   Step index 5 is the evidence step.
+1307   All notes.
+1308   withEvidence starts null.
+1309-1314 The first note that has an evidence id.
+1315-1320 If one exists, select it, open the panel, add proof-open, and fill the panel
+       so the tour target is on screen. The demo round's evidence is on the
+       Con rebuttal card "Transport matters more".
+1323   The target element.
+1324-1327 If it exists, outline it and scroll it into view.
+1328   "Step 3 of 10" style. tourStep is zero-based, so the label adds 1.
+1329   The step's sentence.
+1330-1331 Back is hidden on step 0.
+1332-1333 Next is hidden on the last step.
+1334   Show the tour bar.
+1335   Remember the step so a refresh of the demo continues here.
+1336   End.
+
+1338-1357 startTour()
+1338   Builds a demo round and opens the workspace on step 0.
+1339   If a real round is open (not already the demo, not a preflow), remember its
+       id in tourReturn so Close can come back.
+1340   Otherwise tourReturn is "".
+1341   demoRound() builds the sample. It is not stored in db.
+1342   tourDemo "1", which loadOpenRound checks first.
+1343   Step 0.
+1344   The sample round as JSON.
+1345   Start on Pro.
+1346   Already on the workspace: do not navigate. Swap state in place.
+1347-1354 demo true, the sample round, Pro, view workspace, evidence closed,
+       nothing selected, step 0, undo history cleared.
+1355   render draws it and showTour runs because tourStep is 0.
+1356   Any other page: go to workspace.html. The new page load reads the session keys.
+1357   End.
+
+1359-1374 closeTour()
+1359   Leaves the demo.
+1360   tourReturn is the real round id, or "".
+1361-1364 Remove the four tour session keys.
+1365   tourStep -1.
+1366   demo false.
+1367-1369 If that round still exists, open it. A full navigation reloads scripts,
+       so state is rebuilt by loadOpenRound.
+1370-1373 Otherwise clear openRoundId and go home.
+1374   End.
+
+1376-1401 demoRound()
+1376   The sample the tour flows. Not saved.
+1377-1382 newRound titled "Feature tour", topic about school lunches, you are Pro,
+       Pro speaks first. Times come from the current settings.
+1383   The Pro contention id that newRound already created.
+1384   Rename it "Student need".
+1385   Shell: "Attendance improves" on Pro constructive.
+1386   Shell: "Nutrition supports learning".
+1387   A Con rebuttal under attendance: "Transport matters more".
+       On a Pro-first sheet, Con rebuttal is a column on the Pro case,
+       because speechesOnSide("pro") includes every speech from Pro constructive on.
+1388   A second Con rebuttal under the same card: "Study is small".
+       Two answers, so the layout has to stack them.
+1389   A Pro summary under the transport card: "Lunch removes another barrier".
+       This is an answer to an answer, which is what the tour's reply step shows.
+1390-1396 Evidence on the transport card, html and plain set to the same example sentence.
+       The tour's evidence step looks for the first note with an evidence id.
+1397   The Con contention.
+1398   Rename it "Cost".
+1399   One Con constructive shell: "Budgets are already tight".
+       That card is on the Con case, so the case-switch step has something to show.
+1400   Return the round.
+1401   End.
+
+1403-1415 safeFileName(title)
+1403   A download name with only lowercase letters, digits, and single hyphens.
+1404   Lowercased title, or "round".
+1405   out starts empty.
+1406-1407 i, letter.
+1408   For each character:
+1409   The character.
+1410   Letters and digits are kept.
+1411   Anything else becomes a hyphen, and only if out is non-empty and does not
+       already end in a hyphen. Leading spaces and punctuation disappear.
+1413   A trailing hyphen is cut.
+1414   If nothing survived, "round".
+1415   End.
+
+1417-1431 exportRound(round)
+1417   Downloads a JSON file. Nothing in the app reads this file back in.
+1418   payload:
+1419   schemaVersion 1. A label for the file, not a switch the importer checks,
+       because there is no importer.
+1420   exportedAt, ISO time.
+1421   note says version 1 does not import. The sentence is inside the file.
+1422   round is the live object. JSON.stringify will include every field on it.
+1424   A Blob of pretty-printed JSON, type application/json.
+1425   A temporary anchor.
+1426   The safe title.
+1427   An object URL for the blob.
+1428   The download name is "<title>-YYYY-MM-DD.json".
+1429   Clicking the anchor starts the download. It is not appended to the document;
+       browsers still honor click() on a detached anchor that has a download name.
+1430   A second later, revoke the object URL so the blob can be freed.
+1431   End.
+
+1433-1446 pfMenu()
+1433   Fills the "Starting preflow" select on the new-round form.
+1434   #new-opening. Only index.html has it.
+1435   Missing: stop. Other pages call render, not this, unless openNewRound runs.
+1436   Every preflow id.
+1437-1438 i, option.
+1439   Remove options after the first. The first option is the "Blank" choice
+       baked into the HTML, value "".
+1440   For each preflow:
+1441   Clone opt-sample.
+1442   value is the id.
+1443   The visible text is the title.
+1444   Append.
+1445-1446 End.
+
+1448-1458 openNewRound()
+1448   Resets the new-round form and shows it.
+1449   Title back to "Untitled round".
+1450-1454 Topic, tournament, round label, and opponent cleared.
+1455   Your side Pro.
+1456   First speaker Pro.
+1457   Rebuild the preflow select.
+1458   Show the dialog.
+       #new-round-error is not cleared here. A previous error sentence can
+       still be sitting in the paragraph until startRound replaces it.
+       End of function is the closing brace after 1458; the function ends at 1458.
+
+1460-1485 startRound()
+1460   Create, from the form.
+1461-1469 newRound with trimmed fields. An empty title becomes "Untitled round".
+       yourSide and firstSide are whatever the selects hold (pro, con, observer
+       for your side; pro or con for first).
+1470   The chosen preflow id, or "".
+1471   The preflow object, or a falsy value.
+1472   The error paragraph.
+1473   err will be writeSave's message.
+1474-1475 Comment: a Con preflow is applied to the Con case even if you are Pro.
+       It is the case you prepared, not "your side".
+       useOpening runs only when the preflow exists and its side is pro or con.
+1476   Store the round on db before saving, so writeSave includes it.
+1477   Write.
+1478-1481 If the write failed, take the round back out of db and show the error.
+       The dialog stays open. Return without navigating.
+1483   Clear the error line.
+1484   openRound navigates to the workspace.
+1485   End.
+
+1487-1492 openRename(id)
+1487   The home-page rename dialog.
+1488   The box.
+1489   Remember the id on the box. Save reads it back from dataset.id.
+1490   The input starts as the current title.
+1491   Show the dialog.
+1492   End.
+
+1494-1513 openDetails()
+1494   Edit-details dialog on a round.
+1495   The open round.
+1496-1500 Copy title, topic, tournament, round label, opponent into the inputs.
+1501   Your side select.
+1502   locked when any card has text or evidence. firstSide cannot change then,
+       because the columns were built in that order.
+1503-1505 The note under the form explains the lock, or says the field sets the order.
+1506   The wrapper around the first-speaker select.
+1507   Locked: hide the select. The current firstSide is left alone.
+1508-1511 Unlocked: show it and set it to the current firstSide.
+1512   Show the dialog.
+1513   End.
+
+1515-1536 saveDetails()
+1515   Writes the dialog back onto the round.
+1516   round.
+1517   locked is computed again, not read from the dialog.
+1518-1522 Trimmed fields. Empty title becomes "Untitled round".
+1523   The side select's value.
+1524   first, declared for the unlocked branch.
+1525   Anything other than pro, con, or observer becomes pro.
+1526   Store yourSide. Changing your side does not move cards.
+1527   Only when the round has no words yet:
+1528   Read the first-speaker select.
+1529   Anything other than con becomes pro.
+1530   Store it.
+1531   Replace the clock with a fresh one for that speaking order and the current
+       settings. Old prep and the old step index are thrown away, which is
+       safe because the lock means this only happens before any cards exist.
+1533   Close dialogs.
+1534   Save.
+1535   Redraw, including the ballot line.
+1536   End.
+
+1538-1643 printSheets(includeEvidence)
+1538   Fills #full-print-report. The report is display:none on screen.
+       print.css shows it, and hides everything else, when the browser prints.
+1539   The round.
+1540   The print title, or "Debate Round".
+1541   The topic line, or hide it when there is no topic.
+1542   Both sides, Pro then Con.
+1543-1566 A long list of loop variables, declared once for the whole function.
+1568-1574 The meta line: tournament, round, opponent, your side, and who speaks first,
+       joined with "   |   ". Empty pieces drop out.
+1575   #print-body.
+1576   Empty it so a second print does not append a second brief.
+1577   For Pro, then Con:
+1578   caseSide.
+1579   A print-case section.
+1580   The Con section gets class new-page, which is a page break.
+1581   "PRO CASE FLOW" or "CON CASE FLOW".
+1582   Every column on that case, including ones hidden on screen.
+       Print does not look at columnFocus.
+1583   Contention ids.
+1584   For each:
+1585   The contention.
+1586   Skip a missing one.
+1587   A print-cont block: a heading plus an empty table.
+1588   The contention name.
+1589   The header row.
+1590-1594 One th per speech, short name, class pro or con for the tint.
+1596   The tbody.
+1597   For each shell:
+1598   startId.
+1599   family = that shell and every card under it, any speech.
+1600   A table row.
+1601   For each speech:
+1602   An empty cell.
+1603   Every note, via objList.
+1604-1606 Keep notes on this contention, in this speech, and in this family.
+       A different shell's cards in the same speech go on that shell's row.
+1607   A print-card.
+1608   The tag span.
+1609-1610 A marker shows its label. No marker: hide the span.
+1611   The card text, as plain text. Newlines survive because print CSS sets
+       white-space: pre-wrap on .print-words.
+1612   The proof div.
+1613-1614 If the user left the checkbox on, and this card has evidence, the cell
+       gets "Proof: " plus the plain text. HTML formatting is not printed.
+1615   Otherwise hide the proof div.
+1616   Append the card to the cell. Several cards in one cell stack.
+1618   Append the cell to the row.
+1620   Append the row.
+1622   Append the contention block to the case section.
+1624   Append the case to the body.
+1626   The crossfire section.
+1627   It starts on a new page.
+1628-1633 The four notes, with print headings. Reflections is labeled
+       "Reflections & Decision" here. On screen it is "Reflections".
+1634   For each:
+1635   Only if the text has non-whitespace content.
+1636   A print-cx-card.
+1637-1638 Heading and text.
+1639   Append.
+1642   Append the crossfire section even if every note was empty. The heading
+       "CROSSFIRE & REFLECTION NOTES" is inside the template, so a blank
+       section still prints that heading.
+1643   End. window.print is called by the button handler, not by this function.
+
+1645-1675 moveWithArrows(id, key)
+1645   Arrow keys move the selection between cards and reply boxes.
+1646   The current .point.
+1647   Missing: stop.
+1648   Its rectangle.
+1649   Every card and every reply box.
+1650   best starts null.
+1651   bestDist starts at -1, meaning "no candidate yet".
+1652-1657 i, box, dx, dy, ok, dist.
+1658   For each other node:
+1659   Skip itself.
+1660   Its rectangle.
+1661   dx, dy from this card's top-left to that node's top-left.
+1663   A candidate must sit in the direction of the key.
+       Right: dx > 20. Left: dx < -20.
+       Down: dy > 8 and almost the same left edge (abs(dx) < 40).
+       Up: the mirror.
+1664   Distance is Manhattan, abs(dx) + abs(dy).
+1665-1668 Keep the closest candidate.
+1670   None in that direction: stop.
+1671-1673 A card: select it (and keep evidence open if it was open) and focus the card.
+       Focusing the .point, not the textarea, is what lets the next arrow work.
+       Enter on a focused card focuses its textarea (the keydown handler).
+1674   A reply box: just focus it. Typing in it creates the reply.
+1675   End.
+
+1677-1965  The click listener
+       One listener on document. Every button uses data-action. The handler
+       preventDefault's the click, then branches on the action string.
+
+1677   addEventListener click.
+1678-1680 If a popover is open, and the click is outside it, and the click is not
+       on one of the buttons that open a popover, close it.
+       The opener buttons are excluded so the same click does not close and
+       then immediately reopen. Those openers call dropMenu themselves via
+       anchorMenu, or they toggle by calling their open function.
+1682   trigger = the closest element with data-action. A click on a label inside
+       a button still finds the button.
+1683   No data-action:
+1684   If the click landed inside a .point while a round is open, select that card.
+       Clicking the textarea also selects, because the textarea is inside .point.
+1686   Return. Typing is handled by the input listener, not here.
+1688   preventDefault. This also cancels the default on <a> elements that carry
+       data-action. The logo link on the workspace has data-action="home", so
+       this handler navigates via go() instead of the href. The home page logo
+       is a plain link and is not caught.
+1689   action = the data-action string.
+1690   id = data-id, used by list buttons and contention buttons.
+1691   A click inside the sidebar on a phone, other than the hamburger itself,
+       closes the drawer. The page they asked for is about to show.
+1692   home: go to index.html. Saves on the way.
+1693   new-round: open the form.
+1694   open-round: openRound(id). id came from the card's buttons.
+1695   show-help: help.html.
+1696   show-settings: settings.html.
+1697   show-openings: preflows.html. Used by the preflow ··· menu.
+1698-1700 show-notes: notes.html, unless already there.
+1701   case-pro: switchCase("pro").
+1702   case-con: switchCase("con").
+1703   toggle-nav: flip navOpen.
+1704   close-nav: the dark cover. Sets navOpen false.
+1705   jump-link:
+1706-1708 Not on the workspace (the notes page has the same sidebar): store the
+       contention id as jumpTo and go to the workspace. showFlow scrolls to it.
+1709-1714 Already there: unfold that contention, redraw, scroll it to the top.
+1716   add-group:
+1717   Snapshot.
+1718   addCont on the active case. A preflow's active case is preflowSide.
+1719   Save.
+1720   render. On the workspace that redraws the flow. On notes it redraws jumps.
+1721-1722 Scroll the new contention into view if the flow is on this page.
+1723   undo.
+1724   redo.
+1725   find-toggle: openFind under this button.
+1726   find-next or find-prev:
+1727   Only if there are hits.
+1728   findAt under 0 becomes 0, so the first press opens the first hit.
+1729   Next wraps with modulo.
+1730   Previous wraps. The added length keeps the modulo off a negative number.
+1731   Open that hit.
+1733   columns-all:
+1734   This case's focus becomes count null, start 0. shownSpeeches then shows all.
+1735   Close a menu if one was open.
+1736   Save.
+1737   Redraw.
+1738   columns-left or columns-right:
+1739   This case's focus object.
+1740   All speeches on the case.
+1741   count is the window size, or the full length when count is null.
+1742   start moves by -1 or +1, and is clamped at 0.
+1743   If the window would pass the end, pull start back.
+1744   Save.
+1745   Redraw.
+1746   timer-toggle: openTimer. openTimer itself returns on a preflow.
+1747   timer-start:
+1748   The timer.
+1749-1754 If a speech is running, this click is Pause. Store the leftover, clear
+       running, deadline, and mode, save. Prep is not paused by this button.
+1755   Otherwise kickClock("speech"). A speech that is already at 0 will not start;
+       kickClock returns when amount is 0.
+1756   Reopen the popover so Pause/Start and the number match the new state.
+       The anchor is the title-bar timer button, or the button that was clicked.
+1757   timer-reset:
+1758   Confirm. The OK handler:
+1759   The current step.
+1760-1763 Stop the clock without writing a leftover. This is a reset, not a pause.
+1764   timeUp false.
+1765   Seconds from the round's allotted map for this step id.
+1766   If that is missing or 0, use the step's own seconds.
+1767   remainingMs is that many seconds, in milliseconds.
+1768   Save.
+1769   Update the chip. The popover was closed by askConfirm's dialog, and the
+       confirm OK path does not reopen it. The chip still updates.
+1770   timer-next:
+1771   The current step, including the plan.
+1772-1776 If something is running, stop it without storing the leftover.
+       Skipping ahead drops whatever was left on the current step.
+1777   index moves forward by one, capped at the last step.
+1778   The step now under that index.
+1779   remainingMs from allotted for that step. If allotted is missing this id,
+       the multiplication yields NaN. mendRound makes sure allotted exists,
+       but a step id that was never stored would still be a hole.
+1780   timeUp false.
+1781   Save.
+1782   Update the chip.
+1783   Close the popover.
+1784   prep-toggle:
+1785   data-side on the button, "pro" or "con".
+1786   The timer.
+1787   Any other side: return. Observer has no button.
+1788   No timer or no prepLeft: return.
+1789-1794 If this team's prep is the clock that is running, pause it.
+       Leftover goes back into that pot. Save.
+1795   Otherwise kickClock("prep", side). That also pauses the other clock first.
+1796   Update the chip.
+1797   Close the popover. The button labels ("Pause" versus "Start") are refreshed
+       only the next time the popover opens.
+1798   prep-reset:
+1799   Confirm. OK:
+1800   Full prep from settings, or 180 seconds, in milliseconds.
+1801-1802 Both pots.
+1803-1807 If prep is what is running, stop it. A running speech is left running.
+1808   Save.
+1809   Update the chip.
+1811   round-menu: the round ··· menu under that button.
+1812   opening-menu: the preflow ··· menu.
+1813   edit-details: close the menu, open the dialog.
+1814   export: close the menu. Export state.round, or, if the click came from a
+       home card, db.rounds[id]. The home card's action is export-round, so
+       this branch is the workspace menu, where state.round is set.
+1815   export-round: the home card. Export that round. No menu to close.
+1816   print: close the menu, show the print dialog.
+1817   do-print:
+1818   Close the dialog.
+1819   printSheets. The checkbox #print-evidence decides whether proof is included.
+1820   After 100ms, window.print. The delay lets the report land in the DOM first.
+1821   save-opening:
+1822   Close the menu.
+1823   caseToOpening of the active case, titled "<round title> preflow".
+1824   Store it on db.preflows.
+1825   writeSave. The return value is not shown. A quota error is ignored here.
+1826-1827 The label is set to "Saved in this browser" regardless.
+1828   rename-round: open the rename dialog for this card's id.
+1829   save-rename:
+1830   The id stored on the dialog.
+1831   The round.
+1832   New title, or "Untitled round".
+1833   Stamp updatedAt.
+1834   Write. Again the error string is not shown.
+1835   Close the dialog.
+1836   Redraw the list.
+1837   duplicate-round:
+1838   copyRound with the current settings (the copy gets fresh timers from them).
+1839   Store it.
+1840   Write.
+1841   Redraw. The new card appears in the list.
+1842   delete-round:
+1843   Confirm.
+1844   delete that id from db.rounds. Other rounds stay.
+1845   Write.
+1846   Redraw.
+1848   delete-opening:
+1849   Confirm. The text says rounds already created from it stay as they are.
+       useOpening copied the cards; it did not keep a live link.
+1850   delete the preflow.
+1851   Write.
+1852   Redraw.
+1854   open-opening: openOpening(id), which goes to the workspace.
+1855   new-opening: reset the preflow form.
+1856   Title "Untitled preflow".
+1857   Topic cleared.
+1858   Side Pro.
+1859   Show the dialog.
+1860   make-opening:
+1861-1865 newOpening from the form. An empty title becomes "Untitled preflow"
+       inside newOpening, because the trim of "" is falsy there... 
+       newOpening uses fields.title || "Untitled preflow". A trimmed "" is
+       falsy, so the default applies. A title of spaces becomes "" after trim,
+       then the default.
+1866   Store it.
+1867   Write.
+1868   Open it.
+1869   create-round: startRound.
+1870   save-details: saveDetails.
+1871   close-dialog: closePopups. Also clears confirmRun, so Cancel does not
+       leave a pending delete.
+1872   fold-group:
+1873   Flip collapsed on that contention.
+1874   Save.
+1875   Rebuild the flow. A collapsed group returns early from drawGroup and
+       hides its columns.
+1876   Rebuild jump links. Their names do not include the fold state; this still
+       refreshes them.
+1877   group-up:
+1878   Snapshot.
+1879   bumpCont direction -1.
+1880   Save.
+1881   Redraw the flow. Color index follows the new position.
+1882   Redraw jumps, which follow the same order.
+1883   group-down: direction 1. Same sequence.
+1889   delete-group:
+1890   Which case owns it.
+1891   Whether any card on it has text or evidence.
+1892   remove, the actual delete:
+1893   Snapshot.
+1894   cutCont. If it returns false, stop.
+1895   Save.
+1896   render.
+1898-1899 If this case has fewer than 2 contentions, do not delete.
+       The dialog title is "Keep this contention". The OK button says "OK"
+       and confirmRun is null, so OK only closes. The last contention stays
+       because the constructive has to sit somewhere.
+       useOpening is not this button. It may still clear a case.
+1900   An empty extra contention is deleted with no confirm.
+1901   A contention that has words confirms. The text says undo can bring it
+       back during this visit. Undo is in-memory; a reload loses the stack.
+1902   note-menu:
+1903   Select that card.
+1904   Open its menu. anchorMenu closes any other popover first.
+1905   add-evidence:
+1906   Select that card.
+1907   evidenceOpen true.
+1908-1910 Add proof-open so the panel has width, then selectNote which fills it.
+1911-1914 After 30ms, focus the evidence box for this card.
+1915   close-btn: the evidence ×.
+1916   evidenceOpen false.
+1917-1918 Remove proof-open. The panel returns to display:none.
+1919   tour: startTour. Present on home, help, and the top bar.
+1920   tour-next:
+1921   Next step.
+1922   Step index 3 forces caseSide back to pro. That is the reply step, which
+       the demo built on the Pro sheet.
+1923   render, and showTour because tourStep is >= 0.
+1924   tour-back:
+1925   Previous step. It does not force a case switch.
+1926   showTour only. It does not call render, so a step that needed a redraw
+       relies on the highlight move alone.
+1927   tour-close: closeTour.
+1928   save-settings:
+1929   The seven number inputs.
+1930-1936 i, parsed, notes, blocked, result, the clock note, the sound checkbox, saveErr.
+1937   For each input:
+1938   pfClock. 4 becomes 240 with a message. 0 or 2000 is not ok.
+1939   Keep the result.
+1940   Any failure sets blocked.
+1941   Collect every message, including the "saved as 240 seconds" notes.
+1944-1946 If any input failed, show the messages and return.
+       Nothing is written. The page stays on settings.
+1948   All of them were ok. Store the seconds.
+1949   Write the seconds back into the input, so a 4 becomes 240 on screen.
+1951   The sound checkbox, if present.
+1952   Store its checked state.
+1953   writeSave.
+1954-1956 A write error replaces the note and stays on the page.
+1958-1960 If any input produced a message (the minutes-to-seconds note), show those
+       messages and stay on the page so the user can read them.
+       A save where every value was already in seconds has no messages.
+1962   No messages: go home.
+1964   After the whole action chain: if the action was the hamburger, the dark
+       cover, or any sidebar control, update the drawer classes.
+       This runs even when an earlier branch already navigated. A navigation
+       unloads the page; the class toggle is harmless in that moment.
+1965   End of the click listener.
+
+1967-2010 The keydown listener
+1967   keydown on document.
+1968-1970 Escape during a tour closes the tour and returns. It does not also
+       do whatever Escape would do in a card.
+1972   event.target, the focused element.
+1973   A card textarea:
+1974   Enter, without Shift, and not while an IME is composing:
+1975   Stop the browser from inserting a newline.
+1976   splitNote.
+1977   Escape:
+1978   Blur the textarea.
+1979-1980 Focus the card itself, so arrow keys work.
+1981   Tab:
+1982   Prevent the browser's tab order.
+1983   Collect cards, reply boxes, and new-point boxes.
+1984-1986 Copy them into an array so indexOf works the same on older engines.
+       querySelectorAll already has indexOf in current browsers; the copy
+       is what the code does.
+1987   The index of this card, not of the textarea. closest(".point") is the card.
+1988   The next one, or the previous one if Shift is held.
+1989   Focus it if it exists. Past the ends, nothing happens.
+1991   return. A card textarea does not also trigger the undo shortcut below.
+       Ctrl+Z inside a card is the browser's own textarea undo.
+1993   Ctrl+Z or Cmd+Z, and the target is not a textarea and not contentEditable
+       (the evidence box is contentEditable, so it keeps its own undo):
+1994   Prevent the browser shortcut.
+1995-1996 Shift+Ctrl+Z is redo. Plain Ctrl+Z is undo.
+1997   Ctrl+Y or Cmd+Y, not in a textarea:
+1998   Prevent.
+1999   redo. The evidence box is contentEditable, so this shortcut still fires
+       there. The guard only excludes TEXTAREA.
+2000   A focused .point whose target is not the textarea (the card itself has
+       tabindex 0, so it can be focused):
+2001   Its id.
+2002-2004 Enter focuses the textarea so you can type.
+2005   Any Arrow key:
+2006   Prevent the page from scrolling.
+2007   moveWithArrows.
+2008-2010 End of the key checks and of the listener.
+
+2012  compositionstart: state.composing = true.
+       An IME composition has started. Enter must not split the card.
+
+2013  compositionend: state.composing = false.
+       The composition finished. The next Enter can split.
+
+2015-2076 The input listener
+2015   Fires on every change to an input, textarea, or contenteditable.
+2016   The target.
+2017   The home search box:
+2018   Remember the query.
+2019   Redraw the round list. The search box keeps focus, and listRounds does
+       not overwrite its value while it is the active element.
+2020   Return.
+2022   No open round: ignore the rest. Home and settings do not have a round,
+       except the search box already returned.
+2023   The title input:
+2024   Copy the value onto the round, including while it is still empty.
+       saveDetails is what turns an empty title into "Untitled round" later.
+       This path stores the raw value.
+2025   saveSoon(false): show "Saving…" and write 400ms after the last key.
+2026   Return.
+2028   A contention name:
+2029   beginTyping, so the whole rename is one undo step.
+2030   Store the name, or "Contention" if the input is empty.
+2031   The matching sidebar jump, if it is on the page.
+2032   Keep the jump label in sync without rebuilding the whole list.
+2033   Debounced save.
+2034   Return.
+2036   The font-size select. A select also fires input in current browsers,
+       and change is handled again below.
+2037   Store the number on settings.
+2038   writeSave immediately. Font size is settings, not the round, so saveSoon
+       (which writes the round and the settings together) is not required,
+       but writeSave does write the whole db.
+2039   Card textareas, reply boxes, and new-point boxes.
+2040-2041 Set each one's font size.
+2042   Re-measure. A bigger font is a taller card.
+2043   Re-place.
+2044   Return.
+2046   A card textarea:
+2047   beginTyping.
+2048   Copy the text onto the note.
+2049   Reply boxes that answer this card.
+2050-2051 Update their aria-label to "Response to <text>".
+2052   Re-measure. The card may have wrapped.
+2053   Re-place. Siblings below move down.
+2054   Debounced save.
+2055   Return.
+2057   A crossfire textarea (data-cross):
+2058   beginTyping. Undo snapshots do not include crossNotes, so this snapshot
+       is of the flow only. Undoing does not revert crossfire text.
+       beginTyping still runs.
+2059   Store the text on crossNotes under the field name.
+2060   Debounced save. saveThisRound writes the whole round, crossfire included.
+2061   Return.
+2063   A reply box (data-slot) that now has text:
+2064   typeReply. That creates a real card and redraws.
+       The reply box is destroyed by the redraw. One character is enough;
+       you continue typing in the new card.
+2065   Return.
+2067   A new-point box that now has text:
+2068   typeNewPoint. Same pattern.
+2069   Return.
+2071   An evidence body. data-evidence is the note id. The class check covers
+       the same nodes.
+2072   beginTyping.
+2073   saveProof. A paste notice is not passed here; this is a keystroke.
+2074   Debounced save.
+2075-2076 End.
+
+2078-2098 The paste listener
+2078   paste on document.
+2079   Only a paste whose target is inside .proof-text. A paste into a card
+       textarea is left to the browser, as plain text.
+2080   Not evidence: return. Do not preventDefault, so the card paste proceeds.
+2081   Prevent the browser from inserting the raw clipboard HTML.
+2082   text/html from the clipboard. Docs and Word put styled HTML here.
+2083   text/plain, the fallback.
+2084   If there is HTML, cleanHtml it. Otherwise linesToHtml, which escapes the
+       plain text and turns newlines into <br>.
+2085-2086 Comment: one card, not a whole open-evidence file. A giant paste is how a
+       save gets cut off.
+2086   If the plain text is longer than 60000 characters:
+2087   Keep the first 60000.
+2088-2091 Replace the cleaned result with an escaped version of that slice, and a
+       notice that says the rest was dropped.
+2094   Insert the HTML at the caret.
+2095   Start or continue an undo burst.
+2096   saveProof with that notice, so the sentence is stored on the evidence.
+2097   Debounced save.
+2098   End.
+
+2100-2106 focusout
+2100   When focus leaves an element.
+2101   If it was an evidence box:
+2102   saveProof once more.
+2103   Debounced save.
+2104   Close the typing burst so the next edit is a new undo step.
+2105-2106 End.
+
+2108-2110 scroll
+2108   Capture phase (the true argument), because scroll does not bubble.
+2109   If the scrolling element is #scroll-box and a round is open, store
+       scrollTop on that case. Switching cases restores it in showFlow.
+       The write is in memory until the next saveSoon or go().
+2110   End.
+
+2112-2127 change
+2112   change fires when a select is committed. The font-size select also took
+       the input path above.
+2113   The target.
+2114   No dataset, or no round: stop. The settings page has no round, so its
+       checkboxes are not handled here. Settings saves from the button.
+2115   columns-count:
+2116   "all" stores null. A number stores that count.
+2117   Save immediately.
+2118   Redraw. colWindow and buildFlow read the new focus.
+2119   columns-start:
+2120   The option value is the index.
+2121   Save.
+2122   Redraw.
+2123   font-size, again:
+2124   Store the number.
+2125   writeSave. The input handler already resized the cards.
+2126-2127 End.
+
+2129-2138 resize
+2129   On the window.
+2130   Cancel a pending resize handler.
+2131   Wait 120ms after the last resize event.
+2132-2135 Wider than 899px: the sidebar is the normal column, not a drawer.
+       Close the drawer flag and update classes.
+2136   On the workspace, rebuild the flow. Column widths depend on the pane.
+2137-2138 End.
+
+2140-2155 setInterval, every 200ms
+2140   The clock tick.
+2141   No round, the tour demo, a preflow, no timer, or a timer that is not
+       running: do nothing. The demo clock does not count down and does not beep.
+2142   The timer.
+2143   left = deadline minus now.
+2144   If the deadline has passed:
+2145   Prep: that team's pot is 0.
+2146   A speech: remainingMs is 0.
+2147-2149 running false, mode null, deadline null.
+2150   timeUp true. timerLabel can then show "Time".
+2151   beep, if sound is on.
+2152   Save the frozen clock.
+2154   Whether or not it just hit zero, update the chip and the open popover's
+       big number. This is what makes the digits move.
+2155   End of the interval callback.
+
+2157-2173 startApp()
+2157   Called once the DOM is ready, or immediately if it already is.
+2158   view from data-page, or "home".
+2159   The confirm OK button. Not every mental model of a page has it; help does
+       not have #confirm-box, so ok is null there.
+2160-2164 OK click: copy confirmRun, clear it, hide the dialog, then run the copy
+       if there was one. Clearing first means a run that opens another confirm
+       can set a new confirmRun without this handler wiping it afterward...
+       it already copied `run`, then set confirmRun null, then calls run.
+       If run calls askConfirm, confirmRun is set again after the null, so the
+       new dialog is kept. Good.
+2166   The pencil next to the title.
+2167-2169 Clicking it focuses the title input.
+2171   Workspace or notes: load the round from sessionStorage. If that returns
+       false, it already sent the browser home. Stop, do not render an empty flow.
+2172   render the page.
+2173   End.
+
+2175   If the document is still loading, wait for DOMContentLoaded and then startApp.
+2176   Otherwise startApp now. Script tags are at the end of the body, so this
+       is the usual path: the nodes already exist.
+2177   End of app.js.
+
+
+========================================================================
+HTML files
+Every page loads the same six scripts and the same nine stylesheets,
+with ?v=31 on each URL so a browser picks up a new file after a change.
+The body data-page attribute is what app.js uses to decide what to draw.
+Templates live in a box with class "hide". cloneTpl copies the first child.
+========================================================================
+
+------------------------------------------------------------------------
+index.html  (154 lines)   data-page="home"
+------------------------------------------------------------------------
+
+1     Document type.
+2     English.
+3-16  Head: charset, viewport, title "Go With the Flow", then the nine CSS files.
+17    body class page, data-page home.
+18    Skip link to #app. It is off screen until focused (page.css).
+20    Comment: the round cards are copied from the sample at the bottom.
+21    #app.home. The top bar and the page body.
+22-33 Top bar: logo link to index.html (a real link, no data-action),
+      Preflows, Feature tour (data-action tour), Settings, Help.
+35    .page-body.
+36    #recovered-banner, hidden until listRounds shows it.
+38-48 Empty state, #empty-home. Three sample bars (pro, con, pro) are decoration.
+      "My rounds", the heading, the sentence about this browser, New round.
+50-61 #round-browser, hidden until there is a round or a search with no match.
+      Heading, #round-count, New round, the search input data-field search-box,
+      #no-match, and #card-list which listRounds fills.
+65    Comment: new round form.
+66-98 #new-round-box, a hidden popup.
+      Title (default "Untitled round"), topic, tournament, round label, opponent.
+      Your side: pro, con, observer.
+      First speaking side: pro or con. Observer is not a choice here.
+      Starting preflow: one option, Blank. pfMenu appends the rest.
+      #new-round-error for a failed save.
+      Cancel (close-dialog) and Create (create-round).
+100-112 #rename-box. One title input. Cancel and Save (save-rename).
+114-124 #confirm-box. #confirm-title, #confirm-text, Cancel, and #confirm-ok
+      whose label the script sets. The button has no data-action. startApp
+      binds it directly so it can run confirmRun.
+126-143 #sample-round, hidden. One .card: name, side pill, info line, topic,
+      edited time, and Open, Rename, Duplicate, Export, Delete.
+      listRounds stamps data-id onto those buttons.
+144   #opt-sample, one empty option. pfMenu clones it. This page's script
+      uses it; the workspace has its own copy.
+146-151 The six scripts, in order, ?v=31.
+152-154 Close body and html.
+
+------------------------------------------------------------------------
+help.html  (63 lines)   data-page="help"
+------------------------------------------------------------------------
+
+1-16  Same head as the other pages. Title "Help — Go With the Flow".
+17    data-page help. render() has no help branch. The page is static text.
+      The tour button still works, because the click listener is global.
+18    Skip link.
+20-32 Same top bar as home.
+34-52 The help card. The sentences are the rules the code implements:
+35    The page body.
+36-46 One paragraph each:
+      Pro's sheet starts at Pro's constructive. Con's starts at Con's.
+      Who speaks first changes the order for the whole round.
+      Add contention. Enter makes the next point. Shift+Enter is a newline.
+      A response lines up with the point it answers. Several answers push
+      later points down.
+      The paperclip attaches evidence to the selected note, including a reply.
+      Paste from Docs or Word. The flow stays visible. Scrolling evidence
+      does not change the selected note.
+      Columns focuses on a consecutive group. Show all restores the case.
+      Export and print still include every speech.
+      Notes is crossfire. Enter there is a normal newline.
+      The timer is one speech, one crossfire, or one prep countdown.
+      Prep is one block per team for the whole round.
+      Settings are seconds. Typing 4 for constructive is read as 4 minutes.
+      A case keeps at least one contention.
+      Who speaks first stays locked once the flow has cards on it.
+      Rounds save in this browser. Export is a record. Version 1 does not
+      import. Clearing site data, private browsing, or another browser
+      removes the saved rounds.
+      Extend, Dropped, Turn, and Answered are labels you add. The page does
+      not decide them.
+48-51 Feature tour button, and a plain Back link to index.html.
+55-60 The six scripts. Help has no templates. cloneTpl is never called here
+      unless the tour navigates away.
+61-63 Close.
+
+------------------------------------------------------------------------
+settings.html  (68 lines)   data-page="settings"
+------------------------------------------------------------------------
+
+1-16  Same head. Title "Settings — Go With the Flow".
+17    data-page settings. render calls clockForm.
+18-32 Same top bar.
+34-57 The card.
+35    Heading.
+37-38 "Flow text". #font-size-note is filled by clockForm. The size itself
+      is chosen on the workspace toolbar, not here.
+39    "Timer presets".
+40    #clock-note explains seconds, the NSDA 4/4/3/2, and that typing 4 is
+      saved as 240. save-settings overwrites this paragraph with errors or
+      with the "saved as N seconds" messages.
+41-49 Seven number inputs, min 1, data-preset set to constructive, rebuttal,
+      summary, final, crossfire, grand, prep. clockForm writes the stored
+      seconds into them.
+50-52 Sound checkbox, data-field sound.
+53    Save settings, data-action save-settings.
+55-57 Back link.
+61-66 Scripts.
+67-68 Close.
+
+------------------------------------------------------------------------
+preflows.html  (98 lines)   data-page="preflows"
+------------------------------------------------------------------------
+
+1-16  Same head. Title "Preflows — Go With the Flow".
+17    data-page preflows. render calls listPreflows.
+18-32 Same top bar.
+34-46 Heading, the sentence that a preflow is the opening constructive and
+      its evidence, and that applying one copies it into a new round.
+      New preflow button. #preflow-list, filled by the script. Back link.
+49-67 #new-opening-box. Title default "Untitled preflow", topic, side pro or con.
+      Cancel and Create (make-opening).
+69-78 Confirm dialog, same shape as home. OK says "Delete" in the HTML;
+      askConfirm replaces that label.
+80-89 #sample-pf, hidden. Name, extra line, Edit (open-opening), Delete
+      (delete-opening).
+91-96 Scripts.
+97-98 Close.
+
+------------------------------------------------------------------------
+notes.html  (240 lines)   data-page="notes"
+------------------------------------------------------------------------
+
+1-16  Same head. Title "Notes — Go With the Flow".
+17    data-page notes.
+18    Skip link points at #notes-page. There is no element with that id.
+      The skip link's target is missing; the workspace skip link points at
+      #flow-scroll, which is also not an id on that page. Both are the
+      skip-link hrefs as written.
+20-100 #app.workspace. Same shell as the debate page, with a notes body.
+21    Dark cover, data-action close-nav. Hidden until the phone drawer opens.
+22-40 Sidebar: logo (data-action home, so the script navigates and saves),
+      Back to rounds, #link-pro, #link-con, #link-notes (Notes starts with
+      class active in the HTML; markCaseLinks then sets the real state),
+      #jump-links plus Add contention, a push-down spacer, Settings, Help.
+42-100 The work column.
+43-60 Title bar: hamburger, title input, pencil, #title-note, save dot and
+      #save-text (data-tour save), timer button (data-tour timer), round ···.
+62-66 Phone case switcher. Notes starts active. Hidden on a wide screen
+      (.side-bar is display:none until the 899px breakpoint).
+68-80 Toolbar: Add contention (data-tour add), Undo, Redo, Find, font size
+      12/14/16/18, Timers. No column controls on this page.
+82-99 #notes-area. Four blocks, each a heading and a textarea.note-box:
+      firstCrossfire, secondCrossfire, grandCrossfire, reflections.
+      Enter is a normal newline because these are not .point-input.
+103-110 #round-menu: Edit details, Export, Print, Save case as preflow, Help,
+      Back to rounds.
+111-128 Timer popover. Activity, big clock, Start, Reset, Next activity.
+      Prep rows for Pro and Con, each with data-side. Reset prep.
+129-137 Find popover. #find-input, #find-hits, Previous, Next.
+139-168 Edit-details dialog. Title, topic, tournament, round label, opponent,
+      your side including observer, #edit-lock-note, and #edit-first-wrap
+      with pro/con. Cancel and Save (save-details).
+170-182 Print dialog. #print-evidence starts checked. Cancel and do-print.
+184-193 Confirm dialog. OK label in the HTML is "OK". askConfirm replaces it.
+195-202 #full-print-report. Title, topic, meta, and #print-body.
+      On screen, print.css hides the whole report.
+204-231 Hidden templates this page can clone:
+      jump-sample, menu-btn-sample (find results),
+      print-case-sample, print-cont, print-th, print-tr, print-td, print-card,
+      print-cx, print-cx-card.
+      The flow templates (cards, columns) are not on this page. buildFlow
+      returns immediately because there is no .flow-paper.
+233-238 Scripts.
+239-240 Close.
+
+------------------------------------------------------------------------
+workspace.html  (354 lines)   data-page="workspace"
+------------------------------------------------------------------------
+
+1-16  Same head. Title "Debate — Go With the Flow".
+17    data-page workspace.
+18    Skip link href #flow-scroll. No node has that id. The flow scroller's
+      id is scroll-box.
+20-141 The workspace shell.
+21    Dark cover.
+23-45 Sidebar. Same links as notes, plus #preflow-label (hidden, shown for a
+      preflow) and an empty .side-picture.
+47-140 Work column.
+48-66 Title bar. Two ··· buttons: #dots-btn (round-menu) and #opening-menu-btn
+      (opening-menu, hidden until a preflow).
+68-72 Phone switcher. None of the three starts active; markCaseLinks sets it.
+74-99 Toolbar. Add contention, Undo, Redo, Find.
+      #column-tools: columns count (All, 2, 3, 4, 5, 6), an empty
+      "start at" select the script fills, left and right arrows.
+      Font size. #toolbar-timer.
+101-106 #column-bar, hidden until a column window is smaller than the full sheet.
+      Status text, Show all, Move left (#status-left), Move right (#status-right).
+108-126 The editor row.
+109-111 #scroll-box and an empty .flow-paper. buildFlow fills the paper.
+112-125 #proof-panel. Heading "Evidence", close ×, breadcrumb
+      #crumb-contention and #crumb-point, and an empty .proof-list.
+127   The tip: Enter is the next point, Shift+Enter is a line inside the point.
+129-139 #tour, hidden, tabindex -1 so it can be focused if needed.
+      #tour-step, #tour-text, Back, Next, Close.
+143-150 Round menu, same items as on the notes page.
+151-154 Opening menu: Back to preflows, Back to rounds.
+155   #note-menu, empty. openPointMenu fills it.
+156-159 #link-menu. A gray line plus #link-choices.
+161-178 Timer popover, same as notes.
+180-188 Find popover, same as notes.
+190-219 Edit details, same fields as notes.
+221-233 Print dialog, same checkbox.
+235-244 Confirm dialog.
+246-253 Print report shell.
+255-346 Hidden templates:
+255-260 jump-sample.
+261   head-row, an empty .speech-top.
+262-270 speech-chip: full name, and a small line with number and time.
+271-286 cont-block: fold button, dot, name input, a ··· decoration, up, down,
+      delete. Then an empty .group-row for the columns.
+287-292 col-sample: .column-area plus a "New point" textarea.
+293-305 card-sample: a .point with tabindex 0 (so arrow keys can land on it),
+      a hidden-until-used .point-tag, a textarea, a clip button, a ··· button.
+306-308 ans-slot: a reply textarea, data-slot 1, placeholder "Response".
+309-315 ev-card: a place line, a contenteditable .proof-text with the paste
+      placeholder, and a .proof-note for the cleaner’s sentence.
+316   menu-btn-sample.
+317   opt-sample.
+318   ev-empty: "Select a note to view evidence".
+319-346 The same print templates as notes.html.
+348-353 Scripts.
+354   Close.
+
+
+========================================================================
+CSS
+Color notes used throughout: page background #fffcfb, ink #121326,
+muted #676c7f, line #e5e1e6, purple #8060d6. Pro tint is lavender.
+Con tint is pink. Observer is gray.
+========================================================================
+
+------------------------------------------------------------------------
+css/page.css  (66 lines)
+Shared type, the hide class, the skip link, warning and info text.
+------------------------------------------------------------------------
+
+1-3   .hide
+      display none, !important so a later display:flex cannot show a template
+      or a closed dialog. unhide removes the class rather than setting display.
+
+5-13  .page
+      No body margin. Background #fffcfb, text #121326, Arial, 15px, line
+      height 1.5. overflow-wrap break-word so a long card word wraps.
+
+15-17 #app
+      At least the viewport height, so short pages still fill the screen.
+
+19-31 .skip-link
+      Absolute, pulled to top -40px so it sits above the visible page.
+      White background, 14px, padding, a light border, 8px radius, z-index 20.
+
+33-35 .skip-link:focus
+      top 12px, so keyboard users see it.
+
+37-41 .gray-text
+      Small top margin, #676c7f, 14px. The ballot line, help notes, search misses.
+
+43-49 .small-label
+      12px, bold, purple #6540be, uppercase. "My rounds" on the empty home.
+
+51-59 .warning-box
+      The recovered-save banner. Orange border #fed7aa, fill #fff7ed, text #9a3412,
+      14px, 12px radius.
+
+61-65 .info-line
+      The tournament line and the "Edited" line on a round card. #676c7f, 13px.
+
+------------------------------------------------------------------------
+css/buttons.css  (119 lines)
+------------------------------------------------------------------------
+
+1-18  .btn
+      Inline flex, centered, 6px gap, border-box. White, 1px #e5e1e6 border,
+      8px radius, 14px, weight 600, pointer cursor.
+
+20-23 .btn:hover
+      Slightly purple-gray fill #f7f5fb, border #dcd9e9.
+
+25-28 .btn:focus
+      2px purple outline, 2px offset.
+
+30-33 .btn:disabled
+      Opacity 0.45, not-allowed cursor. Undo, Redo, and the column arrows use this.
+
+35-39 .btn.main
+      Purple fill and border #8060d6, white text. Create, New round, Add contention.
+
+41-44 .btn.main:hover
+      Darker purple #7154c4.
+
+46-50 .btn.plain
+      No fill, no visible border, gray text #53545f. The top-bar links.
+
+52-54 .btn.plain:hover
+      Fill #f2f0f4.
+
+56-60 .btn.red
+      Pink fill #fff5f5, red text #dc2626, border #fecaca. Delete.
+
+62-65 .btn.red:hover
+      Stronger pink #fee2e2, border #f87171.
+
+67-72 .big
+      Taller button. Min height 42, more padding, 12px radius, 15px type.
+      Used on New round.
+
+74-78 .icon
+      16 by 16 inline block. No icon is currently placed in the HTML.
+
+80-83 .icon svg
+      The svg inside an icon box is also 16 by 16.
+
+85-87 .btn-text
+      vertical-align middle. phone.css shows this under toolbar buttons.
+
+89-95 .button-row
+      Flex wrap, 8px gap, 14px top margin. The Open/Rename/Delete row,
+      and the rows inside dialogs that use this class.
+
+97-103 .side-tag
+      Inline block, pill radius 999px, 12px bold. The home-card side chip.
+
+105-108 .pro-tag
+      Lavender fill #e5dfff, dark text.
+
+110-113 .con-tag
+      Pink fill #fddced, dark text.
+
+115-118 .obs-tag
+      Gray fill #eceaf1, text #454251. Observer rounds.
+
+------------------------------------------------------------------------
+css/home.css  (172 lines)
+The list pages: home, help, settings, preflows.
+------------------------------------------------------------------------
+
+1-6   .home
+      Column flex, at least the viewport tall, same page background.
+      The top bar stays at the top and .page-body fills the rest.
+
+8-19  .top-bar
+      Flex, space-between, 16px gap, padding 14px 32px, white, bottom border,
+      sticky to the top, z-index 5 so it sits over the scrolling list.
+
+21-26 .top-menu
+      Flex wrap, 6px gap. The Preflows / tour / Settings / Help cluster.
+
+28-35 .page-body
+      Border-box, full width, max 940px, centered, padding 32px 24px 64px, flex 1.
+
+37-42 .simple-page
+      A narrower centered column, max 980px. No page currently uses this class.
+
+44-50 .list-top
+      Flex, space-between, aligned to the bottom of the text, 16px gap,
+      20px bottom margin. The "My rounds" heading beside New round.
+
+52-59 .page-body h1 and .list-top h1
+      No margin, 26px, bold, the ink color.
+
+61-65 .list-top p
+      The count line. 4px top margin, muted, 15px.
+
+67-80 .search-box
+      Border-box, full width, max 440px, min height 42, 12px radius,
+      light border, 15px Arial. Also used inside the find popover;
+      the popover CSS overrides the width.
+
+82-85 .search-box:focus
+      Purple border and a 2px purple outline.
+
+87-92 .card-list
+      The selector is written twice. One rule: a column flex with 14px between cards.
+
+94-102 .card
+      The selector is written three times. One rule: white, 1px border,
+      16px radius, padding 18px 20px. Round cards, preflow cards, the help card,
+      the settings card.
+
+104-106 .card:hover
+      Border #dcd9e9.
+
+108-113 .card-top
+      Flex, space-between, so the title and the side pill sit on one line.
+
+115-120 .card-top h2
+      18px, bold, no margin.
+
+122-127 .sample-flow
+      The three decorative columns on the empty home. Centered, 8px gap.
+
+129-131 .sample-bar
+      Each column is 54px wide.
+
+133-140 .sample-bar span
+      A block, 28px tall, 6px below the next, light border, 8px radius, white.
+
+142-145 .sample-bar.pro span
+      Lavender fill #e5dfff, border #ddd6f6.
+
+147-150 .sample-bar.con span
+      Pink fill #fddced, border #f6d5df.
+
+152-159 .empty-box
+      Centered text, padding 48px 24px, dashed border, 16px radius, white.
+
+161-165 .empty-box h1
+      24px, 8px below.
+
+167-171 .empty-box p
+      Max 460px, centered, muted, 20px below, which separates it from the button.
+
+------------------------------------------------------------------------
+css/sidebar.css  (191 lines)
+------------------------------------------------------------------------
+
+1-11  .sidebar
+      232px wide, does not shrink, padding, pink-lavender fill #f7eef6,
+      right border #e5dce8, scrolls if the jump list is long.
+      Column flex so the bottom links can be pushed down.
+
+13-23 .logo
+      Flex, 8px gap, bold 16px, no underline, ink color.
+
+25-30 .logo .logo-dot
+      The flower character. Purple #6d28d9, 22px.
+
+32-34 .logo-flower
+      display block. No element uses this class.
+
+36-51 .back-btn
+      Full width, transparent, left aligned, 14px, 10px radius.
+      "Back to rounds".
+
+53-55 .back-btn:hover
+      The rest of the file gives it a hover fill. It is the line after 51;
+      from the rule at 53, the hover state is a visible background.
+      (The properties sit on lines 53-55: the hover rule.)
+
+57-75 .menu-link
+      The Pro / Con / Notes / Settings / Help rows. Block-level buttons
+      in the sidebar. Inactive ones are quiet; .active is the next rule.
+
+77-79 .menu-link:hover
+      Hover fill.
+
+81-84 .menu-link.active
+      The selected case or Notes. Stronger background so the current page
+      is obvious.
+
+86-93 .link-list
+      The jump list plus Add contention. This is the data-tour="jumps" box.
+
+95-111 .jump-link
+      One contention jump. Flex so the dot and the name sit on a line.
+
+113-116 .jump-link:hover
+      Hover fill.
+
+118-125 .color-dot
+      The small circle. The script sets its backgroundColor from JUMP_COLORS.
+
+127-133 .link-name
+      The contention name. It can shrink; phone.css lets it use the free width.
+
+135-151 .add-link
+      "+ Add contention". Text-style button at the bottom of the jump list.
+
+153-155 .add-link:hover
+      Hover fill.
+
+157-160 .sidebar .push-down
+      flex 1, so Settings and Help sit at the bottom of a tall sidebar.
+
+162-167 .bottom-link
+      Settings and Help.
+
+169-171 .bottom-link:hover
+      Hover fill.
+
+173-176 .side-picture
+      The empty illustration box at the bottom of the workspace sidebar.
+
+178-182 .side-picture svg
+      Sized for an svg that is not currently in the HTML.
+
+184-186 .open-menu-btn
+      The hamburger. Hidden on a wide screen by the default; phone.css shows it.
+
+188-191 .dark-cover
+      The phone overlay behind the drawer. Hidden until .menu-open at the
+      899px breakpoint.
+
+------------------------------------------------------------------------
+css/workspace.css  (572 lines)
+The flow: title, toolbar, speech columns, cards, reply boxes.
+------------------------------------------------------------------------
+
+1-6   .workspace
+      Row flex, exactly the viewport tall, overflow hidden so the page itself
+      does not scroll. The sidebar and the flow scroll inside their own boxes.
+
+8-15  .work-box
+      Column flex, flex 1, min width and height 0 so the flex child can shrink
+      and the inner scroller works. Same background.
+
+17-25 .title-bar
+      Row, space-between, padding, does not shrink. Title on the left,
+      save and timer on the right.
+
+27-32 .title-box
+      Column, flex 1, so the title can use the free width.
+
+34-39 .title-line
+      The title input and the pencil on one row.
+
+41-52 .title-input
+      The round title. Borderless so it looks like a heading until focused.
+
+54-57 .title-input:focus
+      The focus ring.
+
+59-63 .edit-mark
+      The pencil. Click is bound in startApp and focuses the input.
+
+65-67 .edit-mark:hover
+      Darker, so it reads as clickable.
+
+69-75 .title-note
+      ballotLine(). Muted, small, one line of meta.
+
+77-82 .title-side
+      Save dot, timer chip, ···. Row, aligned center.
+
+84-88 .save-line
+      The dot and "Saved in this browser" / "Saving…" / an error sentence.
+
+90-97 .save-dot
+      A small circle beside the save words.
+
+99-110 .timer-btn
+      The chip in the title bar. Shows the live label from timerLabel.
+
+112-114 .timer-btn:hover
+      Hover fill.
+
+116-123 .dots-btn
+      The ··· button. Square-ish, quiet until hover.
+
+125-134 .tool-bar
+      The row under the title: Add, Undo, Redo, Find, columns, font, Timers.
+
+136-141 .add-btn
+      The purple Add contention button in that row.
+
+143-150 .tool-btn
+      Undo, Redo, Find, Timers. Same quiet button shape.
+
+152-155 .tool-btn:hover
+      Hover fill.
+
+157-167 .tool-select
+      Columns count, start-at, and font size. Native select, styled to match.
+
+169-173 .tool-select:hover and :focus
+      Purple edge.
+
+175-180 .arrow-btn
+      The < and > column arrows.
+
+182-185 .tool-right and .size-select:last-child
+      Pushes the font size (and the toolbar timer, which has tool-right)
+      toward the end of the row.
+
+187-194 .column-bar
+      "Showing columns 2–4 of 7" plus Show all and the move buttons.
+      Hidden with .hide when every column is on screen.
+
+196-200 .column-bar button
+      Compact buttons inside that bar.
+
+202-208 .tip
+      The Enter / Shift+Enter hint under the flow.
+
+210-217 .editor-line
+      Row: the scroller and, when open, the evidence panel.
+
+219-224 .scroll-box
+      The vertical scroll of the flow. flex 1, min-height 0, overflow auto.
+      This is the element whose scrollTop is stored per case.
+
+226-232 .flow-paper
+      The sheet buildFlow fills. At least the width of its columns.
+
+234-243 .speech-top
+      The header row. Sticky so speech names stay put while contentions scroll.
+      Flex, one chip per visible speech.
+
+245-251 .speech-title
+      One speech chip. The script sets its width in pixels.
+
+253-257 .speech-name
+      The full name, bold.
+
+259-267 .speech-small
+      The "1. Constr." line and the minutes, in a row.
+
+269-272 .speech-time
+      The "4 min" text.
+
+274-277 .speech-title.pro
+      Lavender header.
+
+279-282 .speech-title.con
+      Pink header.
+
+284-291 .group
+      One contention section. Margin below the next contention.
+
+293-307 .group-top
+      The colored header. The script sets background, color, and the left border.
+      Sticky within the flow so the contention name stays visible.
+      maxWidth is set in JS to the pane width.
+
+309-317 .group-arrow
+      The ▾ / ▸ fold button.
+
+319-322 .group-arrow:hover
+      Hover fill.
+
+324-330 .group-dot
+      The circle. backgroundColor comes from the script.
+
+332-343 .group-name
+      The contention name input. Transparent, inherits the header ink color.
+
+345-350 .group-name:focus
+      A visible box so you can see you are editing the name.
+
+352-357 .group-dots
+      The "···" decoration. On a wide screen the real buttons appear on hover
+      and this hint shows the rest of the time. phone.css hides it and shows
+      the buttons always.
+
+359-362 .group-buttons
+      Up, down, delete. Hidden until the contention is hovered, on a wide screen.
+
+364-368 .group:hover .group-buttons
+      Shown on hover.
+
+370-372 .group:hover .group-dots
+      The decoration hides while the real buttons are showing.
+
+374-381 .group-btn
+      The small up, down, and delete buttons.
+
+383-387 .group-btn:hover
+      Light purple fill.
+
+389-393 .group-btn.red:hover
+      The delete button's hover: red text, pink fill.
+
+395-401 .group-row
+      The columns in a row. width max-content so they can be wider than the
+      pane and scroll sideways. min-width 100% so a short row still fills.
+      align stretch so every column is as tall as the contention.
+
+403-407 .speech-column
+      Does not shrink. Padding 0 4px. Width is set in JS.
+
+409-412 .column-area
+      position relative, so the absolute cards are positioned against it.
+      min-height 48. The script then sets an explicit pixel height.
+
+414-427 .point
+      The card. position absolute, left 8px, width calc(100% - 16px),
+      min-height 44, padding, 12px radius, white, 1px border, z-index 1.
+      Column flex so the textarea and the clip row stack.
+      top and height are set in JS.
+
+429-431 .point:hover
+      Border #ddd6ea.
+
+433-436 .point.picked
+      2px purple border #8067ec. The selected card.
+
+438-451 .point-input
+      Borderless textarea, transparent, full width, resize none, overflow
+      hidden. The script sets its height from scrollHeight so there is no
+      inner scrollbar. Color #53545f, 14px, line-height 1.35.
+      Font size is then overwritten in JS from settings.
+
+453-455 .point-input:focus
+      No extra outline. The card's border shows the focus.
+
+457-467 .point-tag
+      The marker chip. Uppercase, 11px, bold, lavender by default
+      (Answered uses this default).
+
+469-472 .point-tag.tag-turn
+      Amber fill #fef3c7, text #b45309.
+
+474-477 .point-tag.tag-dropped
+      Red fill #fee2e2, text #b91c1c.
+
+479-482 .point-tag.tag-extend
+      Blue fill #dbeafe, text #1d4ed8.
+
+484-491 .point-bottom
+      The clip and the ··· on one row, space-between.
+
+493-507 .clip-btn and .point-menu
+      Quiet text buttons, 13px bold, muted #676c7f.
+
+509-513 Their hover
+      Light purple fill, purple text.
+
+515-517 .clip-btn.has-proof
+      Purple #6540be even before hover, so a card with evidence is visible.
+
+519-522 .clip-number
+      The "1" inside the clip button. 12px bold.
+
+524-526 .point-menu
+      opacity 0. Hidden until hover, on a wide screen.
+
+528-531 .point:hover .point-menu and .point:focus-within .point-menu
+      opacity 1. Keyboard focus reveals it too.
+
+533-549 .reply-box and .new-box
+      Dashed border #d5cfe4, 12px radius, 36px tall, absolute, left 6px,
+      width calc(100% - 12px). resize none. Placeholder "Response" or "New point".
+
+551-554 Their placeholders
+      Muted #676c7f.
+
+556-563 Hover and focus
+      Solid purple border, no outline.
+
+565-571 .new-box overrides the shared rule
+      position relative, top and left auto, so it sits in normal flow under
+      the column canvas instead of on top of a card. Width and margin adjust
+      for that flow position. Reply boxes stay absolute; placePoints sets top.
+
+------------------------------------------------------------------------
+css/evidence.css  (118 lines)
+------------------------------------------------------------------------
+
+1-11  .proof-panel
+      380px, column flex, does not shrink, overflow hidden, left border.
+      display none until the workspace has proof-open.
+
+13-15 .workspace.proof-open .proof-panel
+      display flex. This is the whole show/hide of the panel.
+      close-btn removes the class. selectNote adds it.
+
+17-23 .proof-top
+      The "Evidence" heading and the ×, space-between, white.
+
+25-30 .proof-title
+      17px bold.
+
+32-42 .close-btn
+      32px square, no border, muted, pointer.
+
+44-47 .close-btn:hover
+      Light purple fill, ink text.
+
+49-54 #evidence-title
+      Padding under the heading, 14px, weight 600. The breadcrumb lives here.
+
+56-58 #evidence-title:empty
+      display none. The element usually has the breadcrumb children, so this
+      applies only if those children are gone.
+
+60-67 .proof-path
+      Flex, 6px gap, 14px, weight 600. Contention name, a gap, the point.
+
+69-71 .path-gap
+      The " > " between them, muted.
+
+73-75 .path-link
+      13px. No element currently uses this class.
+
+77-83 .proof-list
+      Column, 16px gap, scrolls vertically, padding 18px.
+      showProof sets scrollTop so the current card is near the top.
+      Scrolling this list does not change state.selectedId. That is the
+      "scrolling evidence does not change the selected note" rule.
+
+85-88 .proof-card
+      Light padding, transparent background.
+
+90-93 .proof-card + .proof-card
+      A card after another card gets a top border and extra padding.
+      The first card does not.
+
+95-104 .proof-text
+      The contenteditable. Min height 72, no border, Georgia / Times, 16px,
+      line height 1.5, color #27262b. This is the only serif text in the app.
+      It is meant to look like a card you cut, not like the flow.
+
+106-109 .proof-text:empty:before
+      Shows data-placeholder ("Paste evidence for this point") in muted text
+      while the box is empty.
+
+111-113 .proof-text:focus
+      No outline.
+
+115-117 .proof-text a
+      Link color #2049ad. keepLink only left http, https, and mailto.
+
+------------------------------------------------------------------------
+css/popups.css  (241 lines)
+Menus, dialogs, the notes page, the tour, the phone case switcher.
+------------------------------------------------------------------------
+
+1-12  .small-popup and .drop-menu
+      position fixed (anchorMenu sets top and left), z-index 30, min width 200,
+      max width 320, padding 8, 12px radius, white, light border.
+      Timer, find, and the ··· menus.
+
+14-18 .small-popup h2
+      15px, 8px below. "Timer", "Find".
+
+20-23 .small-popup .search-box
+      Full width of the popover, no extra margin. Overrides home.css max-width.
+
+25-28 Button rows inside a small popup or a drop menu
+      8px top margin instead of the larger .button-row margin.
+
+30-35 #popover-clock
+      28px bold. The speech countdown.
+
+37-42 .find-list
+      Column, max height 220, scrolls.
+
+44-59 Buttons inside a drop menu or the find list
+      Full width, left aligned, no border, transparent, 14px, 8px radius,
+      min height 34. These are the menu rows and the hit rows.
+
+61-65 Their hover
+      Page-background fill, ink text.
+
+67-79 .popup-cover
+      Fixed over the whole viewport, z-index 40 (above menus), flex centered,
+      padding 16, a 40% dim of #1e1b2e. New round, rename, confirm, edit, print.
+
+81-93 .popup
+      Column flex, full width, max 500px, max 90vh, padding, 18px radius, white.
+      overflow hidden so the body scrolls inside, not the dialog.
+
+95-99 .popup h2
+      21px, 16px below.
+
+101-105 .popup-body
+      flex 1, scrolls, a little padding at the bottom.
+
+107-112 .popup-buttons
+      Flex, end-aligned, 10px gap, 20px above. Cancel then the main button.
+
+114-119 .form-line
+      Column, 6px between the label and the control, 14px below the next field.
+
+121-125 .form-line span
+      The label. 14px, bold, #53545f.
+
+127-140 Inputs, textareas, and selects inside a form line
+      Full width, min height 38, 8px radius, 15px Arial, light border.
+
+142-147 Their focus
+      Purple border and outline.
+
+149-154 A checkbox inside a form line
+      16px, no min-height, 8px right margin. The sound checkbox and the
+      print-evidence checkbox. The label text sits beside them because the
+      span is a column only at the form-line level; the checkbox rule puts
+      the box inline in the span.
+
+156-164 .notes-area
+      The crossfire page body. Max 900px, flex 1, scrolls, padding 24.
+
+166-172 .notes-area section
+      This rule styles a section element. The notes page uses divs, not
+      sections, so this block does not apply to the four note groups.
+
+174-178 .notes-area h2
+      17px. "First crossfire" and the other headings. This does apply.
+
+180-192 .note-box
+      Full width, min height 110, 8px radius, 15px, line height 1.5.
+
+194-197 .note-box:focus
+      Purple border, no outline.
+
+199-204 .form-grid
+      The settings clock fields. Flex wrap, 10px by 12px gap.
+
+206-208 .form-grid .form-line
+      Each field is 150px wide, so the seven clocks sit in a row and wrap.
+
+210-220 .tour
+      The bar at the bottom of the workspace during the tour. Flex, space-between,
+      padding, a top border, white, z-index 20. Hidden with .hide until showTour.
+
+222-224 .tour-words p
+      No extra margin. The step count is .gray-text; the sentence is a p.
+
+226-230 .tour-buttons
+      Back, Next, Close in a row, 8px gap.
+
+232-236 .highlight
+      The tour outline. 2px purple, 2px offset, 8px radius.
+      showTour adds this class to the step's target and removes it from the last one.
+
+238-240 .side-bar
+      display none. The Pro / Con / Notes switcher under the title is a phone
+      control. phone.css shows it at 899px and below.
+
+------------------------------------------------------------------------
+css/print.css  (174 lines)
+------------------------------------------------------------------------
+
+1-3   #full-print-report
+      display none on screen. printSheets still fills it. You do not see it
+      until the print dialog.
+
+5-168 @media print
+      These rules apply only while the browser is printing or saving a PDF.
+
+6-10  .page
+      Height auto, overflow visible, white. The screen's 100vh lock is lifted.
+
+12-14 .page > *:not(#full-print-report)
+      Every direct child of the body except the report is display none.
+      The workspace, the menus, and the hidden templates do not print.
+      The report is a direct child of the body, so it survives.
+
+16-25 #full-print-report
+      display block, white, ink #1e1b2e, Arial, 11px, line height 1.45.
+
+27-30 .new-page
+      Page break before the Con case and before the crossfire section.
+      page-break-before for older engines, break-before for current ones.
+
+32-36 .print-top
+      Space under the title block and a 3px purple rule.
+
+38-43 .print-name
+      The round title. 20px bold.
+
+45-50 .print-topic-line
+      The resolution. 13px bold, #48455e.
+
+52-56 .print-info
+      Tournament, round, opponent, your side, who speaks first. 11px, #79748f.
+
+58-66 .print-case-name
+      "PRO CASE FLOW", "CON CASE FLOW", and the crossfire heading.
+      Uppercase, 14px, purple #6355d8, a light rule underneath.
+
+68-70 .print-group
+      One contention. 18px below the next.
+
+72-79 .print-group-name
+      The contention name. 12px bold, a 3px purple bar on the left.
+
+81-85 .print-table
+      Full width, collapsed borders.
+
+87-94 .print-head
+      A speech column header. 10px bold, left aligned, light purple fill,
+      a border.
+
+96-99 .print-head.pro
+      Darker lavender, text #372a6b.
+
+101-104 .print-head.con
+      Pink fill #fae3ea, text #451d28.
+
+106-111 .print-cell
+      A table cell. Top-aligned so cards in a short cell sit at the top
+      beside taller cards in the same row. White, light border.
+
+113-119 .print-card
+      One card inside a cell. Light fill, small padding, 4px radius.
+
+121-131 .print-tag
+      The marker, uppercase, 8px, purple. Hidden by the script when there
+      is no marker, so an empty tag does not print a blank chip.
+
+133-137 .print-words
+      The card text. 10px. pre-wrap keeps the Shift+Enter line breaks.
+
+139-145 .print-proof
+      "Proof: ..." under the card. 9px, a 2px purple bar on the left.
+      Omitted entirely when the print checkbox was off, because the script
+      hides the div.
+
+147-153 .print-note
+      One crossfire block. Padding, light border, 6px radius.
+
+155-160 .print-note-name
+      "First Crossfire" and the other print headings. 12px, purple.
+
+162-167 .print-note-words
+      The crossfire text. 11px, pre-wrap.
+
+170-173 @page
+      The printed page is landscape, with 8mm margins.
+      This is outside the @media block. It still applies to print, because
+      @page is a print concept. Screen layout ignores it.
+
+------------------------------------------------------------------------
+css/phone.css  (425 lines)
+Four breakpoints. These override the desktop rules above.
+------------------------------------------------------------------------
+
+1-9   max-width 1199px
+      The sidebar narrows from 232px to 210px.
+      The evidence panel narrows from 380px to 320px.
+      The layout is still the desktop row.
+
+11-392 max-width 899px
+       The phone layout.
+
+13-17 .group-buttons
+      Always flex. Up, down, and delete are visible without hover,
+      because a phone has no hover.
+
+19-21 .group-dots
+      The decorative ··· is hidden. The real buttons replaced it.
+
+23-25 .point-menu
+      opacity 1. The card ··· is always visible. The desktop rule hid it.
+
+27-29 .workspace
+      position relative, so the absolute sidebar and evidence panel are
+      positioned against it.
+
+31-41 .sidebar
+      display none, absolute, full height, 280px, z-index 25, white, a right border.
+      It is a drawer, not a column.
+
+43-45 .sidebar.open
+      display flex. updateSideMenu adds .open when navOpen is true.
+
+47-57 .workspace.menu-open .dark-cover
+      A fixed dim layer, z-index 20, under the drawer (25) and over the flow.
+      Clicking it is data-action close-nav.
+
+59-64 .open-menu-btn
+      The hamburger becomes inline-block, 18px, bold.
+
+66-68 .editor-line
+      position relative, so the evidence panel can cover the flow.
+
+70-78 .proof-panel
+      Absolute, top to bottom, on the right, full width up to 400px, z-index 15.
+      It covers the flow instead of sitting beside it.
+
+80-85 .top-bar
+      Stacks. The logo and the menu become two rows. Padding tightens.
+
+87-90 .page-body and .simple-page
+      Less padding, and 96px at the bottom so the fixed bottom menu does not
+      cover the last card.
+
+92-95 Headings
+      22px instead of 26.
+
+97-100 .list-top
+      Stacks. New round drops under the heading instead of sitting beside it.
+
+102-106 .title-bar
+      Wraps. Less padding.
+
+108-112 .title-side
+      Full width, wraps. Save, timer, and ··· can sit on a second line.
+
+114-116 .title-input
+      18px.
+
+118-120 .title-note
+      12px.
+
+122-124 .timer-btn
+      Cannot grow wider than the row.
+
+126-128 .work-box
+      96px bottom padding, for the fixed toolbar.
+
+130-132 .home
+      76px bottom padding, for the fixed top-menu which has moved to the bottom.
+
+134-141 .side-bar
+      display flex. The Pro / Con / Notes switcher appears under the title,
+      in a lavender rounded track #efeaf8.
+
+143-155 .side-btn
+      Each takes equal width, min height 36, no border, 13px bold, muted.
+
+157-160 .side-btn.active
+      White pill, purple text #6540be.
+
+162-175 .tool-bar
+      Fixed to the bottom of the screen, z-index 18, a top border, horizontal
+      scroll if the buttons do not fit. This is why the flow has bottom padding.
+
+177-182 #column-tools
+      Flex, does not shrink, 4px gap. The selects and arrows stay one cluster
+      inside the scrolling toolbar.
+
+184-195 .add-btn and .tool-btn
+      Column flex, at least 64 by 52, 11px. They become tall tap targets.
+
+197-201 .add-btn specifically
+      Stays purple, 12px radius.
+
+203-207 .tool-bar .btn-text
+      Block, 11px bold. A second line under an icon, if a button has one.
+
+209-213 .tool-select
+      Max width 132, min height 40, 12px.
+
+215-219 .tool-right and the font-size select
+      margin-left 0. The desktop "push to the end" is wrong inside a scroller.
+
+221-233 .top-menu
+      Fixed to the bottom, z-index 12, full width, white, a top border.
+      On home, help, settings, and preflows this is the bottom navigation.
+      z-index 12 sits under the workspace toolbar (18) when both could exist;
+      those pages do not have a .tool-bar.
+
+235-243 .top-menu .btn
+      Equal width, min height 44, no border, 12px, muted.
+
+245-248 .popup-cover
+      Aligns to the bottom, no padding. Dialogs become sheets.
+
+250-255 .popup
+      No max-width, max 92vh, radius only on the top corners, tighter padding.
+
+257-270 .small-popup and .drop-menu
+      Forced to left 0, right 0, bottom 0, top auto, full width.
+      The !important beats the pixel top and left that anchorMenu wrote.
+      Menus become bottom sheets, max 78vh, scrolling.
+
+272-277 .column-bar
+      One line, horizontal scroll, less padding.
+
+279-281 .scroll-box
+      A little bottom padding.
+
+283-285 .speech-top
+      No extra padding.
+
+287-290 .speech-title
+      No margin, square corners. Columns are full-bleed on a phone.
+      columnSize returns the whole pane width under 900px, so one column
+      fills the screen and the next is a sideways scroll.
+
+292-294 .speech-column
+      Padding 10px 12px 0.
+
+296-299 .tip
+      The hint can wrap. Padding tightens.
+
+301-303 .notes-area
+      Padding 16.
+
+305-309 .tour
+      Aligns to the start, less padding, 8px gap. It sits above the toolbar
+      in the document flow; the toolbar is fixed, so the tour is in the column.
+
+311-315 .tour-words
+      flex 1, can shrink, 14px.
+
+317-319 .tour-buttons
+      Wrap. Back, Next, and Close can stack if the sentence is wide.
+
+321-326 .proof-panel again, later in the same breakpoint
+      Full width, no max, z-index 22. This overrides the earlier 400px cap
+      in the same media block. The later rule wins. Evidence covers the flow.
+
+328-330 .workspace.proof-open .tool-bar
+      Hidden, so the bottom toolbar does not sit on top of the evidence sheet.
+
+332-334 .workspace.proof-open .work-box
+      No bottom padding while evidence is open. The toolbar is gone.
+
+336-338 .card-top
+      Wraps. A long title and the side pill can stack.
+
+340-342 .form-grid .form-line
+      Each settings field is full width. The seven clocks stack.
+
+344-346 .popup-buttons
+      Wrap. Cancel and Save can stack on a narrow sheet.
+
+348-351 .title-note and .save-line
+      white-space normal. A long ballot line can wrap instead of overflowing.
+
+353-355 .group-name
+      min-width 0, so a long contention name can shrink inside the header.
+
+357-361 .link-name
+      No max width, flex 1, min-width 0. Long contention names ellipsize or
+      wrap inside the drawer instead of forcing it wider than 280px.
+
+363-365 .search-box
+      No max width. The home search fills the page.
+
+367-369 .empty-box
+      Less padding.
+
+371-373 .empty-box h1
+      22px.
+
+375-381 .clip-btn, .point-menu, .group-btn, .group-arrow, .close-btn
+      At least 36 by 36. Tap size.
+
+383-387 .top-menu .btn again
+      Text may wrap, line height 1.2. "Feature tour" can be two lines.
+
+389-391 .logo-text
+      min-width 0, so the wordmark can shrink beside the flower.
+
+394-406 max-width 480px
+      A second tightening on a very narrow phone.
+      Title input stays 18px (same as the 899 rule).
+      Speech names drop to 14px.
+      Home cards use 14px padding.
+
+408-424 max-width 899px AND max-height 500px
+      A short window, such as a phone in landscape.
+      The Enter/Shift+Enter tip is display none.
+      The title bar padding shrinks to 6px 10px.
+      The case switcher margin shrinks.
+      The notes area padding shrinks to 12px.
+      The goal is to give the flow the vertical room.
+
+End of the line-by-line reading.

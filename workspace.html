@@ -4,15 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Debate — Go With the Flow</title>
-  <link rel="stylesheet" href="css/page.css?v=28">
-  <link rel="stylesheet" href="css/buttons.css?v=28">
-  <link rel="stylesheet" href="css/home.css?v=28">
-  <link rel="stylesheet" href="css/sidebar.css?v=28">
-  <link rel="stylesheet" href="css/workspace.css?v=28">
-  <link rel="stylesheet" href="css/evidence.css?v=28">
-  <link rel="stylesheet" href="css/popups.css?v=28">
-  <link rel="stylesheet" href="css/phone.css?v=28">
-  <link rel="stylesheet" href="css/print.css?v=28">
+  <link rel="stylesheet" href="css/page.css?v=31">
+  <link rel="stylesheet" href="css/buttons.css?v=31">
+  <link rel="stylesheet" href="css/home.css?v=31">
+  <link rel="stylesheet" href="css/sidebar.css?v=31">
+  <link rel="stylesheet" href="css/workspace.css?v=31">
+  <link rel="stylesheet" href="css/evidence.css?v=31">
+  <link rel="stylesheet" href="css/popups.css?v=31">
+  <link rel="stylesheet" href="css/phone.css?v=31">
+  <link rel="stylesheet" href="css/print.css?v=31">
 </head>
 <body class="page" data-page="workspace">
   <a class="skip-link" href="#flow-scroll">Skip to content</a>
@@ -252,14 +252,14 @@
     <div id="print-body"></div>
   </div>
 
-  <div class="hide" id="tpl-jump">
+  <div class="hide" id="jump-sample">
     <button type="button" class="jump-link" data-action="jump-link">
       <span class="color-dot"></span>
       <span class="link-name"></span>
     </button>
   </div>
-  <div class="hide" id="tpl-speech-head"><div class="speech-top"></div></div>
-  <div class="hide" id="tpl-speech-label">
+  <div class="hide" id="head-row"><div class="speech-top"></div></div>
+  <div class="hide" id="speech-chip">
     <div class="speech-title">
       <div class="speech-name"></div>
       <div class="speech-small">
@@ -268,7 +268,7 @@
       </div>
     </div>
   </div>
-  <div class="hide" id="tpl-contention">
+  <div class="hide" id="cont-block">
     <div class="group">
       <div class="group-top">
         <button type="button" class="btn group-arrow" data-action="fold-group"></button>
@@ -284,13 +284,13 @@
       <div class="group-row"></div>
     </div>
   </div>
-  <div class="hide" id="tpl-speech-col">
+  <div class="hide" id="col-sample">
     <div class="speech-column">
       <div class="column-area"></div>
       <textarea class="new-box" placeholder="New point"></textarea>
     </div>
   </div>
-  <div class="hide" id="tpl-point">
+  <div class="hide" id="card-sample">
     <div class="point" tabindex="0">
       <span class="point-tag"></span>
       <textarea class="point-input"></textarea>
@@ -303,53 +303,53 @@
       </div>
     </div>
   </div>
-  <div class="hide" id="tpl-slot">
+  <div class="hide" id="ans-slot">
     <textarea class="reply-box" placeholder="Response" data-slot="1"></textarea>
   </div>
-  <div class="hide" id="tpl-evidence-card">
+  <div class="hide" id="ev-card">
     <div class="proof-card">
       <p class="gray-text proof-place"></p>
       <div class="proof-text" contenteditable="true" data-placeholder="Paste evidence for this point"></div>
       <p class="gray-text proof-note"></p>
     </div>
   </div>
-  <div class="hide" id="tpl-menu-button"><button type="button"></button></div>
-  <div class="hide" id="tpl-option"><option></option></div>
-  <div class="hide" id="tpl-empty-note"><p class="gray-text">Select a note to view evidence</p></div>
-  <div class="hide" id="tpl-print-case">
+  <div class="hide" id="menu-btn-sample"><button type="button"></button></div>
+  <div class="hide" id="opt-sample"><option></option></div>
+  <div class="hide" id="ev-empty"><p class="gray-text">Select a note to view evidence</p></div>
+  <div class="hide" id="print-case-sample">
     <div class="print-case"><h2 class="print-case-name"></h2></div>
   </div>
-  <div class="hide" id="tpl-print-contention">
+  <div class="hide" id="print-cont">
     <div class="print-group">
       <h3 class="print-group-name"></h3>
       <table class="print-table"><thead><tr></tr></thead><tbody></tbody></table>
     </div>
   </div>
-  <div class="hide" id="tpl-print-th"><th class="print-head"></th></div>
-  <div class="hide" id="tpl-print-row"><tr class="print-row"></tr></div>
-  <div class="hide" id="tpl-print-td"><td class="print-cell"></td></div>
-  <div class="hide" id="tpl-print-note">
+  <div class="hide" id="print-th"><th class="print-head"></th></div>
+  <div class="hide" id="print-tr"><tr class="print-row"></tr></div>
+  <div class="hide" id="print-td"><td class="print-cell"></td></div>
+  <div class="hide" id="print-card">
     <div class="print-card">
       <span class="print-tag"></span>
       <div class="print-words"></div>
       <div class="print-proof"></div>
     </div>
   </div>
-  <div class="hide" id="tpl-print-notes">
+  <div class="hide" id="print-cx">
     <div class="print-notes"><h2 class="print-case-name">CROSSFIRE &amp; REFLECTION NOTES</h2></div>
   </div>
-  <div class="hide" id="tpl-print-notes-card">
+  <div class="hide" id="print-cx-card">
     <div class="print-note">
       <h3 class="print-note-name"></h3>
       <div class="print-note-words"></div>
     </div>
   </div>
 
-  <script src="js/rounds.js?v=28"></script>
-  <script src="js/lineup.js?v=28"></script>
-  <script src="js/clean.js?v=28"></script>
-  <script src="js/save.js?v=28"></script>
-  <script src="js/helpers.js?v=28"></script>
-  <script src="js/app.js?v=28"></script>
+  <script src="js/rounds.js?v=31"></script>
+  <script src="js/lineup.js?v=31"></script>
+  <script src="js/clean.js?v=31"></script>
+  <script src="js/save.js?v=31"></script>
+  <script src="js/helpers.js?v=31"></script>
+  <script src="js/app.js?v=31"></script>
 </body>
 </html>

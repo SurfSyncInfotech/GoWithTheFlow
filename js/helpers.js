@@ -1,59 +1,54 @@
-function copyBox(id) {
-  var sample = document.getElementById(id);
-  return sample.firstElementChild.cloneNode(true);
+function cloneTpl(id) {
+  return document.getElementById(id).firstElementChild.cloneNode(true);
 }
 
-function show(node) {
+function unhide(node) {
   if (node) node.classList.remove("hide");
 }
 
-function hide(node) {
+function foldAway(node) {
   if (node) node.classList.add("hide");
-}   
+}
 
-function emptyBox(node) {
+function clearNode(node) {
   if (!node) return;
   while (node.firstChild) node.removeChild(node.firstChild);
 }
 
-function showText(node, text) {
+function setLine(node, text) {
   if (!node) return;
   node.textContent = text || "";
-  if (text) show(node);
-  else hide(node);
+  if (text) unhide(node);
+  else foldAway(node);
 }
 
-function valuesOf(box) {
-  var names = Object.keys(box || {});
+function objList(box) {
   var list = [];
-  var i;
-  for (i = 0; i < names.length; i++) {
-    list.push(box[names[i]]);
+  var k;
+  if (!box) return list;
+  for (k in box) {
+    if (Object.prototype.hasOwnProperty.call(box, k)) list.push(box[k]);
   }
   return list;
 }
 
-function joinFilled(parts, gap) {
-  var kept = [];
+function joinSkipEmpty(parts, gap) {
+  var out = "";
   var i;
   for (i = 0; i < parts.length; i++) {
-    if (parts[i]) kept.push(parts[i]);
+    if (!parts[i]) continue;
+    out = out ? out + gap + parts[i] : String(parts[i]);
   }
-  return kept.join(gap);
+  return out;
 }
 
-function newestFirst(list) {
-  var i;
-  var j;
-  var temp;
-  for (i = 0; i < list.length; i++) {
-    for (j = i + 1; j < list.length; j++) {
-      if ((list[j].updatedAt || "") > (list[i].updatedAt || "")) {
-        temp = list[i];
-        list[i] = list[j];
-        list[j] = temp;
-      }
-    }
-  }
-  return list;
+// home + preflow lists. ISO dates sort as text, so this is enough.
+function sortRecent(list) {
+  return list.sort(function (a, b) {
+    var x = a.updatedAt || "";
+    var y = b.updatedAt || "";
+    if (y > x) return 1;
+    if (y < x) return -1;
+    return 0;
+  });
 }

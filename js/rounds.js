@@ -17,10 +17,12 @@ var MARKERS = [
   { id: "turn", label: "Turn" }
 ];
 
-function newId(prefix) {
+function uid(prefix) {
   return prefix + "-" + Date.now().toString(36) + "-" + Math.floor(Math.random() * 100000).toString(36);
 }
 
+// NSDA PF card, stored in seconds: 4 constructive, 4 rebuttal, 3 summary, 2 final focus,
+// 3 / 3 crossfire, 3 grand cross, 3 prep per team for the whole round.
 function timerTimes() {
   return {
     constructive: 240,
@@ -31,6 +33,39 @@ function timerTimes() {
     grand: 180,
     prep: 180
   };
+}
+
+// The settings boxes are seconds. A 4 in constructive is the usual "I meant the 4-minute speech" typo.
+function pfClock(kind, raw) {
+  var n = Number(raw);
+  var label = kind;
+  if (kind === "final") label = "final focus";
+  else if (kind === "grand") label = "grand cross";
+  else if (kind === "prep") label = "prep";
+  if (!isFinite(n) || n <= 0) return { ok: false, seconds: 0, message: label + " has to be a positive time." };
+  if (n > 20 * 60) return { ok: false, seconds: 0, message: label + " over 20 minutes isn't a PF clock." };
+  if (n <= 15) {
+    return {
+      ok: true,
+      seconds: Math.round(n * 60),
+      message: label + ": " + n + " min saved as " + Math.round(n * 60) + " seconds."
+    };
+  }
+  return { ok: true, seconds: Math.round(n), message: "" };
+}
+
+function mendClocks(durations) {
+  var base = timerTimes();
+  var keys = Object.keys(base);
+  var i;
+  var n;
+  if (!durations || typeof durations !== "object") return base;
+  for (i = 0; i < keys.length; i++) {
+    n = Number(durations[keys[i]]);
+    if (!isFinite(n) || n <= 0 || n > 20 * 60) durations[keys[i]] = base[keys[i]];
+    else durations[keys[i]] = Math.round(n);
+  }
+  return durations;
 }
 
 function startSettings() {
@@ -57,6 +92,9 @@ function sortByOrder(list) {
   return list;
 }
 
+// NSDA dropped the old rebuttal flip: 1st constructive also speaks 1st rebuttal, summary, and FF.
+// Bid tournaments that still swap rebuttal are not this file. Pro's sheet starts at Pro constr
+// even if Con won the flip — Con constr lives on the Con case, not over here.
 function speechOrder(firstSide) {
   var pairs = [
     ["pro-constructive", "con-constructive"],
@@ -112,6 +150,18 @@ function timerSteps(firstSide, durations) {
   ];
 }
 
+// First CX is the two first speakers, second CX the two second speakers, grand is all four.
+// Reflections sit after the round and are not a timed speech.
+function crossNotesFrom(notes) {
+  notes = notes || {};
+  return {
+    firstCrossfire: notes.firstCrossfire || "",
+    secondCrossfire: notes.secondCrossfire || "",
+    grandCrossfire: notes.grandCrossfire || "",
+    reflections: notes.reflections || ""
+  };
+}
+
 function newTimer(firstSide, durations) {
   var plan = timerSteps(firstSide, durations);
   var allotted = {};
@@ -136,7 +186,7 @@ function newTimer(firstSide, durations) {
 
 function newGroup(name) {
   return {
-    id: newId("cont"),
+    id: uid("cont"),
     name: name,
     collapsed: false,
     startingPointIds: []
@@ -159,7 +209,7 @@ function newRound(fields, settings) {
   groups[pro.contention.id] = pro.contention;
   groups[con.contention.id] = con.contention;
   return {
-    id: newId("round"),
+    id: uid("round"),
     title: fields.title || "Untitled round",
     topic: fields.topic || "",
     tournament: fields.tournament || "",
@@ -176,12 +226,7 @@ function newRound(fields, settings) {
     contentions: groups,
     notes: {},
     evidence: {},
-    crossNotes: {
-      firstCrossfire: "",
-      secondCrossfire: "",
-      grandCrossfire: "",
-      reflections: ""
-    },
+    crossNotes: crossNotesFrom(),
     timers: newTimer(fields.firstSide === "con" ? "con" : "pro", times),
     columnFocus: {
       pro: { count: null, start: 0 },
@@ -197,7 +242,7 @@ function newOpening(fields) {
   var groups = {};
   groups[contention.id] = contention;
   return {
-    id: newId("preflow"),
+    id: uid("preflow"),
     title: fields.title || "Untitled preflow",
     topic: fields.topic || "",
     side: side,
@@ -231,12 +276,7 @@ function openingAsRound(preflow) {
     contentions: preflow.contentions,
     notes: preflow.notes,
     evidence: preflow.evidence,
-    crossNotes: {
-      firstCrossfire: "",
-      secondCrossfire: "",
-      grandCrossfire: "",
-      reflections: ""
-    },
+    crossNotes: crossNotesFrom(),
     timers: newTimer(preflow.side, timerTimes()),
     columnFocus: {
       pro: { count: null, start: 0 },
@@ -246,13 +286,13 @@ function openingAsRound(preflow) {
   };
 }
 
-function sideOfGroup(round, contentionId) {
+function whoseCont(round, contentionId) {
   if (round.cases.pro.contentionIds.indexOf(contentionId) !== -1) return "pro";
   if (round.cases.con.contentionIds.indexOf(contentionId) !== -1) return "con";
   return null;
 }
 
-function notesInGroup(round, contentionId) {
+function cardsOn(round, contentionId) {
   var names = Object.keys(round.notes);
   var list = [];
   var i;
@@ -263,7 +303,7 @@ function notesInGroup(round, contentionId) {
 }
 
 function replyNotes(round, parentId, speechId) {
-  var notes = notesInGroup(round, round.notes[parentId].contentionId);
+  var notes = cardsOn(round, round.notes[parentId].contentionId);
   var list = [];
   var i;
   for (i = 0; i < notes.length; i++) {
@@ -290,7 +330,7 @@ function nextNumber(list) {
 
 function newPoint(contentionId, speechId, parentId, order, text) {
   return {
-    id: newId("note"),
+    id: uid("note"),
     contentionId: contentionId,
     speechId: speechId,
     parentId: parentId || null,
@@ -301,7 +341,7 @@ function newPoint(contentionId, speechId, parentId, order, text) {
   };
 }
 
-function addFirstPoint(round, contentionId, speechId, text, afterId) {
+function addShell(round, contentionId, speechId, text, afterId) {
   var contention = round.contentions[contentionId];
   var note = newPoint(contentionId, speechId, null, contention.startingPointIds.length, text);
   var index = contention.startingPointIds.length;
@@ -314,7 +354,7 @@ function addFirstPoint(round, contentionId, speechId, text, afterId) {
   return note;
 }
 
-function addReply(round, parentId, speechId, text, afterId) {
+function addAns(round, parentId, speechId, text, afterId) {
   var parent = round.notes[parentId];
   var siblings = replyNotes(round, parentId, speechId);
   var note = newPoint(parent.contentionId, speechId, parentId, nextNumber(siblings), text);
@@ -323,29 +363,63 @@ function addReply(round, parentId, speechId, text, afterId) {
   return note;
 }
 
-function pointAndReplies(round, noteId, list) {
+function underLine(round, noteId, list) {
   var names = Object.keys(round.notes);
   var i;
   list.push(noteId);
   for (i = 0; i < names.length; i++) {
-    if (round.notes[names[i]].parentId === noteId) pointAndReplies(round, names[i], list);
+    if (round.notes[names[i]].parentId === noteId) underLine(round, names[i], list);
   }
   return list;
 }
 
-function canConnect(round, noteId, parentId) {
+// Empty string means the link is legal. Anything else is the reason to show on the menu
+// and not move the card. Order matters: a self-link and a cross-contention link fail
+// for different reasons than "that's a later speech".
+function whyNotLink(round, noteId, parentId) {
   var note = round.notes[noteId];
   var parent = round.notes[parentId];
-  var replies;
-  var caseSide;
-  var speeches;
-  if (!note || !parent || noteId === parentId) return false;
-  if (note.contentionId !== parent.contentionId) return false;
-  replies = pointAndReplies(round, noteId, []);
-  if (replies.indexOf(parentId) !== -1) return false;
-  caseSide = sideOfGroup(round, note.contentionId);
-  speeches = speechesOnSide(round, caseSide);
-  return speeches.indexOf(parent.speechId) >= 0 && speeches.indexOf(parent.speechId) < speeches.indexOf(note.speechId);
+  var under;
+  var side;
+  var cols;
+  var parentCol;
+  var cardCol;
+  if (!note || !parent) return "That card isn't on this flow anymore.";
+  if (noteId === parentId) return "A card can't answer itself.";
+  if (note.contentionId !== parent.contentionId) return "Stay on this contention. Another contention is a different sheet.";
+  under = underLine(round, noteId, []);
+  if (under.indexOf(parentId) !== -1) return "That loops the line — the extension would be answering itself.";
+  side = whoseCont(round, note.contentionId);
+  cols = speechesOnSide(round, side);
+  parentCol = cols.indexOf(parent.speechId);
+  cardCol = cols.indexOf(note.speechId);
+  if (parentCol < 0 || cardCol < 0 || parentCol >= cardCol) {
+    return "Answers go in a later column. A constructive shell can't hang under rebuttal.";
+  }
+  return "";
+}
+
+function canConnect(round, noteId, parentId) {
+  return whyNotLink(round, noteId, parentId) === "";
+}
+
+// The labels are yours. These only catch the ones that don't mean what they say on a PF flow.
+function markerWarn(round, note, markerId) {
+  var info;
+  var side;
+  if (!note || !markerId) return "";
+  info = SPEECHES[note.speechId];
+  side = whoseCont(round, note.contentionId);
+  if (markerId === "dropped" && info && info.type === "constructive") {
+    return "Dropped on a constructive shell doesn't track — that speech is the argument, nothing has gone unanswered yet. Label it anyway?";
+  }
+  if (markerId === "turn" && round.yourSide && round.yourSide !== "observer" && side === round.yourSide && info && info.type === "constructive") {
+    return "A turn is their argument, flipped onto them. This card is on your constructive. Label it anyway?";
+  }
+  if (markerId === "extend" && !note.parentId) {
+    return "Extend means you're kicking an earlier line back up. This card isn't under anything yet. Label it anyway?";
+  }
+  return "";
 }
 
 function dropId(list, id) {
@@ -384,7 +458,7 @@ function connectPoint(round, noteId, parentId) {
   return true;
 }
 
-function deletePoint(round, noteId) {
+function cutCard(round, noteId) {
   var note = round.notes[noteId];
   var names;
   var children;
@@ -409,6 +483,8 @@ function deletePoint(round, noteId) {
     }
   }
   if (note.evidenceId && round.evidence[note.evidenceId]) delete round.evidence[note.evidenceId];
+  // Strike this card, keep the extension. The next speech's answer stays on the
+  // same line instead of vanishing with the response you deleted.
   if (note.parentId) {
     for (i = 0; i < children.length; i++) {
       children[i].parentId = note.parentId;
@@ -428,17 +504,17 @@ function deletePoint(round, noteId) {
   delete round.notes[noteId];
 }
 
-function copyPoint(round, noteId) {
+function dupeCard(round, noteId) {
   var note = round.notes[noteId];
   var copy;
   var evidence;
   if (!note) return null;
-  if (note.parentId) copy = addReply(round, note.parentId, note.speechId, note.text, noteId);
-  else copy = addFirstPoint(round, note.contentionId, note.speechId, note.text, noteId);
+  if (note.parentId) copy = addAns(round, note.parentId, note.speechId, note.text, noteId);
+  else copy = addShell(round, note.contentionId, note.speechId, note.text, noteId);
   copy.marker = note.marker;
   if (note.evidenceId && round.evidence[note.evidenceId]) {
     evidence = round.evidence[note.evidenceId];
-    copy.evidenceId = newId("ev");
+    copy.evidenceId = uid("ev");
     round.evidence[copy.evidenceId] = {
       id: copy.evidenceId,
       noteId: copy.id,
@@ -449,7 +525,7 @@ function copyPoint(round, noteId) {
   return copy;
 }
 
-function movePoint(round, noteId, direction) {
+function nudgeCard(round, noteId, direction) {
   var note = round.notes[noteId];
   var list;
   var index;
@@ -494,22 +570,32 @@ function roundHasWords(round) {
   return Object.keys(round.evidence).length > 0;
 }
 
-function addGroup(round, caseSide) {
-  var count = round.cases[caseSide].contentionIds.length + 1;
-  var contention = newGroup("Contention " + count);
+function addCont(round, caseSide) {
+  var ids = round.cases[caseSide].contentionIds;
+  var n = 1;
+  var i;
+  var name;
+  var num;
+  var contention;
+  for (i = 0; i < ids.length; i++) {
+    name = round.contentions[ids[i]] ? round.contentions[ids[i]].name : "";
+    num = /^Contention (\d+)$/.exec(name || "");
+    if (num && Number(num[1]) >= n) n = Number(num[1]) + 1;
+  }
+  contention = newGroup("Contention " + n);
   round.contentions[contention.id] = contention;
   round.cases[caseSide].contentionIds.push(contention.id);
   return contention;
 }
 
-function deleteGroup(round, contentionId) {
-  var caseSide = sideOfGroup(round, contentionId);
+function cutCont(round, contentionId) {
+  var caseSide = whoseCont(round, contentionId);
   var notes;
   var ids;
   var kept;
   var i;
-  if (!caseSide) return;
-  notes = notesInGroup(round, contentionId);
+  if (!caseSide) return false;
+  notes = cardsOn(round, contentionId);
   for (i = 0; i < notes.length; i++) {
     if (notes[i].evidenceId) delete round.evidence[notes[i].evidenceId];
     delete round.notes[notes[i].id];
@@ -521,10 +607,11 @@ function deleteGroup(round, contentionId) {
     if (ids[i] !== contentionId) kept.push(ids[i]);
   }
   round.cases[caseSide].contentionIds = kept;
+  return true;
 }
 
-function moveGroup(round, contentionId, direction) {
-  var caseSide = sideOfGroup(round, contentionId);
+function bumpCont(round, contentionId, direction) {
+  var caseSide = whoseCont(round, contentionId);
   var ids;
   var index;
   var temp;
@@ -538,7 +625,7 @@ function moveGroup(round, contentionId, direction) {
 }
 
 function groupHasWords(round, contentionId) {
-  var notes = notesInGroup(round, contentionId);
+  var notes = cardsOn(round, contentionId);
   var i;
   for (i = 0; i < notes.length; i++) {
     if (notes[i].text || notes[i].evidenceId) return true;
@@ -566,7 +653,7 @@ function shownSpeeches(round, caseSide) {
 
 function freshId(map, oldId) {
   if (!oldId) return null;
-  if (!map[oldId]) map[oldId] = newId("id");
+  if (!map[oldId]) map[oldId] = uid("id");
   return map[oldId];
 }
 
@@ -656,12 +743,7 @@ function copyRound(round, settings) {
   copy.contentions = cloned.contentions;
   copy.notes = cloned.notes;
   copy.evidence = cloned.evidence;
-  copy.crossNotes = {
-    firstCrossfire: round.crossNotes.firstCrossfire,
-    secondCrossfire: round.crossNotes.secondCrossfire,
-    grandCrossfire: round.crossNotes.grandCrossfire,
-    reflections: round.crossNotes.reflections
-  };
+  copy.crossNotes = crossNotesFrom(round.crossNotes);
   copy.columnFocus = {
     pro: { count: round.columnFocus.pro.count, start: round.columnFocus.pro.start },
     con: { count: round.columnFocus.con.count, start: round.columnFocus.con.start }
@@ -669,6 +751,8 @@ function copyRound(round, settings) {
   return copy;
 }
 
+// A preflow is the case you actually read. Practice answers in later columns
+// stay in the preflow; the round only takes constructive shells and their cards.
 function useOpening(round, preflow) {
   var cloned = copyParts({
     contentions: preflow.contentions,
@@ -703,7 +787,7 @@ function useOpening(round, preflow) {
     cloned.contentions[names[i]].startingPointIds = newIds;
   }
   oldIds = round.cases[side].contentionIds.slice();
-  for (i = 0; i < oldIds.length; i++) deleteGroup(round, oldIds[i]);
+  for (i = 0; i < oldIds.length; i++) cutCont(round, oldIds[i]);
   round.cases[side].contentionIds = copyIdList(preflow.contentionIds, cloned.map);
   names = Object.keys(cloned.contentions);
   for (i = 0; i < names.length; i++) round.contentions[names[i]] = cloned.contentions[names[i]];
@@ -713,6 +797,8 @@ function useOpening(round, preflow) {
   for (i = 0; i < names.length; i++) round.evidence[names[i]] = cloned.evidence[names[i]];
 }
 
+// Only the constructive column becomes a reusable case. Rebuttal ink from the
+// round is not the shell you want on the next ballot.
 function caseToOpening(round, caseSide, title) {
   var preflow = newOpening({ title: title, topic: round.topic, side: caseSide });
   var speech = caseSide + "-constructive";
@@ -742,7 +828,7 @@ function caseToOpening(round, caseSide, title) {
       contention.startingPointIds.push(copy.id);
       preflow.notes[copy.id] = copy;
       if (note.evidenceId && round.evidence[note.evidenceId]) {
-        copy.evidenceId = newId("ev");
+        copy.evidenceId = uid("ev");
         preflow.evidence[copy.evidenceId] = {
           id: copy.evidenceId,
           noteId: copy.id,
@@ -760,6 +846,209 @@ function caseToOpening(round, caseSide, title) {
   return preflow;
 }
 
+function parkOnShell(round, note) {
+  var cont = round.contentions[note.contentionId];
+  note.parentId = null;
+  if (cont && cont.startingPointIds.indexOf(note.id) === -1) cont.startingPointIds.push(note.id);
+}
+
+// Old saves and a half-written localStorage blob can come back missing a case,
+// with a reply pointing at a deleted card, or with a parent loop. A case with
+// no contention has nowhere to flow the constructive, so a blank one is put back.
+function mendRound(round) {
+  var sides;
+  var s;
+  var ids;
+  var kept;
+  var seen;
+  var i;
+  var id;
+  var cont;
+  var starts;
+  var n;
+  var note;
+  var names;
+  var parent;
+  var order;
+  var side;
+  var ev;
+  if (!round || typeof round !== "object") return;
+  if (round.yourSide !== "con" && round.yourSide !== "observer") round.yourSide = "pro";
+  if (round.firstSide !== "con") round.firstSide = "pro";
+  if (!round.cases) round.cases = {};
+  if (!round.cases.pro) round.cases.pro = { contentionIds: [] };
+  if (!round.cases.con) round.cases.con = { contentionIds: [] };
+  if (!round.cases.pro.contentionIds) round.cases.pro.contentionIds = [];
+  if (!round.cases.con.contentionIds) round.cases.con.contentionIds = [];
+  if (!round.contentions) round.contentions = {};
+  if (!round.notes) round.notes = {};
+  if (!round.evidence) round.evidence = {};
+  round.crossNotes = crossNotesFrom(round.crossNotes);
+  if (!round.columnFocus) round.columnFocus = {};
+  if (!round.columnFocus.pro) round.columnFocus.pro = { count: null, start: 0 };
+  if (!round.columnFocus.con) round.columnFocus.con = { count: null, start: 0 };
+  if (!round.scroll) round.scroll = { pro: 0, con: 0 };
+  if (typeof round.scroll.pro !== "number") round.scroll.pro = 0;
+  if (typeof round.scroll.con !== "number") round.scroll.con = 0;
+  if (!round.timers || !round.timers.prepLeft) round.timers = newTimer(round.firstSide, timerTimes());
+  else {
+    if (round.timers.prepLeft.pro == null || round.timers.prepLeft.pro < 0) round.timers.prepLeft.pro = 0;
+    if (round.timers.prepLeft.con == null || round.timers.prepLeft.con < 0) round.timers.prepLeft.con = 0;
+    if (!round.timers.allotted) round.timers.allotted = {};
+  }
+
+  sides = ["pro", "con"];
+  for (s = 0; s < sides.length; s++) {
+    ids = round.cases[sides[s]].contentionIds;
+    kept = [];
+    seen = {};
+    for (i = 0; i < ids.length; i++) {
+      id = ids[i];
+      if (seen[id]) continue;
+      cont = round.contentions[id];
+      if (!cont) continue;
+      seen[id] = true;
+      if (!cont.name) cont.name = "Contention " + (kept.length + 1);
+      if (!cont.startingPointIds) cont.startingPointIds = [];
+      starts = [];
+      for (n = 0; n < cont.startingPointIds.length; n++) {
+        note = round.notes[cont.startingPointIds[n]];
+        if (!note || note.contentionId !== id || note.parentId) continue;
+        starts.push(note.id);
+      }
+      cont.startingPointIds = starts;
+      kept.push(id);
+    }
+    if (!kept.length) {
+      cont = newGroup("Contention 1");
+      round.contentions[cont.id] = cont;
+      kept.push(cont.id);
+    }
+    round.cases[sides[s]].contentionIds = kept;
+  }
+
+  names = Object.keys(round.notes);
+  for (i = 0; i < names.length; i++) {
+    note = round.notes[names[i]];
+    if (!note || !round.contentions[note.contentionId]) {
+      if (note && note.evidenceId && round.evidence[note.evidenceId]) delete round.evidence[note.evidenceId];
+      delete round.notes[names[i]];
+      continue;
+    }
+    if (!SPEECHES[note.speechId]) {
+      side = whoseCont(round, note.contentionId) || "pro";
+      note.speechId = side + "-constructive";
+    }
+    if (!note.marker) note.marker = "";
+  }
+
+  names = Object.keys(round.notes);
+  for (i = 0; i < names.length; i++) {
+    note = round.notes[names[i]];
+    if (!note) continue;
+    seen = {};
+    id = note.id;
+    n = 0;
+    while (id && n < 40) {
+      if (seen[id]) {
+        parkOnShell(round, note);
+        break;
+      }
+      seen[id] = true;
+      parent = round.notes[id];
+      id = parent && parent.parentId;
+      n++;
+    }
+    if (note.parentId && !round.notes[note.parentId]) {
+      parkOnShell(round, note);
+      continue;
+    }
+    if (!note.parentId) continue;
+    parent = round.notes[note.parentId];
+    if (parent.contentionId !== note.contentionId) {
+      parkOnShell(round, note);
+      continue;
+    }
+    side = whoseCont(round, note.contentionId);
+    order = speechesOnSide(round, side);
+    // An answer that sits in an earlier speech than its parent was linked backwards.
+    if (order.indexOf(parent.speechId) < 0 || order.indexOf(note.speechId) < 0 || order.indexOf(parent.speechId) >= order.indexOf(note.speechId)) {
+      parkOnShell(round, note);
+    }
+  }
+
+  names = Object.keys(round.notes);
+  for (i = 0; i < names.length; i++) {
+    note = round.notes[names[i]];
+    if (!note || note.parentId) continue;
+    cont = round.contentions[note.contentionId];
+    if (cont && cont.startingPointIds.indexOf(note.id) === -1) cont.startingPointIds.push(note.id);
+  }
+
+  names = Object.keys(round.evidence);
+  for (i = 0; i < names.length; i++) {
+    ev = round.evidence[names[i]];
+    if (!ev || !ev.noteId || !round.notes[ev.noteId]) {
+      delete round.evidence[names[i]];
+      continue;
+    }
+    round.notes[ev.noteId].evidenceId = names[i];
+  }
+}
+
+function mendPreflow(pre) {
+  var kept = [];
+  var seen = {};
+  var i;
+  var id;
+  var cont;
+  var starts;
+  var n;
+  var note;
+  var names;
+  if (!pre || typeof pre !== "object") return;
+  if (pre.side !== "con") pre.side = "pro";
+  if (!pre.contentions) pre.contentions = {};
+  if (!pre.notes) pre.notes = {};
+  if (!pre.evidence) pre.evidence = {};
+  if (!pre.contentionIds) pre.contentionIds = [];
+  for (i = 0; i < pre.contentionIds.length; i++) {
+    id = pre.contentionIds[i];
+    if (seen[id] || !pre.contentions[id]) continue;
+    seen[id] = true;
+    cont = pre.contentions[id];
+    if (!cont.name) cont.name = "Contention " + (kept.length + 1);
+    if (!cont.startingPointIds) cont.startingPointIds = [];
+    starts = [];
+    for (n = 0; n < cont.startingPointIds.length; n++) {
+      note = pre.notes[cont.startingPointIds[n]];
+      if (note && note.contentionId === id && !note.parentId) starts.push(note.id);
+    }
+    cont.startingPointIds = starts;
+    kept.push(id);
+  }
+  if (!kept.length) {
+    cont = newGroup("Contention 1");
+    pre.contentions[cont.id] = cont;
+    kept.push(cont.id);
+  }
+  pre.contentionIds = kept;
+  names = Object.keys(pre.notes);
+  for (i = 0; i < names.length; i++) {
+    note = pre.notes[names[i]];
+    if (!note || !pre.contentions[note.contentionId]) {
+      if (note && note.evidenceId) delete pre.evidence[note.evidenceId];
+      delete pre.notes[names[i]];
+    }
+  }
+  names = Object.keys(pre.evidence);
+  for (i = 0; i < names.length; i++) {
+    if (!pre.evidence[names[i]] || !pre.notes[pre.evidence[names[i]].noteId]) delete pre.evidence[names[i]];
+  }
+}
+
+// Prep and speech clocks are a deadline. If the laptop slept between flights,
+// don't keep burning time that already passed — freeze whatever was left.
 function stopTimerOnOpen(round) {
   var left;
   if (!round.timers || !round.timers.running || !round.timers.deadline) return;

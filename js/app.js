@@ -42,8 +42,9 @@ var TOUR = [
 
 function sideName(side) {
   if (side === "con") return "Con";
+  if (side === "pro") return "Pro";
   if (side === "observer") return "Observer";
-  return "Pro";
+  return "";
 }
 
 function clock(ms) {
@@ -72,6 +73,8 @@ function resetHistory() {
   state.heights = {};
 }
 
+// Undo covers the flow: contentions, cards, and evidence. Crossfire notes and the
+// speech clock stay put — undoing a rebuttal card should not rewind prep.
 function copyFlow() {
   return JSON.stringify({
     cases: state.round.cases,
@@ -82,11 +85,18 @@ function copyFlow() {
 }
 
 function putFlowBack(json) {
-  var data = JSON.parse(json);
+  var data;
+  try {
+    data = JSON.parse(json);
+  } catch (error) {
+    return false;
+  }
+  if (!data || !data.cases || !data.contentions || !data.notes) return false;
   state.round.cases = data.cases;
   state.round.contentions = data.contentions;
   state.round.notes = data.notes;
-  state.round.evidence = data.evidence;
+  state.round.evidence = data.evidence || {};
+  return true;
 }
 
 function rememberStep() {
@@ -120,9 +130,13 @@ function rememberBeforeChange() {
 }
 
 function undo() {
+  var current;
+  var prior;
   if (!state.history.past.length || !state.round) return;
-  state.history.future.push(copyFlow());
-  putFlowBack(state.history.past.pop());
+  current = copyFlow();
+  prior = state.history.past.pop();
+  if (!putFlowBack(prior)) return;
+  state.history.future.push(current);
   state.history.typing = false;
   state.selectedId = state.round.notes[state.selectedId] ? state.selectedId : null;
   saveSoon(true);
@@ -130,9 +144,13 @@ function undo() {
 }
 
 function redo() {
+  var current;
+  var next;
   if (!state.history.future.length || !state.round) return;
-  state.history.past.push(copyFlow());
-  putFlowBack(state.history.future.pop());
+  current = copyFlow();
+  next = state.history.future.pop();
+  if (!putFlowBack(next)) return;
+  state.history.past.push(current);
   state.selectedId = state.round.notes[state.selectedId] ? state.selectedId : null;
   saveSoon(true);
   render();
@@ -221,7 +239,7 @@ function rememberRound() {
 }
 
 function go(url) {
-  closePopup();
+  dropMenu();
   saveTypedWords();
   saveNow();
   rememberRound();
@@ -277,7 +295,7 @@ function updateSideMenu() {
 function closePopups() {
   var boxes = document.querySelectorAll(".popup-cover");
   var i;
-  for (i = 0; i < boxes.length; i++) hide(boxes[i]);
+  for (i = 0; i < boxes.length; i++) foldAway(boxes[i]);
   confirmRun = null;
 }
 
@@ -286,7 +304,7 @@ function askConfirm(title, text, okLabel, run) {
   document.getElementById("confirm-text").textContent = text;
   document.getElementById("confirm-ok").textContent = okLabel || "OK";
   confirmRun = run;
-  show(document.getElementById("confirm-box"));
+  unhide(document.getElementById("confirm-box"));
 }
 
 function timerStepNow() {
@@ -332,19 +350,32 @@ function beep() {
   }
 }
 
-function startTimer(mode, side) {
-  var timers = state.round.timers;
+function kickClock(mode, side) {
+  var timers = state.round && state.round.timers;
+  var left;
+  var amount;
+  if (!timers) return;
+  // Prep belongs to a team. Observer flows the round and does not have a prep pot.
+  if (mode === "prep" && side !== "pro" && side !== "con") return;
   if (timers.running) {
-    var left = Math.max(0, timers.deadline - Date.now());
-    if (timers.mode === "prep") timers.prepLeft[timers.prepSide] = left;
-    else timers.remainingMs = left;
+    left = timers.deadline - Date.now();
+    if (!isFinite(left) || left < 0) left = 0;
+    if (timers.mode === "prep" && (timers.prepSide === "pro" || timers.prepSide === "con")) timers.prepLeft[timers.prepSide] = left;
+    else if (timers.mode === "speech") timers.remainingMs = left;
     timers.running = false;
     timers.deadline = null;
+    timers.mode = null;
   }
-  var amount = mode === "prep" ? timers.prepLeft[side] : timers.remainingMs;
-  if (amount <= 0) return;
+  if (mode === "prep") {
+    if (!timers.prepLeft || timers.prepLeft[side] == null) return;
+    amount = timers.prepLeft[side];
+  } else {
+    mode = "speech";
+    amount = timers.remainingMs;
+  }
+  if (!isFinite(amount) || amount <= 0) return;
   timers.mode = mode;
-  timers.prepSide = side || timers.prepSide;
+  if (mode === "prep") timers.prepSide = side;
   timers.running = true;
   timers.timeUp = false;
   timers.deadline = Date.now() + amount;
@@ -361,43 +392,49 @@ function columnSize(pane, count) {
   return minCol;
 }
 
-function openPopup(anchor, node) {
-  closePopup();
-  show(node);
-  var rect = anchor.getBoundingClientRect();
-  var width = Math.min(node.offsetWidth || 220, window.innerWidth - 16);
-  var height = node.offsetHeight;
-  var left = Math.min(Math.max(8, rect.left), Math.max(8, window.innerWidth - width - 8));
-  var top = rect.bottom + 6;
+function anchorMenu(anchor, node) {
+  var rect;
+  var width;
+  var height;
+  var left;
+  var top;
+  dropMenu();
+  if (!anchor || !node || !anchor.getBoundingClientRect) return;
+  unhide(node);
+  rect = anchor.getBoundingClientRect();
+  width = Math.min(node.offsetWidth || 220, window.innerWidth - 16);
+  height = node.offsetHeight;
+  left = Math.min(Math.max(8, rect.left), Math.max(8, window.innerWidth - width - 8));
+  top = rect.bottom + 6;
   if (top + height > window.innerHeight - 8) top = Math.max(8, rect.top - height - 6);
   node.style.top = top + "px";
   node.style.left = left + "px";
   state.popover = node;
 }
 
-function closePopup() {
-  if (state.popover) hide(state.popover);
+function dropMenu() {
+  if (state.popover) foldAway(state.popover);
   state.popover = null;
 }
 
 function render() {
   var page = document.body.dataset.page;
   state.view = page;
-  if (page === "home") fillHome();
-  else if (page === "settings") fillSettings();
-  else if (page === "preflows") fillPreflows();
-  else if (page === "notes") fillNotes();
-  else if (page === "workspace") fillWorkspace();
+  if (page === "home") listRounds();
+  else if (page === "settings") clockForm();
+  else if (page === "preflows") listPreflows();
+  else if (page === "notes") showCx();
+  else if (page === "workspace") showFlow();
   if (page === "workspace" && state.tourStep >= 0) showTour();
 }
 
-function fillHome() {
+function listRounds() {
   var banner = document.getElementById("recovered-banner");
   if (banner) {
-    if (db.recovered) show(banner);
-    else hide(banner);
+    if (db.recovered) unhide(banner);
+    else foldAway(banner);
   }
-  var rounds = valuesOf(db.rounds);
+  var rounds = objList(db.rounds);
   var q = state.query.trim().toLowerCase();
   var matched = [];
   var i;
@@ -406,35 +443,38 @@ function fillHome() {
     words = [rounds[i].title, rounds[i].topic, rounds[i].tournament, rounds[i].opponent].join(" ").toLowerCase();
     if (!q || words.indexOf(q) !== -1) matched.push(rounds[i]);
   }
-  rounds = newestFirst(matched);
+  rounds = sortRecent(matched);
   var empty = document.getElementById("empty-home");
   var browser = document.getElementById("round-browser");
   if (!rounds.length && !q) {
-    show(empty);
-    hide(browser);
+    unhide(empty);
+    foldAway(browser);
     return;
   }
-  hide(empty);
-  show(browser);
+  foldAway(empty);
+  unhide(browser);
   var count = document.getElementById("round-count");
   count.textContent = rounds.length + (rounds.length === 1 ? " round" : " rounds") + " in this browser";
   var search = document.querySelector("[data-field='search-box']");
   if (search && document.activeElement !== search) search.value = state.query;
   var list = document.getElementById("card-list");
-  emptyBox(list);
+  clearNode(list);
   var noMatch = document.getElementById("no-match");
-  if (!rounds.length) show(noMatch);
-  else hide(noMatch);
+  if (!rounds.length) unhide(noMatch);
+  else foldAway(noMatch);
   var buttons;
   var b;
   for (i = 0; i < rounds.length; i++) {
-    var card = copyBox("tpl-round-card");
+    var card = cloneTpl("sample-round");
     card.querySelector(".card-name").textContent = rounds[i].title;
     var pill = card.querySelector(".side-tag");
-    pill.textContent = sideName(rounds[i].yourSide);
-    pill.classList.add(rounds[i].yourSide === "con" ? "con-tag" : "pro-tag");
-    showText(card.querySelector(".card-line"), joinFilled([rounds[i].tournament, rounds[i].roundLabel], " · "));
-    showText(card.querySelector(".card-topic"), rounds[i].topic || "");
+    pill.textContent = sideName(rounds[i].yourSide) || "Pro";
+    pill.classList.remove("pro-tag", "con-tag", "obs-tag");
+    if (rounds[i].yourSide === "con") pill.classList.add("con-tag");
+    else if (rounds[i].yourSide === "observer") pill.classList.add("obs-tag");
+    else pill.classList.add("pro-tag");
+    setLine(card.querySelector(".card-line"), joinSkipEmpty([rounds[i].tournament, rounds[i].roundLabel], " · "));
+    setLine(card.querySelector(".card-topic"), rounds[i].topic || "");
     card.querySelector(".card-time").textContent = "Edited " + new Date(rounds[i].updatedAt).toLocaleString();
     buttons = card.querySelectorAll("button");
     for (b = 0; b < buttons.length; b++) buttons[b].dataset.id = rounds[i].id;
@@ -442,7 +482,7 @@ function fillHome() {
   }
 }
 
-function fillSettings() {
+function clockForm() {
   var note = document.getElementById("font-size-note");
   if (note) note.textContent = "Choose 12, 14, 16, or 18 px in the workspace toolbar. The current size is " + (db.settings.fontSize || 14) + " px.";
   var inputs = document.querySelectorAll("[data-preset]");
@@ -452,15 +492,15 @@ function fillSettings() {
   if (sound) sound.checked = !!db.settings.sound;
 }
 
-function fillPreflows() {
+function listPreflows() {
   var list = document.getElementById("preflow-list");
-  var preflows = newestFirst(valuesOf(db.preflows));
+  var preflows = sortRecent(objList(db.preflows));
   var i;
   var b;
   var buttons;
-  emptyBox(list);
+  clearNode(list);
   for (i = 0; i < preflows.length; i++) {
-    var card = copyBox("tpl-preflow-card");
+    var card = cloneTpl("sample-pf");
     card.querySelector(".card-name").textContent = preflows[i].title;
     card.querySelector(".card-extra").textContent = sideName(preflows[i].side) + (preflows[i].topic ? " · " + preflows[i].topic : "");
     buttons = card.querySelectorAll("button");
@@ -469,29 +509,36 @@ function fillPreflows() {
   }
 }
 
-function roundMeta() {
-  return joinFilled([
-    state.round.tournament,
-    state.round.roundLabel,
-    state.round.opponent ? "vs " + state.round.opponent : "",
-    "You: " + sideName(state.round.yourSide),
-    state.round.firstSide ? sideName(state.round.firstSide) + " speaks first" : ""
+function ballotLine() {
+  var round = state.round;
+  var you = sideName(round.yourSide);
+  var first = "";
+  if (!you) you = "Pro";
+  // Only a speaking team can "speak first". Observer is who you are, not a slot in the order.
+  if (round.firstSide === "con") first = "Con speaks first";
+  else if (round.firstSide === "pro") first = "Pro speaks first";
+  return joinSkipEmpty([
+    round.tournament,
+    round.roundLabel,
+    round.opponent ? "vs " + round.opponent : "",
+    "You: " + you,
+    first
   ], "  ·  ");
 }
 
-function fillTitle() {
+function roundStamp() {
   var title = document.querySelector(".title-input");
   if (title && document.activeElement !== title && title.value !== state.round.title) title.value = state.round.title;
   var meta = document.getElementById("title-note");
-  if (meta) meta.textContent = roundMeta();
+  if (meta) meta.textContent = ballotLine();
   updateSaveLabel();
   updateTimerButton();
 }
 
-function fillJumps() {
+function contJumps() {
   var list = document.getElementById("jump-links");
   if (!list) return;
-  emptyBox(list);
+  clearNode(list);
   var caseSide = activeCase();
   var ids = state.round.cases[caseSide].contentionIds;
   var i;
@@ -500,7 +547,7 @@ function fillJumps() {
   for (i = 0; i < ids.length; i++) {
     contention = state.round.contentions[ids[i]];
     if (!contention) continue;
-    jump = copyBox("tpl-jump");
+    jump = cloneTpl("jump-sample");
     jump.dataset.id = ids[i];
     jump.querySelector(".color-dot").style.backgroundColor = JUMP_COLORS[i % JUMP_COLORS.length];
     jump.querySelector(".link-name").textContent = contention.name;
@@ -523,7 +570,7 @@ function markCaseLinks() {
   markOneLink("switch-notes", onNotes);
 }
 
-function fillRoundBar() {
+function rdBar() {
   var preflow = state.round.isPreflow;
   var caseLinks = document.getElementById("case-links");
   var caseSwitch = document.getElementById("side-bar");
@@ -534,37 +581,37 @@ function fillRoundBar() {
   var columnTools = document.getElementById("column-tools");
   var toolbarTimer = document.getElementById("toolbar-timer");
   if (preflow) {
-    hide(caseLinks);
-    hide(caseSwitch);
-    hide(timerChip);
-    hide(roundMenu);
-    hide(columnTools);
-    hide(toolbarTimer);
-    show(preMenu);
+    foldAway(caseLinks);
+    foldAway(caseSwitch);
+    foldAway(timerChip);
+    foldAway(roundMenu);
+    foldAway(columnTools);
+    foldAway(toolbarTimer);
+    unhide(preMenu);
     if (preLabel) {
       preLabel.textContent = sideName(state.round.preflowSide) + " preflow";
-      show(preLabel);
+      unhide(preLabel);
     }
   } else {
-    show(caseLinks);
-    show(caseSwitch);
-    show(timerChip);
-    show(roundMenu);
-    show(columnTools);
-    show(toolbarTimer);
-    hide(preMenu);
-    hide(preLabel);
+    unhide(caseLinks);
+    unhide(caseSwitch);
+    unhide(timerChip);
+    unhide(roundMenu);
+    unhide(columnTools);
+    unhide(toolbarTimer);
+    foldAway(preMenu);
+    foldAway(preLabel);
   }
   markCaseLinks();
-  fillTitle();
-  fillJumps();
+  roundStamp();
+  contJumps();
   var sizes = document.querySelector("[data-field='font-size']");
   if (sizes) sizes.value = String(db.settings.fontSize || 14);
   showUndoButtons();
   updateSideMenu();
 }
 
-function fillColumnBoxes() {
+function colWindow() {
   if (!state.round || state.round.isPreflow || document.body.dataset.page !== "workspace") return;
   var caseSide = activeCase();
   var all = speechesOnSide(state.round, caseSide);
@@ -575,9 +622,9 @@ function fillColumnBoxes() {
   if (startSelect) {
     var i;
     var option;
-    emptyBox(startSelect);
+    clearNode(startSelect);
     for (i = 0; i < all.length; i++) {
-      option = copyBox("tpl-option");
+      option = cloneTpl("opt-sample");
       option.value = String(i);
       option.textContent = "Start at: " + speechName(all[i], false);
       if ((focus.start || 0) === i) option.selected = true;
@@ -587,22 +634,22 @@ function fillColumnBoxes() {
   var view = shownSpeeches(state.round, caseSide);
   var status = document.getElementById("column-bar");
   if (view.count < view.all.length) {
-    show(status);
+    unhide(status);
     document.getElementById("column-status-text").textContent = "Showing columns " + (view.start + 1) + "–" + (view.start + view.visible.length) + " of " + view.all.length;
     document.getElementById("status-left").disabled = view.start === 0;
     document.getElementById("status-right").disabled = view.start + view.visible.length >= view.all.length;
-  } else hide(status);
+  } else foldAway(status);
   var left = document.querySelector("#column-tools [data-action='columns-left']");
   var right = document.querySelector("#column-tools [data-action='columns-right']");
   if (left) left.disabled = (focus.start || 0) === 0;
   if (right) right.disabled = (focus.start || 0) + (focus.count || all.length) >= all.length;
 }
 
-function fillWorkspace() {
+function showFlow() {
   var shell = document.querySelector(".workspace");
   if (shell) shell.classList.toggle("proof-open", state.evidenceOpen);
-  fillRoundBar();
-  fillColumnBoxes();
+  rdBar();
+  colWindow();
   buildFlow();
   if (state.evidenceOpen) showProof();
   var scroller = document.getElementById("scroll-box");
@@ -623,11 +670,11 @@ function fillWorkspace() {
   }
 }
 
-function fillNotes() {
+function showCx() {
   var areas = document.querySelectorAll("textarea.note-box");
   var i;
   var value;
-  fillRoundBar();
+  rdBar();
   for (i = 0; i < areas.length; i++) {
     value = (state.round.crossNotes && state.round.crossNotes[areas[i].dataset.cross]) || "";
     if (document.activeElement !== areas[i]) areas[i].value = value;
@@ -649,8 +696,8 @@ function buildFlow() {
   var pane = scroller.clientWidth || 800;
   var width = columnSize(pane, view.visible.length);
   var paneWidth = pane + "px";
-  emptyBox(sheet);
-  var heads = copyBox("tpl-speech-head");
+  clearNode(sheet);
+  var heads = cloneTpl("head-row");
   var kindNames = { constructive: "Constr.", rebuttal: "Reb.", summary: "Sum.", final: "FF" };
   var i;
   var speechId;
@@ -662,7 +709,7 @@ function buildFlow() {
   for (i = 0; i < view.visible.length; i++) {
     speechId = view.visible[i];
     info = SPEECHES[speechId];
-    label = copyBox("tpl-speech-label");
+    label = cloneTpl("speech-chip");
     label.classList.add(info.team);
     label.style.width = width + "px";
     label.querySelector(".speech-name").textContent = info.full;
@@ -685,7 +732,7 @@ function buildFlow() {
 }
 
 function drawGroup(contention, caseSide, view, width) {
-  var section = copyBox("tpl-contention");
+  var section = cloneTpl("cont-block");
   section.dataset.id = contention.id;
   var index = state.round.cases[caseSide].contentionIds.indexOf(contention.id);
   var tone = CONTENTION_COLORS[(index >= 0 ? index : 0) % CONTENTION_COLORS.length];
@@ -706,7 +753,7 @@ function drawGroup(contention, caseSide, view, width) {
   for (b = 0; b < buttons.length; b++) buttons[b].dataset.id = contention.id;
   var grid = section.querySelector(".group-row");
   if (contention.collapsed) {
-    hide(grid);
+    foldAway(grid);
     return section;
   }
   var layout = lineUpGroup(state.round, contention, caseSide, state.heights);
@@ -723,7 +770,7 @@ function drawGroup(contention, caseSide, view, width) {
   var starter;
   for (s = 0; s < view.visible.length; s++) {
     speechId = view.visible[s];
-    column = copyBox("tpl-speech-col");
+    column = cloneTpl("col-sample");
     column.style.width = width + "px";
     column.dataset.speech = speechId;
     canvas = column.querySelector(".column-area");
@@ -742,7 +789,7 @@ function drawGroup(contention, caseSide, view, width) {
       if (slot.speechId !== speechId) continue;
       parent = state.round.notes[slot.parentId];
       if (!parent || parent.contentionId !== contention.id) continue;
-      box = copyBox("tpl-slot");
+      box = cloneTpl("ans-slot");
       box.style.fontSize = textSize();
       box.setAttribute("aria-label", "Response to " + (parent.text || "point"));
       box.dataset.parent = slot.parentId;
@@ -760,15 +807,15 @@ function drawGroup(contention, caseSide, view, width) {
 }
 
 function drawPoint(note) {
-  var box = copyBox("tpl-point");
+  var box = cloneTpl("card-sample");
   box.dataset.id = note.id;
   if (note.id === state.selectedId) box.classList.add("picked");
   var marker = box.querySelector(".point-tag");
   if (note.marker) {
     marker.textContent = markerLabel(note.marker);
     marker.className = "point-tag" + (note.marker ? " tag-" + note.marker : "");
-    show(marker);
-  } else hide(marker);
+    unhide(marker);
+  } else foldAway(marker);
   var area = box.querySelector(".point-input");
   area.style.fontSize = textSize();
   area.value = note.text;
@@ -780,10 +827,10 @@ function drawPoint(note) {
   if (note.evidenceId) {
     clip.classList.add("has-proof");
     clip.setAttribute("aria-label", "Open evidence");
-    show(clip.querySelector(".clip-number"));
+    unhide(clip.querySelector(".clip-number"));
   } else {
     clip.setAttribute("aria-label", "Add evidence");
-    hide(clip.querySelector(".clip-number"));
+    foldAway(clip.querySelector(".clip-number"));
   }
   if (!document.querySelector("[data-tour='clip-btn']")) clip.dataset.tour = "clip-btn";
   box.querySelector(".point-menu").dataset.id = note.id;
@@ -852,13 +899,13 @@ function showProof() {
   var crumb = document.querySelector(".proof-path");
   if (!list || !state.round) return;
   var selected = state.round.notes[state.selectedId];
-  emptyBox(list);
+  clearNode(list);
   if (!selected) {
-    hide(crumb);
-    if (document.getElementById("tpl-empty-note")) list.appendChild(copyBox("tpl-empty-note"));
+    foldAway(crumb);
+    if (document.getElementById("ev-empty")) list.appendChild(cloneTpl("ev-empty"));
     return;
   }
-  show(crumb);
+  unhide(crumb);
   var contention = state.round.contentions[selected.contentionId];
   var summary = (selected.text || "Point").split("\n")[0];
   if (summary.length > 25) summary = summary.slice(0, 25) + "...";
@@ -901,7 +948,7 @@ function proofList(contentionId, caseSide) {
 }
 
 function drawProofCard(note, current) {
-  var card = copyBox("tpl-evidence-card");
+  var card = cloneTpl("ev-card");
   if (current) card.classList.add("current");
   var first = (note.text || "Empty point").split("\n")[0];
   card.querySelector(".proof-place").textContent = first + " · " + speechName(note.speechId, true);
@@ -939,7 +986,7 @@ function focusNote(id, caret) {
 
 function typeReply(slot, text) {
   rememberBeforeChange();
-  var note = addReply(state.round, slot.dataset.parent, slot.dataset.speech, text || "");
+  var note = addAns(state.round, slot.dataset.parent, slot.dataset.speech, text || "");
   saveSoon(true);
   state.selectedId = note.id;
   buildFlow();
@@ -948,9 +995,12 @@ function typeReply(slot, text) {
 
 function typeNewPoint(starter) {
   var text = starter.value;
+  var speech = starter.dataset.speech;
   if (!text) return;
+  // a preflow is only the constructive you read. don't let a rebuttal column spawn a shell there.
+  if (state.round.isPreflow && speech !== state.round.preflowSide + "-constructive") return;
   rememberBeforeChange();
-  var note = addFirstPoint(state.round, starter.dataset.starter, starter.dataset.speech, text);
+  var note = addShell(state.round, starter.dataset.starter, starter.dataset.speech, text);
   starter.value = "";
   saveSoon(true);
   state.selectedId = note.id;
@@ -971,8 +1021,8 @@ function splitNote(area) {
   rememberBeforeChange();
   note.text = before;
   var created = note.parentId
-    ? addReply(state.round, note.parentId, note.speechId, after, note.id)
-    : addFirstPoint(state.round, note.contentionId, note.speechId, after, note.id);
+    ? addAns(state.round, note.parentId, note.speechId, after, note.id)
+    : addShell(state.round, note.contentionId, note.speechId, after, note.id);
   saveSoon(true);
   state.selectedId = created.id;
   buildFlow();
@@ -993,7 +1043,7 @@ function saveProof(body, pasteNotice) {
     return;
   }
   if (!note.evidenceId || !state.round.evidence[note.evidenceId]) {
-    note.evidenceId = newId("ev");
+    note.evidenceId = uid("ev");
     state.round.evidence[note.evidenceId] = { id: note.evidenceId, noteId: note.id, html: "", plain: "", notice: "" };
   }
   var record = state.round.evidence[note.evidenceId];
@@ -1028,7 +1078,7 @@ function findWords() {
 
 function openHit(hit) {
   if (!hit) return;
-  closePopup();
+  dropMenu();
   if (hit.cross) {
     sessionStorage.setItem("focusCross", hit.cross);
     if (document.body.dataset.page !== "notes") go("notes.html");
@@ -1039,7 +1089,7 @@ function openHit(hit) {
     return;
   }
   var note = state.round.notes[hit.noteId];
-  state.caseSide = sideOfGroup(state.round, note.contentionId) || state.caseSide;
+  state.caseSide = whoseCont(state.round, note.contentionId) || state.caseSide;
   state.round.columnFocus[state.caseSide] = { count: null, start: 0 };
   state.round.contentions[note.contentionId].collapsed = false;
   state.selectedId = note.id;
@@ -1062,9 +1112,9 @@ function showFoundWords() {
   var i;
   var button;
   var label;
-  emptyBox(results);
+  clearNode(results);
   for (i = 0; i < state.findHits.length; i++) {
-    button = copyBox("tpl-menu-button");
+    button = cloneTpl("menu-btn-sample");
     label = state.findHits[i].cross ? "Notes" : (state.round.notes[state.findHits[i].noteId].text || "Evidence").split("\n")[0];
     button.textContent = label;
     button.dataset.hit = String(i);
@@ -1082,7 +1132,7 @@ function openFind(anchor) {
   var box = document.getElementById("find-popover");
   var input = document.getElementById("find-input");
   input.value = state.findText;
-  openPopup(anchor, box);
+  anchorMenu(anchor, box);
   showFoundWords();
   input.focus();
 }
@@ -1098,27 +1148,35 @@ function openTimer(anchor) {
   document.getElementById("prep-con-label").textContent = "Con " + clock(timers.prepLeft.con);
   document.getElementById("prep-pro-btn").textContent = timers.running && timers.mode === "prep" && timers.prepSide === "pro" ? "Pause" : "Start";
   document.getElementById("prep-con-btn").textContent = timers.running && timers.mode === "prep" && timers.prepSide === "con" ? "Pause" : "Start";
-  openPopup(anchor, document.getElementById("timer-popover"));
+  anchorMenu(anchor, document.getElementById("timer-popover"));
 }
 
 function markerClick(note, markerId) {
   return function () {
-    rememberBeforeChange();
-    note.marker = markerId;
-    saveSoon(true);
-    buildFlow();
+    var warn = markerWarn(state.round, note, markerId);
+    var apply = function () {
+      rememberBeforeChange();
+      note.marker = markerId;
+      saveSoon(true);
+      buildFlow();
+    };
+    if (!warn) {
+      apply();
+      return;
+    }
+    askConfirm("Label this card?", warn, "Add label", apply);
   };
 }
 
 function openPointMenu(anchor, noteId) {
   var note = state.round.notes[noteId];
   var menu = document.getElementById("note-menu");
-  emptyBox(menu);
+  clearNode(menu);
   function item(label, run) {
-    var button = copyBox("tpl-menu-button");
+    var button = cloneTpl("menu-btn-sample");
     button.textContent = label;
     button.addEventListener("click", function () {
-      closePopup();
+      dropMenu();
       run();
     });
     menu.appendChild(button);
@@ -1131,11 +1189,11 @@ function openPointMenu(anchor, noteId) {
     splitNote(area);
   });
   item("Link response", function () { openLinkMenu(anchor, note); });
-  item("Move up", function () { rememberBeforeChange(); movePoint(state.round, noteId, -1); saveSoon(true); buildFlow(); });
-  item("Move down", function () { rememberBeforeChange(); movePoint(state.round, noteId, 1); saveSoon(true); buildFlow(); });
+  item("Move up", function () { rememberBeforeChange(); nudgeCard(state.round, noteId, -1); saveSoon(true); buildFlow(); });
+  item("Move down", function () { rememberBeforeChange(); nudgeCard(state.round, noteId, 1); saveSoon(true); buildFlow(); });
   item("Duplicate", function () {
     rememberBeforeChange();
-    var copy = copyPoint(state.round, noteId);
+    var copy = dupeCard(state.round, noteId);
     state.selectedId = copy.id;
     saveSoon(true);
     buildFlow();
@@ -1146,22 +1204,22 @@ function openPointMenu(anchor, noteId) {
   for (m = 0; m < MARKERS.length; m++) {
     item("Marker: " + MARKERS[m].label, markerClick(note, MARKERS[m].id));
   }
-  openPopup(anchor, menu);
+  anchorMenu(anchor, menu);
 }
 
 function openLinkMenu(anchor, note) {
-  var caseSide = sideOfGroup(state.round, note.contentionId);
+  var caseSide = whoseCont(state.round, note.contentionId);
   var speeches = speechesOnSide(state.round, caseSide);
   var limit = speeches.indexOf(note.speechId);
-  var blocked = pointAndReplies(state.round, note.id, []);
+  var blocked = underLine(state.round, note.id, []);
   var menu = document.getElementById("link-menu");
   var choicesBox = document.getElementById("link-choices");
   var intro = menu.querySelector(".gray-text");
-  var notes = valuesOf(state.round.notes);
+  var notes = objList(state.round.notes);
   var choices = [];
   var i;
   var button;
-  emptyBox(choicesBox);
+  clearNode(choicesBox);
   for (i = 0; i < notes.length; i++) {
     if (notes[i].contentionId === note.contentionId && speeches.indexOf(notes[i].speechId) > -1 && speeches.indexOf(notes[i].speechId) < limit && blocked.indexOf(notes[i].id) === -1) {
       choices.push(notes[i]);
@@ -1169,21 +1227,27 @@ function openLinkMenu(anchor, note) {
   }
   intro.textContent = choices.length ? "Link this point to an earlier note" : "No earlier point in this contention.";
   for (i = 0; i < choices.length; i++) {
-    button = copyBox("tpl-menu-button");
+    button = cloneTpl("menu-btn-sample");
     button.textContent = speechName(choices[i].speechId, false) + ": " + (choices[i].text || "Empty point").split("\n")[0];
     button.dataset.link = choices[i].id;
     choicesBox.appendChild(button);
   }
   choicesBox.onclick = function (event) {
     var picked = event.target.closest("button");
+    var why;
     if (!picked || !picked.dataset.link) return;
+    why = whyNotLink(state.round, note.id, picked.dataset.link);
+    if (why) {
+      intro.textContent = why;
+      return;
+    }
     rememberBeforeChange();
     connectPoint(state.round, note.id, picked.dataset.link);
-    closePopup();
+    dropMenu();
     saveSoon(true);
     buildFlow();
   };
-  openPopup(anchor, menu);
+  anchorMenu(anchor, menu);
 }
 
 function removeNote(note) {
@@ -1196,7 +1260,7 @@ function removeNote(note) {
   var run = function () {
     rememberBeforeChange();
     if (state.selectedId === note.id) state.selectedId = null;
-    deletePoint(state.round, note.id);
+    cutCard(state.round, note.id);
     saveSoon(true);
     buildFlow();
     showProof();
@@ -1240,7 +1304,7 @@ function showTour() {
   state.navOpen = needsMenu;
   updateSideMenu();
   if (state.tourStep === 5) {
-    notes = valuesOf(state.round.notes);
+    notes = objList(state.round.notes);
     withEvidence = null;
     for (i = 0; i < notes.length; i++) {
       if (notes[i].evidenceId) {
@@ -1263,11 +1327,11 @@ function showTour() {
   }
   document.getElementById("tour-step").textContent = "Step " + (state.tourStep + 1) + " of " + TOUR.length;
   document.getElementById("tour-text").textContent = step.text;
-  if (state.tourStep > 0) show(document.getElementById("tour-back"));
-  else hide(document.getElementById("tour-back"));
-  if (state.tourStep < TOUR.length - 1) show(document.getElementById("tour-next"));
-  else hide(document.getElementById("tour-next"));
-  show(document.getElementById("tour"));
+  if (state.tourStep > 0) unhide(document.getElementById("tour-back"));
+  else foldAway(document.getElementById("tour-back"));
+  if (state.tourStep < TOUR.length - 1) unhide(document.getElementById("tour-next"));
+  else foldAway(document.getElementById("tour-next"));
+  unhide(document.getElementById("tour"));
   sessionStorage.setItem("tourStep", String(state.tourStep));
 }
 
@@ -1318,12 +1382,12 @@ function demoRound() {
   }, db.settings);
   var proId = round.cases.pro.contentionIds[0];
   round.contentions[proId].name = "Student need";
-  var attendance = addFirstPoint(round, proId, "pro-constructive", "Attendance improves");
-  addFirstPoint(round, proId, "pro-constructive", "Nutrition supports learning");
-  var transport = addReply(round, attendance.id, "con-rebuttal", "Transport matters more");
-  addReply(round, attendance.id, "con-rebuttal", "Study is small");
-  addReply(round, transport.id, "pro-summary", "Lunch removes another barrier");
-  transport.evidenceId = newId("ev");
+  var attendance = addShell(round, proId, "pro-constructive", "Attendance improves");
+  addShell(round, proId, "pro-constructive", "Nutrition supports learning");
+  var transport = addAns(round, attendance.id, "con-rebuttal", "Transport matters more");
+  addAns(round, attendance.id, "con-rebuttal", "Study is small");
+  addAns(round, transport.id, "pro-summary", "Lunch removes another barrier");
+  transport.evidenceId = uid("ev");
   round.evidence[transport.evidenceId] = {
     id: transport.evidenceId,
     noteId: transport.id,
@@ -1332,7 +1396,7 @@ function demoRound() {
   };
   var conId = round.cases.con.contentionIds[0];
   round.contentions[conId].name = "Cost";
-  addFirstPoint(round, conId, "con-constructive", "Budgets are already tight");
+  addShell(round, conId, "con-constructive", "Budgets are already tight");
   return round;
 }
 
@@ -1366,7 +1430,7 @@ function exportRound(round) {
   setTimeout(function () { URL.revokeObjectURL(link.href); }, 1000);
 }
 
-function fillOpeningList() {
+function pfMenu() {
   var select = document.getElementById("new-opening");
   if (!select) return;
   var names = Object.keys(db.preflows);
@@ -1374,7 +1438,7 @@ function fillOpeningList() {
   var option;
   while (select.options.length > 1) select.remove(1);
   for (i = 0; i < names.length; i++) {
-    option = copyBox("tpl-option");
+    option = cloneTpl("opt-sample");
     option.value = names[i];
     option.textContent = db.preflows[names[i]].title;
     select.appendChild(option);
@@ -1389,11 +1453,11 @@ function openNewRound() {
   document.getElementById("new-opponent").value = "";
   document.getElementById("new-side").value = "pro";
   document.getElementById("new-first").value = "pro";
-  fillOpeningList();
-  show(document.getElementById("new-round-box"));
+  pfMenu();
+  unhide(document.getElementById("new-round-box"));
 }
 
-function makeRoundFromForm() {
+function startRound() {
   var round = newRound({
     title: document.getElementById("new-title").value.trim() || "Untitled round",
     topic: document.getElementById("new-topic").value.trim(),
@@ -1404,9 +1468,19 @@ function makeRoundFromForm() {
     firstSide: document.getElementById("new-first").value
   }, db.settings);
   var preId = document.getElementById("new-opening").value;
-  if (preId && db.preflows[preId]) useOpening(round, db.preflows[preId]);
+  var pre = preId && db.preflows[preId];
+  var errNode = document.getElementById("new-round-error");
+  var err;
+  // A Con preflow lands on the Con case even if you're Pro. That's the case you prepared, not your side.
+  if (pre && (pre.side === "pro" || pre.side === "con")) useOpening(round, pre);
   db.rounds[round.id] = round;
-  writeSave(db);
+  err = writeSave(db);
+  if (err) {
+    delete db.rounds[round.id];
+    if (errNode) errNode.textContent = err;
+    return;
+  }
+  if (errNode) errNode.textContent = "";
   openRound(round.id);
 }
 
@@ -1414,7 +1488,7 @@ function openRename(id) {
   var box = document.getElementById("rename-box");
   box.dataset.id = id;
   document.getElementById("rename-title").value = db.rounds[id].title;
-  show(box);
+  unhide(box);
 }
 
 function openDetails() {
@@ -1430,12 +1504,12 @@ function openDetails() {
     ? "Who speaks first is locked because notes already follow this order. Start a new round for a different order."
     : "Who speaks first sets the speech order.";
   var firstWrap = document.getElementById("edit-first-wrap");
-  if (locked) hide(firstWrap);
+  if (locked) foldAway(firstWrap);
   else {
-    show(firstWrap);
+    unhide(firstWrap);
     document.getElementById("edit-first").value = round.firstSide;
   }
-  show(document.getElementById("edit-box"));
+  unhide(document.getElementById("edit-box"));
 }
 
 function saveDetails() {
@@ -1446,9 +1520,14 @@ function saveDetails() {
   round.tournament = document.getElementById("edit-tournament").value.trim();
   round.roundLabel = document.getElementById("edit-round-label").value.trim();
   round.opponent = document.getElementById("edit-opponent").value.trim();
-  round.yourSide = document.getElementById("edit-side").value;
+  var side = document.getElementById("edit-side").value;
+  var first;
+  if (side !== "pro" && side !== "con" && side !== "observer") side = "pro";
+  round.yourSide = side;
   if (!locked) {
-    round.firstSide = document.getElementById("edit-first").value;
+    first = document.getElementById("edit-first").value;
+    if (first !== "con") first = "pro";
+    round.firstSide = first;
     round.timers = newTimer(round.firstSide, db.settings.durations);
   }
   closePopups();
@@ -1456,10 +1535,10 @@ function saveDetails() {
   render();
 }
 
-function makePrintPage(includeEvidence) {
+function printSheets(includeEvidence) {
   var round = state.round;
   document.getElementById("print-title").textContent = round.title || "Debate Round";
-  showText(document.getElementById("print-topic"), round.topic ? "Topic / Resolution: " + round.topic : "");
+  setLine(document.getElementById("print-topic"), round.topic ? "Topic / Resolution: " + round.topic : "");
   var sides = ["pro", "con"];
   var sideIndex;
   var caseSide;
@@ -1486,7 +1565,7 @@ function makePrintPage(includeEvidence) {
   var extra;
   var extraNotes;
   var e;
-  showText(document.getElementById("print-meta"), joinFilled([
+  setLine(document.getElementById("print-meta"), joinSkipEmpty([
     round.tournament ? "Tournament: " + round.tournament : "",
     round.roundLabel ? "Round: " + round.roundLabel : "",
     round.opponent ? "vs " + round.opponent : "",
@@ -1494,10 +1573,10 @@ function makePrintPage(includeEvidence) {
     round.firstSide ? sideName(round.firstSide) + " speaks first" : ""
   ], "   |   "));
   var body = document.getElementById("print-body");
-  emptyBox(body);
+  clearNode(body);
   for (sideIndex = 0; sideIndex < sides.length; sideIndex++) {
     caseSide = sides[sideIndex];
-    section = copyBox("tpl-print-case");
+    section = cloneTpl("print-case-sample");
     if (sideIndex === 1) section.classList.add("new-page");
     section.querySelector(".print-case-name").textContent = (caseSide === "pro" ? "PRO CASE" : "CON CASE") + " FLOW";
     speeches = speechesOnSide(round, caseSide);
@@ -1505,11 +1584,11 @@ function makePrintPage(includeEvidence) {
     for (g = 0; g < groupIds.length; g++) {
       contention = round.contentions[groupIds[g]];
       if (!contention) continue;
-      block = copyBox("tpl-print-contention");
+      block = cloneTpl("print-cont");
       block.querySelector(".print-group-name").textContent = contention.name;
       headRow = block.querySelector("thead tr");
       for (s = 0; s < speeches.length; s++) {
-        th = copyBox("tpl-print-th");
+        th = cloneTpl("print-th");
         th.textContent = SPEECHES[speeches[s]].short;
         th.classList.add(SPEECHES[speeches[s]].team);
         headRow.appendChild(th);
@@ -1517,23 +1596,23 @@ function makePrintPage(includeEvidence) {
       tbody = block.querySelector("tbody");
       for (p = 0; p < contention.startingPointIds.length; p++) {
         startId = contention.startingPointIds[p];
-        family = pointAndReplies(round, startId, []);
-        tr = copyBox("tpl-print-row");
+        family = underLine(round, startId, []);
+        tr = cloneTpl("print-tr");
         for (s = 0; s < speeches.length; s++) {
-          td = copyBox("tpl-print-td");
-          noteList = valuesOf(round.notes);
+          td = cloneTpl("print-td");
+          noteList = objList(round.notes);
           for (n = 0; n < noteList.length; n++) {
             if (noteList[n].contentionId !== groupIds[g] || noteList[n].speechId !== speeches[s]) continue;
             if (family.indexOf(noteList[n].id) === -1) continue;
-            card = copyBox("tpl-print-note");
+            card = cloneTpl("print-card");
             marker = card.querySelector(".print-tag");
             if (noteList[n].marker) marker.textContent = markerLabel(noteList[n].marker);
-            else hide(marker);
+            else foldAway(marker);
             card.querySelector(".print-words").textContent = noteList[n].text || "";
             evBox = card.querySelector(".print-proof");
             if (includeEvidence && noteList[n].evidenceId && round.evidence[noteList[n].evidenceId]) {
               evBox.textContent = "Proof: " + (round.evidence[noteList[n].evidenceId].plain || "");
-            } else hide(evBox);
+            } else foldAway(evBox);
             td.appendChild(card);
           }
           tr.appendChild(td);
@@ -1544,7 +1623,7 @@ function makePrintPage(includeEvidence) {
     }
     body.appendChild(section);
   }
-  extra = copyBox("tpl-print-notes");
+  extra = cloneTpl("print-cx");
   extra.classList.add("new-page");
   extraNotes = [
     ["First Crossfire", round.crossNotes.firstCrossfire],
@@ -1554,7 +1633,7 @@ function makePrintPage(includeEvidence) {
   ];
   for (e = 0; e < extraNotes.length; e++) {
     if (extraNotes[e][1] && extraNotes[e][1].trim()) {
-      card = copyBox("tpl-print-notes-card");
+      card = cloneTpl("print-cx-card");
       card.querySelector(".print-note-name").textContent = extraNotes[e][0];
       card.querySelector(".print-note-words").textContent = extraNotes[e][1];
       extra.appendChild(card);
@@ -1596,6 +1675,10 @@ function moveWithArrows(id, key) {
 }
 
 document.addEventListener("click", function (event) {
+  if (state.popover && !state.popover.contains(event.target) &&
+      !event.target.closest("[data-action='timer-toggle'], [data-action='find-toggle'], [data-action='round-menu'], [data-action='note-menu'], [data-action='opening-menu']")) {
+    dropMenu();
+  }
   var trigger = event.target.closest("[data-action]");
   if (!trigger) {
     var point = event.target.closest(".point");
@@ -1632,7 +1715,7 @@ document.addEventListener("click", function (event) {
     }
   } else if (action === "add-group") {
     rememberBeforeChange();
-    var created = addGroup(state.round, activeCase());
+    var created = addCont(state.round, activeCase());
     saveSoon(true);
     render();
     var added = document.querySelector('.group[data-id="' + created.id + '"]');
@@ -1649,7 +1732,7 @@ document.addEventListener("click", function (event) {
     }
   } else if (action === "columns-all") {
     state.round.columnFocus[activeCase()] = { count: null, start: 0 };
-    closePopup();
+    dropMenu();
     saveSoon(true);
     render();
   } else if (action === "columns-left" || action === "columns-right") {
@@ -1669,7 +1752,7 @@ document.addEventListener("click", function (event) {
       timers.deadline = null;
       timers.mode = null;
       saveSoon(true);
-    } else startTimer("speech");
+    } else kickClock("speech");
     openTimer(document.getElementById("timer-btn") || trigger);
   } else if (action === "timer-reset") {
     askConfirm("Reset this timer?", "This restores the full time for the current speech.", "Reset", function () {
@@ -1678,7 +1761,9 @@ document.addEventListener("click", function (event) {
       state.round.timers.mode = null;
       state.round.timers.deadline = null;
       state.round.timers.timeUp = false;
-      state.round.timers.remainingMs = state.round.timers.allotted[activity.item.id] * 1000;
+      var secs = state.round.timers.allotted && state.round.timers.allotted[activity.item.id];
+      if (!secs) secs = activity.item.seconds || 0;
+      state.round.timers.remainingMs = secs * 1000;
       saveSoon(true);
       updateTimerButton();
     });
@@ -1695,22 +1780,24 @@ document.addEventListener("click", function (event) {
     state.round.timers.timeUp = false;
     saveSoon(true);
     updateTimerButton();
-    closePopup();
+    dropMenu();
   } else if (action === "prep-toggle") {
     var side = trigger.dataset.side;
     var prep = state.round.timers;
+    if (side !== "pro" && side !== "con") return;
+    if (!prep || !prep.prepLeft) return;
     if (prep.running && prep.mode === "prep" && prep.prepSide === side) {
       prep.prepLeft[side] = Math.max(0, prep.deadline - Date.now());
       prep.running = false;
       prep.deadline = null;
       prep.mode = null;
       saveSoon(true);
-    } else startTimer("prep", side);
+    } else kickClock("prep", side);
     updateTimerButton();
-    closePopup();
+    dropMenu();
   } else if (action === "prep-reset") {
     askConfirm("Reset prep time?", "Both teams go back to the full prep allowance.", "Reset", function () {
-      var ms = db.settings.durations.prep * 1000;
+      var ms = (db.settings.durations.prep || 180) * 1000;
       state.round.timers.prepLeft.pro = ms;
       state.round.timers.prepLeft.con = ms;
       if (state.round.timers.mode === "prep") {
@@ -1721,18 +1808,18 @@ document.addEventListener("click", function (event) {
       saveSoon(true);
       updateTimerButton();
     });
-  } else if (action === "round-menu") openPopup(trigger, document.getElementById("round-menu"));
-  else if (action === "opening-menu") openPopup(trigger, document.getElementById("opening-menu"));
-  else if (action === "edit-details") { closePopup(); openDetails(); }
-  else if (action === "export") { closePopup(); exportRound(state.round || db.rounds[id]); }
+  } else if (action === "round-menu") anchorMenu(trigger, document.getElementById("round-menu"));
+  else if (action === "opening-menu") anchorMenu(trigger, document.getElementById("opening-menu"));
+  else if (action === "edit-details") { dropMenu(); openDetails(); }
+  else if (action === "export") { dropMenu(); exportRound(state.round || db.rounds[id]); }
   else if (action === "export-round") exportRound(db.rounds[id]);
-  else if (action === "print") { closePopup(); show(document.getElementById("print-box")); }
+  else if (action === "print") { dropMenu(); unhide(document.getElementById("print-box")); }
   else if (action === "do-print") {
     closePopups();
-    makePrintPage(document.getElementById("print-evidence").checked);
+    printSheets(document.getElementById("print-evidence").checked);
     setTimeout(function () { window.print(); }, 100);
   } else if (action === "save-opening") {
-    closePopup();
+    dropMenu();
     var preflow = caseToOpening(state.round, activeCase(), state.round.title + " preflow");
     db.preflows[preflow.id] = preflow;
     writeSave(db);
@@ -1769,7 +1856,7 @@ document.addEventListener("click", function (event) {
     document.getElementById("preflow-title").value = "Untitled preflow";
     document.getElementById("preflow-topic").value = "";
     document.getElementById("preflow-side").value = "pro";
-    show(document.getElementById("new-opening-box"));
+    unhide(document.getElementById("new-opening-box"));
   } else if (action === "make-opening") {
     var made = newOpening({
       title: document.getElementById("preflow-title").value.trim(),
@@ -1779,35 +1866,38 @@ document.addEventListener("click", function (event) {
     db.preflows[made.id] = made;
     writeSave(db);
     openOpening(made.id);
-  } else if (action === "create-round") makeRoundFromForm();
+  } else if (action === "create-round") startRound();
   else if (action === "save-details") saveDetails();
   else if (action === "close-dialog") closePopups();
   else if (action === "fold-group") {
     state.round.contentions[id].collapsed = !state.round.contentions[id].collapsed;
     saveSoon(true);
     buildFlow();
-    fillJumps();
+    contJumps();
   } else if (action === "group-up") {
     rememberBeforeChange();
-    moveGroup(state.round, id, -1);
+    bumpCont(state.round, id, -1);
     saveSoon(true);
     buildFlow();
-    fillJumps();
+    contJumps();
   } else if (action === "group-down") {
     rememberBeforeChange();
-    moveGroup(state.round, id, 1);
+    bumpCont(state.round, id, 1);
     saveSoon(true);
     buildFlow();
-    fillJumps();
+    contJumps();
   } else if (action === "delete-group") {
+    var caseSide = whoseCont(state.round, id);
     var nonempty = groupHasWords(state.round, id);
     var remove = function () {
       rememberBeforeChange();
-      deleteGroup(state.round, id);
+      if (!cutCont(state.round, id)) return;
       saveSoon(true);
       render();
     };
-    if (!nonempty) remove();
+    if (caseSide && state.round.cases[caseSide].contentionIds.length < 2) {
+      askConfirm("Keep this contention", "A case needs a contention to hold the constructive. Add another one first if you want this name gone.", "OK", null);
+    } else if (!nonempty) remove();
     else askConfirm("Delete this contention?", "All of its notes and evidence will be deleted. Undo can bring them back during this visit.", "Delete", remove);
   } else if (action === "note-menu") {
     state.selectedId = id;
@@ -1838,14 +1928,37 @@ document.addEventListener("click", function (event) {
   else if (action === "save-settings") {
     var inputs = document.querySelectorAll("[data-preset]");
     var i;
-    var value;
-    for (i = 0; i < inputs.length; i++) {
-      value = Number(inputs[i].value);
-      if (value > 0) db.settings.durations[inputs[i].dataset.preset] = value;
-    }
+    var parsed = [];
+    var notes = [];
+    var blocked = false;
+    var result;
+    var note = document.getElementById("clock-note");
     var sound = document.querySelector("[data-field='sound']");
+    var saveErr;
+    for (i = 0; i < inputs.length; i++) {
+      result = pfClock(inputs[i].dataset.preset, inputs[i].value);
+      parsed.push(result);
+      if (!result.ok) blocked = true;
+      if (result.message) notes.push(result.message);
+    }
+    if (blocked) {
+      if (note) note.textContent = notes.join(" ");
+      return;
+    }
+    for (i = 0; i < inputs.length; i++) {
+      db.settings.durations[inputs[i].dataset.preset] = parsed[i].seconds;
+      inputs[i].value = String(parsed[i].seconds);
+    }
     if (sound) db.settings.sound = sound.checked;
-    writeSave(db);
+    saveErr = writeSave(db);
+    if (saveErr) {
+      if (note) note.textContent = saveErr;
+      return;
+    }
+    if (notes.length) {
+      if (note) note.textContent = notes.join(" ");
+      return;
+    }
     window.location.href = "index.html";
   }
   if (action === "toggle-nav" || action === "close-nav" || trigger.closest(".sidebar")) updateSideMenu();
@@ -1903,7 +2016,7 @@ document.addEventListener("input", function (event) {
   var target = event.target;
   if (target.dataset.field === "search-box") {
     state.query = target.value;
-    fillHome();
+    listRounds();
     return;
   }
   if (!state.round) return;
@@ -1969,6 +2082,15 @@ document.addEventListener("paste", function (event) {
   var html = event.clipboardData.getData("text/html");
   var text = event.clipboardData.getData("text/plain");
   var cleaned = html ? cleanHtml(html) : { html: linesToHtml(text), plain: text, notice: "" };
+  // one card, not the open-ev file. a giant paste is how the round stops saving halfway through elims.
+  if ((cleaned.plain || "").length > 60000) {
+    var cut = cleaned.plain.slice(0, 60000);
+    cleaned = {
+      html: linesToHtml(cut),
+      plain: cut,
+      notice: "Kept the first part of the paste. A full open-ev file won't fit in this browser — one card at a time."
+    };
+  }
   putHtmlHere(cleaned.html);
   beginTyping();
   saveProof(body, cleaned.notice);
@@ -2001,12 +2123,6 @@ document.addEventListener("change", function (event) {
   } else if (target.dataset.field === "font-size") {
     db.settings.fontSize = Number(target.value);
     writeSave(db);
-  }
-});
-
-document.addEventListener("click", function (event) {
-  if (state.popover && !state.popover.contains(event.target) && !event.target.closest("[data-action='timer-toggle'], [data-action='find-toggle'], [data-action='round-menu'], [data-action='note-menu'], [data-action='opening-menu']")) {
-    closePopup();
   }
 });
 
@@ -2044,7 +2160,7 @@ function startApp() {
   if (ok) ok.addEventListener("click", function () {
     var run = confirmRun;
     confirmRun = null;
-    hide(document.getElementById("confirm-box"));
+    foldAway(document.getElementById("confirm-box"));
     if (run) run();
   });
   var icon = document.querySelector(".edit-mark");

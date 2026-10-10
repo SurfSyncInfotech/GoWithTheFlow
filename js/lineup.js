@@ -31,6 +31,8 @@ function repliesInColumn(round, parentId, speechId) {
   return sortByOrder(list);
 }
 
+// summary has to clear the rebuttal pile on that line, or the extension paints on top of it.
+// once somebody answered, later speeches answer THAT card — blank box only on the first untouched speech.
 function spaceForPoint(round, note, caseSide, heights, saved) {
   var own;
   var later;
@@ -128,6 +130,8 @@ function lineUpGroup(round, contention, caseSide, heights) {
     for (var s = 0; s < later.length; s++) {
       speechId = later[s];
       siblings = repliesInColumn(round, names[i], speechId);
+      // Once a line is answered, later speeches answer that response.
+      // A blank box only sits on the first speech that hasn't touched the argument.
       if (siblings.length || hasEarlierReply(round, names[i], speechId, caseSide)) continue;
       slots.push({
         parentId: names[i],
