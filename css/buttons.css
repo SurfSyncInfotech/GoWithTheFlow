@@ -1,0 +1,113 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 7px 14px;
+  border: 1px solid #e5e1e6;
+  border-radius: 8px;
+  background-color: #ffffff;
+  color: #121326;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background-color: #f7f5fb;
+  border-color: #dcd9e9;
+}
+
+.btn:focus {
+  outline: 2px solid #8060d6;
+  outline-offset: 2px;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn.main {
+  background-color: #8060d6;
+  color: #ffffff;
+  border: 1px solid #8060d6;
+}
+
+.btn.main:hover {
+  background-color: #7154c4;
+  border-color: #7154c4;
+}
+
+.btn.plain {
+  background-color: transparent;
+  border-color: transparent;
+  color: #53545f;
+}
+
+.btn.plain:hover {
+  background-color: #f2f0f4;
+}
+
+.btn.red {
+  background-color: #fff5f5;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.btn.red:hover {
+  background-color: #fee2e2;
+  border-color: #f87171;
+}
+
+.big {
+  min-height: 42px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 15px;
+}
+
+.icon {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+}
+
+.icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btn-text {
+  vertical-align: middle;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.side-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pro-tag {
+  background-color: #e5dfff;
+  color: #121326;
+}
+
+.con-tag {
+  background-color: #fddced;
+  color: #121326;
+}

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings — Go With the Flow</title>
+  <link rel="stylesheet" href="css/page.css?v=28">
+  <link rel="stylesheet" href="css/buttons.css?v=28">
+  <link rel="stylesheet" href="css/home.css?v=28">
+  <link rel="stylesheet" href="css/sidebar.css?v=28">
+  <link rel="stylesheet" href="css/workspace.css?v=28">
+  <link rel="stylesheet" href="css/evidence.css?v=28">
+  <link rel="stylesheet" href="css/popups.css?v=28">
+  <link rel="stylesheet" href="css/phone.css?v=28">
+  <link rel="stylesheet" href="css/print.css?v=28">
+</head>
+<body class="page" data-page="settings">
+  <a class="skip-link" href="#app">Skip to content</a>
+
+  <div id="app" class="home">
+    <div class="top-bar">
+      <a class="logo" href="index.html">
+        <span class="logo-dot">✿</span>
+        <span class="logo-text">Go With the Flow</span>
+      </a>
+      <div class="top-menu">
+        <a class="btn plain" href="preflows.html">Preflows</a>
+        <button type="button" class="btn plain" data-action="tour">Feature tour</button>
+        <a class="btn plain" href="settings.html">Settings</a>
+        <a class="btn plain" href="help.html">Help</a>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <h1>Settings</h1>
+      <div class="card">
+        <h2>Flow text</h2>
+        <p class="gray-text" id="font-size-note"></p>
+        <h2>Timer presets</h2>
+        <p class="gray-text">These times are copied onto a new round. Times are in seconds.</p>
+        <div class="form-grid">
+          <label class="form-line"><span>constructive</span><input type="number" min="1" data-preset="constructive"></label>
+          <label class="form-line"><span>rebuttal</span><input type="number" min="1" data-preset="rebuttal"></label>
+          <label class="form-line"><span>summary</span><input type="number" min="1" data-preset="summary"></label>
+          <label class="form-line"><span>final</span><input type="number" min="1" data-preset="final"></label>
+          <label class="form-line"><span>crossfire</span><input type="number" min="1" data-preset="crossfire"></label>
+          <label class="form-line"><span>grand</span><input type="number" min="1" data-preset="grand"></label>
+          <label class="form-line"><span>prep</span><input type="number" min="1" data-preset="prep"></label>
+        </div>
+        <label class="form-line">
+          <span><input type="checkbox" data-field="sound"> Play a short sound when a timer reaches zero</span>
+        </label>
+        <button type="button" class="btn main" data-action="save-settings">Save settings</button>
+      </div>
+      <div class="button-row">
+        <a class="btn plain" href="index.html">Back</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/rounds.js?v=28"></script>
+  <script src="js/lineup.js?v=28"></script>
+  <script src="js/clean.js?v=28"></script>
+  <script src="js/save.js?v=28"></script>
+  <script src="js/helpers.js?v=28"></script>
+  <script src="js/app.js?v=28"></script>
+</body>
+</html>

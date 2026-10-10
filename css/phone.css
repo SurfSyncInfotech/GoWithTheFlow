@@ -1,0 +1,424 @@
+@media (max-width: 1199px) {
+  .sidebar {
+    width: 210px;
+  }
+
+  .proof-panel {
+    width: 320px;
+  }
+}
+
+@media (max-width: 899px) {
+
+  .group-buttons {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .group-dots {
+    display: none;
+  }
+
+  .point-menu {
+    opacity: 1;
+  }
+
+  .workspace {
+    position: relative;
+  }
+
+  .sidebar {
+    display: none;
+    position: absolute;
+    z-index: 25;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    background-color: #ffffff;
+    border-right: 1px solid #e5e1e6;
+  }
+
+  .sidebar.open {
+    display: flex;
+  }
+
+  .workspace.menu-open .dark-cover {
+    display: block;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 20;
+    border: 0;
+    background-color: rgba(30, 27, 46, 0.4);
+  }
+
+  .open-menu-btn {
+    display: inline-block;
+    padding: 6px 10px;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .editor-line {
+    position: relative;
+  }
+
+  .proof-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: 400px;
+    z-index: 15;
+  }
+
+  .top-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px 16px;
+  }
+
+  .page-body,
+  .simple-page {
+    padding: 20px 16px 96px;
+  }
+
+  .page-body h1,
+  .list-top h1 {
+    font-size: 22px;
+  }
+
+  .list-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .title-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 12px 8px;
+  }
+
+  .title-side {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .title-input {
+    font-size: 18px;
+  }
+
+  .title-note {
+    font-size: 12px;
+  }
+
+  .timer-btn {
+    max-width: 100%;
+  }
+
+  .work-box {
+    padding-bottom: 96px;
+  }
+
+  .home {
+    padding-bottom: 76px;
+  }
+
+  .side-bar {
+    display: flex;
+    gap: 4px;
+    margin: 0 12px 8px;
+    padding: 4px;
+    border-radius: 14px;
+    background-color: #efeaf8;
+  }
+
+  .side-btn {
+    flex: 1;
+    min-height: 36px;
+    padding: 8px 4px;
+    border: 0;
+    border-radius: 10px;
+    background-color: transparent;
+    color: #53545f;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .side-btn.active {
+    background-color: #ffffff;
+    color: #6540be;
+  }
+
+  .tool-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 18;
+    flex-wrap: nowrap;
+    gap: 4px;
+    overflow-x: auto;
+    margin: 0;
+    padding: 6px 8px 10px;
+    background-color: #ffffff;
+    border-top: 1px solid #e5e1e6;
+  }
+
+  #column-tools {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .add-btn,
+  .tool-btn {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 64px;
+    min-height: 52px;
+    padding: 6px 8px;
+    border: 0;
+    background-color: transparent;
+    font-size: 11px;
+  }
+
+  .add-btn {
+    background-color: #8060d6;
+    color: #ffffff;
+    border-radius: 12px;
+  }
+
+  .tool-bar .btn-text {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .tool-select {
+    max-width: 132px;
+    min-height: 40px;
+    font-size: 12px;
+  }
+
+  .tool-right,
+  .size-select,
+  .size-select:last-child {
+    margin-left: 0;
+  }
+
+  .top-menu {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 12;
+    display: flex;
+    gap: 0;
+    margin: 0;
+    padding: 6px 4px 10px;
+    background-color: #ffffff;
+    border-top: 1px solid #e5e1e6;
+  }
+
+  .top-menu .btn {
+    flex: 1;
+    min-height: 44px;
+    padding: 8px 2px;
+    border: 0;
+    background-color: transparent;
+    color: #53545f;
+    font-size: 12px;
+  }
+
+  .popup-cover {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .popup {
+    max-width: none;
+    max-height: 92vh;
+    border-radius: 20px 20px 0 0;
+    padding: 18px 16px 16px;
+  }
+
+  .small-popup,
+  .drop-menu {
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0;
+    border-radius: 20px 20px 0 0;
+    max-height: 78vh;
+    overflow: auto;
+    padding: 8px 8px 12px;
+  }
+
+  .column-bar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    white-space: nowrap;
+    padding: 4px 12px 0;
+  }
+
+  .scroll-box {
+    padding: 0 0 8px;
+  }
+
+  .speech-top {
+    padding: 0;
+  }
+
+  .speech-title {
+    margin: 0;
+    border-radius: 0;
+  }
+
+  .speech-column {
+    padding: 10px 12px 0;
+  }
+
+  .tip {
+    white-space: normal;
+    padding: 6px 12px 8px;
+  }
+
+  .notes-area {
+    padding: 16px;
+  }
+
+  .tour {
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .tour-words {
+    flex: 1;
+    min-width: 0;
+    font-size: 14px;
+  }
+
+  .tour-buttons {
+    flex-wrap: wrap;
+  }
+
+  .proof-panel {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    z-index: 22;
+  }
+
+  .workspace.proof-open .tool-bar {
+    display: none;
+  }
+
+  .workspace.proof-open .work-box {
+    padding-bottom: 0;
+  }
+
+  .card-top {
+    flex-wrap: wrap;
+  }
+
+  .form-grid .form-line {
+    width: 100%;
+  }
+
+  .popup-buttons {
+    flex-wrap: wrap;
+  }
+
+  .title-note,
+  .save-line {
+    white-space: normal;
+  }
+
+  .group-name {
+    min-width: 0;
+  }
+
+  .link-name {
+    max-width: none;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .search-box {
+    max-width: none;
+  }
+
+  .empty-box {
+    padding: 28px 16px;
+  }
+
+  .empty-box h1 {
+    font-size: 22px;
+  }
+
+  .clip-btn,
+  .point-menu,
+  .group-btn,
+  .group-arrow,
+  .close-btn {
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  .top-menu .btn {
+    white-space: normal;
+    line-height: 1.2;
+  }
+
+  .logo-text {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .title-input {
+    font-size: 18px;
+  }
+
+  .speech-name {
+    font-size: 14px;
+  }
+
+  .card {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 899px) and (max-height: 500px) {
+  .tip {
+    display: none;
+  }
+
+  .title-bar {
+    padding: 6px 10px;
+  }
+
+  .side-bar {
+    margin-bottom: 4px;
+  }
+
+  .notes-area {
+    padding: 12px;
+  }
+}

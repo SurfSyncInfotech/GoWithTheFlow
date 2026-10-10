@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preflows — Go With the Flow</title>
+  <link rel="stylesheet" href="css/page.css?v=28">
+  <link rel="stylesheet" href="css/buttons.css?v=28">
+  <link rel="stylesheet" href="css/home.css?v=28">
+  <link rel="stylesheet" href="css/sidebar.css?v=28">
+  <link rel="stylesheet" href="css/workspace.css?v=28">
+  <link rel="stylesheet" href="css/evidence.css?v=28">
+  <link rel="stylesheet" href="css/popups.css?v=28">
+  <link rel="stylesheet" href="css/phone.css?v=28">
+  <link rel="stylesheet" href="css/print.css?v=28">
+</head>
+<body class="page" data-page="preflows">
+  <a class="skip-link" href="#app">Skip to content</a>
+
+  <div id="app" class="home">
+    <div class="top-bar">
+      <a class="logo" href="index.html">
+        <span class="logo-dot">✿</span>
+        <span class="logo-text">Go With the Flow</span>
+      </a>
+      <div class="top-menu">
+        <a class="btn plain" href="preflows.html">Preflows</a>
+        <button type="button" class="btn plain" data-action="tour">Feature tour</button>
+        <a class="btn plain" href="settings.html">Settings</a>
+        <a class="btn plain" href="help.html">Help</a>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div class="list-top">
+        <div>
+          <h1>Preflows</h1>
+          <p class="gray-text">A preflow is the opening constructive and its evidence. Applying one copies it into a new round.</p>
+        </div>
+        <button type="button" class="btn main" data-action="new-opening">New preflow</button>
+      </div>
+      <div class="card-list" id="preflow-list"></div>
+      <div class="button-row">
+        <a class="btn plain" href="index.html">Back</a>
+      </div>
+    </div>
+  </div>
+
+  <div id="new-opening-box" class="popup-cover hide">
+    <div class="popup">
+      <h2>New preflow</h2>
+      <div class="popup-body">
+        <label class="form-line"><span>Title</span><input id="preflow-title" value="Untitled preflow"></label>
+        <label class="form-line"><span>Topic</span><input id="preflow-topic"></label>
+        <label class="form-line"><span>Side</span>
+          <select id="preflow-side">
+            <option value="pro">Pro</option>
+            <option value="con">Con</option>
+          </select>
+        </label>
+      </div>
+      <div class="popup-buttons">
+        <button type="button" class="btn" data-action="close-dialog">Cancel</button>
+        <button type="button" class="btn main" data-action="make-opening">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirm-box" class="popup-cover hide">
+    <div class="popup">
+      <h2 id="confirm-title"></h2>
+      <div class="popup-body"><p id="confirm-text"></p></div>
+      <div class="popup-buttons">
+        <button type="button" class="btn" data-action="close-dialog">Cancel</button>
+        <button type="button" class="btn main" id="confirm-ok">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="hide" id="tpl-preflow-card">
+    <div class="card">
+      <h2 class="card-name"></h2>
+      <p class="card-extra"></p>
+      <div class="button-row">
+        <button type="button" class="btn main" data-action="open-opening">Edit</button>
+        <button type="button" class="btn red" data-action="delete-opening">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/rounds.js?v=28"></script>
+  <script src="js/lineup.js?v=28"></script>
+  <script src="js/clean.js?v=28"></script>
+  <script src="js/save.js?v=28"></script>
+  <script src="js/helpers.js?v=28"></script>
+  <script src="js/app.js?v=28"></script>
+</body>
+</html>

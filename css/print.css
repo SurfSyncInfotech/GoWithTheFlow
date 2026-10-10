@@ -1,0 +1,173 @@
+#full-print-report {
+  display: none;
+}
+
+@media print {
+  .page {
+    height: auto;
+    overflow: visible;
+    background-color: #ffffff;
+  }
+
+  .page > *:not(#full-print-report) {
+    display: none;
+  }
+
+  #full-print-report {
+    display: block;
+    background-color: #ffffff;
+    color: #1e1b2e;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 11px;
+    line-height: 1.45;
+    padding: 10px 0;
+    margin: 0;
+  }
+
+  .new-page {
+    page-break-before: always;
+    break-before: page;
+  }
+
+  .print-top {
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid #6355d8;
+  }
+
+  .print-name {
+    margin: 0 0 4px;
+    color: #1e1b2e;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .print-topic-line {
+    margin: 4px 0;
+    color: #48455e;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .print-info {
+    margin: 4px 0 0;
+    color: #79748f;
+    font-size: 11px;
+  }
+
+  .print-case-name {
+    margin: 16px 0 8px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid #ede8f5;
+    color: #6355d8;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .print-group {
+    margin-bottom: 18px;
+  }
+
+  .print-group-name {
+    margin: 6px 0 8px;
+    padding-left: 6px;
+    border-left: 3px solid #6355d8;
+    color: #1e1b2e;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .print-table {
+    width: 100%;
+    margin-bottom: 12px;
+    border-collapse: collapse;
+  }
+
+  .print-head {
+    padding: 6px 4px;
+    border: 1px solid #dcd7eb;
+    background-color: #f4f1fa;
+    font-size: 10px;
+    font-weight: 700;
+    text-align: left;
+  }
+
+  .print-head.pro {
+    background-color: #ede9fa;
+    color: #372a6b;
+  }
+
+  .print-head.con {
+    background-color: #fae3ea;
+    color: #451d28;
+  }
+
+  .print-cell {
+    padding: 6px 4px;
+    border: 1px solid #ede8f5;
+    background-color: #ffffff;
+    vertical-align: top;
+  }
+
+  .print-card {
+    margin-bottom: 5px;
+    padding: 5px;
+    border: 1px solid #e7e2f1;
+    border-radius: 4px;
+    background-color: #faf9fd;
+  }
+
+  .print-tag {
+    display: inline-block;
+    margin-bottom: 3px;
+    padding: 1px 4px;
+    border-radius: 2px;
+    background-color: #ede9fa;
+    color: #5945c7;
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .print-words {
+    color: #1e1b2e;
+    font-size: 10px;
+    white-space: pre-wrap;
+  }
+
+  .print-proof {
+    margin-top: 5px;
+    padding: 3px 5px;
+    border-left: 2px solid #6355d8;
+    color: #48455e;
+    font-size: 9px;
+  }
+
+  .print-note {
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border: 1px solid #ede8f5;
+    border-radius: 6px;
+    background-color: #faf9fd;
+  }
+
+  .print-note-name {
+    margin: 0 0 6px;
+    color: #6355d8;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .print-note-words {
+    color: #1e1b2e;
+    font-size: 11px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+}
+
+@page {
+  size: landscape;
+  margin: 8mm;
+}

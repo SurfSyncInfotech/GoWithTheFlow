@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debate — Go With the Flow</title>
+  <link rel="stylesheet" href="css/page.css?v=28">
+  <link rel="stylesheet" href="css/buttons.css?v=28">
+  <link rel="stylesheet" href="css/home.css?v=28">
+  <link rel="stylesheet" href="css/sidebar.css?v=28">
+  <link rel="stylesheet" href="css/workspace.css?v=28">
+  <link rel="stylesheet" href="css/evidence.css?v=28">
+  <link rel="stylesheet" href="css/popups.css?v=28">
+  <link rel="stylesheet" href="css/phone.css?v=28">
+  <link rel="stylesheet" href="css/print.css?v=28">
+</head>
+<body class="page" data-page="workspace">
+  <a class="skip-link" href="#flow-scroll">Skip to content</a>
+
+  <div id="app" class="workspace">
+    <button type="button" class="dark-cover" data-action="close-nav"></button>
+
+    <div class="sidebar">
+      <a class="logo" href="index.html" data-action="home">
+        <span class="logo-dot">✿</span>
+        <span class="logo-text">Go With the Flow</span>
+      </a>
+      <button type="button" class="btn back-btn" data-action="home">Back to rounds</button>
+      <div id="case-links">
+        <button type="button" class="menu-link" id="link-pro" data-action="case-pro" data-tour="cases">Pro Case</button>
+        <button type="button" class="menu-link" id="link-con" data-action="case-con" data-tour="cases">Con Case</button>
+        <button type="button" class="menu-link" id="link-notes" data-action="show-notes" data-tour="notes">Notes</button>
+      </div>
+      <p class="gray-text hide" id="preflow-label"></p>
+      <div class="link-list" data-tour="jumps">
+        <div id="jump-links"></div>
+        <button type="button" class="add-link" data-action="add-group">+ Add contention</button>
+      </div>
+      <div class="push-down"></div>
+      <button type="button" class="menu-link bottom-link" data-action="show-settings">Settings</button>
+      <button type="button" class="menu-link bottom-link" data-action="show-help">Help</button>
+      <div class="side-picture">
+        
+      </div>
+    </div>
+
+    <div class="work-box">
+      <div class="title-bar">
+        <button type="button" class="btn open-menu-btn" data-action="toggle-nav">☰</button>
+        <div class="title-box">
+          <div class="title-line">
+            <input class="title-input" data-field="title-input">
+            <span class="edit-mark" title="Click to edit title">✎</span>
+          </div>
+          <p class="title-note" id="title-note"></p>
+        </div>
+        <div class="title-side">
+          <div class="save-line">
+            <span class="save-dot"></span>
+            <span class="save-text" id="save-text" data-tour="save">Saved in this browser</span>
+          </div>
+          <button type="button" class="timer-btn" id="timer-btn" data-action="timer-toggle" data-tour="timer">Timer</button>
+          <button type="button" class="btn dots-btn" id="dots-btn" data-action="round-menu">···</button>
+          <button type="button" class="btn dots-btn hide" id="opening-menu-btn" data-action="opening-menu">···</button>
+        </div>
+      </div>
+
+      <div class="side-bar" id="side-bar">
+        <button type="button" class="side-btn" id="switch-pro" data-action="case-pro">Pro Case</button>
+        <button type="button" class="side-btn" id="switch-con" data-action="case-con">Con Case</button>
+        <button type="button" class="side-btn" id="switch-notes" data-action="show-notes">Notes</button>
+      </div>
+
+      <div class="tool-bar">
+        <button type="button" class="btn main add-btn" data-action="add-group" data-tour="add">+ Add contention</button>
+        <button type="button" class="btn tool-btn" data-action="undo">Undo</button>
+        <button type="button" class="btn tool-btn" data-action="redo">Redo</button>
+        <button type="button" class="btn tool-btn" data-action="find-toggle">Find</button>
+        <div id="column-tools">
+          <select class="tool-select" data-field="columns-count">
+            <option value="all">Columns: All</option>
+            <option value="2">Columns: 2</option>
+            <option value="3">Columns: 3</option>
+            <option value="4">Columns: 4</option>
+            <option value="5">Columns: 5</option>
+            <option value="6">Columns: 6</option>
+          </select>
+          <select class="tool-select" data-field="columns-start"></select>
+          <button type="button" class="btn arrow-btn" data-action="columns-left" title="Previous column">&lt;</button>
+          <button type="button" class="btn arrow-btn" data-action="columns-right" title="Next column">&gt;</button>
+        </div>
+        <select class="tool-select size-select" data-field="font-size">
+          <option value="12">12 px</option>
+          <option value="14">14 px</option>
+          <option value="16">16 px</option>
+          <option value="18">18 px</option>
+        </select>
+        <button type="button" class="btn tool-btn tool-right" id="toolbar-timer" data-action="timer-toggle" data-tour="timer">Timers</button>
+      </div>
+
+      <div class="column-bar hide" id="column-bar">
+        <span id="column-status-text"></span>
+        <button type="button" class="btn" data-action="columns-all">Show all</button>
+        <button type="button" class="btn" id="status-left" data-action="columns-left">Move left</button>
+        <button type="button" class="btn" id="status-right" data-action="columns-right">Move right</button>
+      </div>
+
+      <div class="editor-line">
+        <div class="scroll-box" id="scroll-box">
+          <div class="flow-paper"></div>
+        </div>
+        <div class="proof-panel" id="proof-panel">
+          <div class="proof-top">
+            <h2 class="proof-title">Evidence</h2>
+            <button type="button" class="close-btn" data-action="close-btn">×</button>
+          </div>
+          <div id="evidence-title">
+            <div class="proof-path">
+              <span class="ev-crumb-c" id="crumb-contention"></span>
+              <span class="path-gap"> &gt; </span>
+              <span class="ev-crumb-p" id="crumb-point"></span>
+            </div>
+          </div>
+          <div class="proof-list"></div>
+        </div>
+      </div>
+      <p class="tip">Enter: next point / Shift+Enter: line within point</p>
+
+      <div id="tour" class="tour hide" tabindex="-1">
+        <div class="tour-words">
+          <p class="gray-text" id="tour-step"></p>
+          <p id="tour-text"></p>
+        </div>
+        <div class="tour-buttons">
+          <button type="button" class="btn" id="tour-back" data-action="tour-back">Back</button>
+          <button type="button" class="btn main" id="tour-next" data-action="tour-next">Next</button>
+          <button type="button" class="btn" data-action="tour-close">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="round-menu" class="drop-menu hide">
+    <button type="button" data-action="edit-details">Edit details</button>
+    <button type="button" data-action="export">Export</button>
+    <button type="button" data-action="print">Print</button>
+    <button type="button" data-action="save-opening">Save case as preflow</button>
+    <button type="button" data-action="show-help">Help</button>
+    <button type="button" data-action="home">Back to rounds</button>
+  </div>
+  <div id="opening-menu" class="drop-menu hide">
+    <button type="button" data-action="show-openings">Back to preflows</button>
+    <button type="button" data-action="home">Back to rounds</button>
+  </div>
+  <div id="note-menu" class="drop-menu hide"></div>
+  <div id="link-menu" class="drop-menu hide">
+    <p class="gray-text">Link this point to an earlier note</p>
+    <div id="link-choices"></div>
+  </div>
+
+  <div id="timer-popover" class="small-popup hide">
+    <h2>Timer</h2>
+    <p id="timer-activity"></p>
+    <p id="popover-clock"></p>
+    <button type="button" class="btn main" id="timer-start-btn" data-action="timer-start">Start</button>
+    <button type="button" class="btn" data-action="timer-reset">Reset</button>
+    <button type="button" class="btn" data-action="timer-next">Next activity</button>
+    <h2>Prep</h2>
+    <div class="button-row">
+      <span id="prep-pro-label"></span>
+      <button type="button" class="btn" id="prep-pro-btn" data-action="prep-toggle" data-side="pro">Start</button>
+    </div>
+    <div class="button-row">
+      <span id="prep-con-label"></span>
+      <button type="button" class="btn" id="prep-con-btn" data-action="prep-toggle" data-side="con">Start</button>
+    </div>
+    <button type="button" class="btn" data-action="prep-reset">Reset prep</button>
+  </div>
+
+  <div id="find-popover" class="small-popup hide">
+    <h2>Find</h2>
+    <input class="search-box" id="find-input" placeholder="Search notes, evidence, and crossfire">
+    <div class="find-list" id="find-hits"></div>
+    <div class="button-row">
+      <button type="button" class="btn" data-action="find-prev">Previous</button>
+      <button type="button" class="btn" data-action="find-next">Next</button>
+    </div>
+  </div>
+
+  <div id="edit-box" class="popup-cover hide">
+    <div class="popup">
+      <h2>Edit details</h2>
+      <div class="popup-body">
+        <label class="form-line"><span>Title</span><input id="edit-title"></label>
+        <label class="form-line"><span>Topic</span><input id="edit-topic"></label>
+        <label class="form-line"><span>Tournament</span><input id="edit-tournament"></label>
+        <label class="form-line"><span>Round label</span><input id="edit-round-label"></label>
+        <label class="form-line"><span>Opponent</span><input id="edit-opponent"></label>
+        <label class="form-line"><span>Your side</span>
+          <select id="edit-side">
+            <option value="pro">Pro</option>
+            <option value="con">Con</option>
+            <option value="observer">Observer</option>
+          </select>
+        </label>
+        <p class="gray-text" id="edit-lock-note"></p>
+        <label class="form-line" id="edit-first-wrap"><span>First speaking side</span>
+          <select id="edit-first">
+            <option value="pro">Pro</option>
+            <option value="con">Con</option>
+          </select>
+        </label>
+      </div>
+      <div class="popup-buttons">
+        <button type="button" class="btn" data-action="close-dialog">Cancel</button>
+        <button type="button" class="btn main" data-action="save-details">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="print-box" class="popup-cover hide">
+    <div class="popup">
+      <h2>Print / Save PDF</h2>
+      <div class="popup-body">
+        <label class="form-line"><span><input type="checkbox" id="print-evidence" checked> Include research proof and evidence citations</span></label>
+        <p class="gray-text">Generates a complete debate brief with Pro Case, Con Case, all speech columns, evidence citations, and Crossfire notes formatted cleanly for PDF.</p>
+      </div>
+      <div class="popup-buttons">
+        <button type="button" class="btn" data-action="close-dialog">Cancel</button>
+        <button type="button" class="btn main" data-action="do-print">Print / Save PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirm-box" class="popup-cover hide">
+    <div class="popup">
+      <h2 id="confirm-title"></h2>
+      <div class="popup-body"><p id="confirm-text"></p></div>
+      <div class="popup-buttons">
+        <button type="button" class="btn" data-action="close-dialog">Cancel</button>
+        <button type="button" class="btn main" id="confirm-ok">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="full-print-report">
+    <div class="print-top">
+      <h1 class="print-name" id="print-title"></h1>
+      <p class="print-topic-line" id="print-topic"></p>
+      <p class="print-info" id="print-meta"></p>
+    </div>
+    <div id="print-body"></div>
+  </div>
+
+  <div class="hide" id="tpl-jump">
+    <button type="button" class="jump-link" data-action="jump-link">
+      <span class="color-dot"></span>
+      <span class="link-name"></span>
+    </button>
+  </div>
+  <div class="hide" id="tpl-speech-head"><div class="speech-top"></div></div>
+  <div class="hide" id="tpl-speech-label">
+    <div class="speech-title">
+      <div class="speech-name"></div>
+      <div class="speech-small">
+        <span class="speech-number"></span>
+        <span class="speech-time"></span>
+      </div>
+    </div>
+  </div>
+  <div class="hide" id="tpl-contention">
+    <div class="group">
+      <div class="group-top">
+        <button type="button" class="btn group-arrow" data-action="fold-group"></button>
+        <span class="group-dot"></span>
+        <input class="group-name" data-field="group-name">
+        <span class="group-dots">···</span>
+        <div class="group-buttons">
+          <button type="button" class="btn group-btn" data-action="group-up" title="Move up">↑</button>
+          <button type="button" class="btn group-btn" data-action="group-down" title="Move down">↓</button>
+          <button type="button" class="btn group-btn red" data-action="delete-group" title="Delete contention">✕</button>
+        </div>
+      </div>
+      <div class="group-row"></div>
+    </div>
+  </div>
+  <div class="hide" id="tpl-speech-col">
+    <div class="speech-column">
+      <div class="column-area"></div>
+      <textarea class="new-box" placeholder="New point"></textarea>
+    </div>
+  </div>
+  <div class="hide" id="tpl-point">
+    <div class="point" tabindex="0">
+      <span class="point-tag"></span>
+      <textarea class="point-input"></textarea>
+      <div class="point-bottom">
+        <button type="button" class="clip-btn" data-action="add-evidence">
+          clip
+          <span class="clip-number">1</span>
+        </button>
+        <button type="button" class="point-menu" data-action="note-menu">···</button>
+      </div>
+    </div>
+  </div>
+  <div class="hide" id="tpl-slot">
+    <textarea class="reply-box" placeholder="Response" data-slot="1"></textarea>
+  </div>
+  <div class="hide" id="tpl-evidence-card">
+    <div class="proof-card">
+      <p class="gray-text proof-place"></p>
+      <div class="proof-text" contenteditable="true" data-placeholder="Paste evidence for this point"></div>
+      <p class="gray-text proof-note"></p>
+    </div>
+  </div>
+  <div class="hide" id="tpl-menu-button"><button type="button"></button></div>
+  <div class="hide" id="tpl-option"><option></option></div>
+  <div class="hide" id="tpl-empty-note"><p class="gray-text">Select a note to view evidence</p></div>
+  <div class="hide" id="tpl-print-case">
+    <div class="print-case"><h2 class="print-case-name"></h2></div>
+  </div>
+  <div class="hide" id="tpl-print-contention">
+    <div class="print-group">
+      <h3 class="print-group-name"></h3>
+      <table class="print-table"><thead><tr></tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+  <div class="hide" id="tpl-print-th"><th class="print-head"></th></div>
+  <div class="hide" id="tpl-print-row"><tr class="print-row"></tr></div>
+  <div class="hide" id="tpl-print-td"><td class="print-cell"></td></div>
+  <div class="hide" id="tpl-print-note">
+    <div class="print-card">
+      <span class="print-tag"></span>
+      <div class="print-words"></div>
+      <div class="print-proof"></div>
+    </div>
+  </div>
+  <div class="hide" id="tpl-print-notes">
+    <div class="print-notes"><h2 class="print-case-name">CROSSFIRE &amp; REFLECTION NOTES</h2></div>
+  </div>
+  <div class="hide" id="tpl-print-notes-card">
+    <div class="print-note">
+      <h3 class="print-note-name"></h3>
+      <div class="print-note-words"></div>
+    </div>
+  </div>
+
+  <script src="js/rounds.js?v=28"></script>
+  <script src="js/lineup.js?v=28"></script>
+  <script src="js/clean.js?v=28"></script>
+  <script src="js/save.js?v=28"></script>
+  <script src="js/helpers.js?v=28"></script>
+  <script src="js/app.js?v=28"></script>
+</body>
+</html>

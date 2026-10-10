@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Go With the Flow</title>
+  <link rel="stylesheet" href="css/page.css?v=28">
+  <link rel="stylesheet" href="css/buttons.css?v=28">
+  <link rel="stylesheet" href="css/home.css?v=28">
+  <link rel="stylesheet" href="css/sidebar.css?v=28">
+  <link rel="stylesheet" href="css/workspace.css?v=28">
+  <link rel="stylesheet" href="css/evidence.css?v=28">
+  <link rel="stylesheet" href="css/popups.css?v=28">
+  <link rel="stylesheet" href="css/phone.css?v=28">
+  <link rel="stylesheet" href="css/print.css?v=28">
+</head>
+<body class="page" data-page="home">
+  <a class="skip-link" href="#app">Skip to content</a>
+
+  <!-- Home page. Round cards are copied from the sample box at the bottom. -->
+  <div id="app" class="home">
+    <div class="top-bar">
+      <a class="logo" href="index.html">
+        <span class="logo-dot">✿</span>
+        <span class="logo-text">Go With the Flow</span>
+      </a>
+      <div class="top-menu">
+        <a class="btn plain" href="preflows.html">Preflows</a>
+        <button type="button" class="btn plain" data-action="tour">Feature tour</button>
+        <a class="btn plain" href="settings.html">Settings</a>
+        <a class="btn plain" href="help.html">Help</a>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <p class="warning-box hide" id="recovered-banner">The last save could not be read. This copy was restored from the previous browser backup.</p>
+
+      <div class="empty-box" id="empty-home">
+        <div class="sample-flow">
+          <div class="sample-bar pro"><span></span><span></span></div>
+          <div class="sample-bar con"><span></span><span></span></div>
+          <div class="sample-bar pro"><span></span><span></span></div>
+        </div>
+        <p class="small-label">My rounds</p>
+        <h1>Your next round starts here.</h1>
+        <p class="gray-text">Rounds save in this browser. Export a copy to keep a record; editable rounds stay in this browser.</p>
+        <button type="button" class="btn main big" data-action="new-round">New round</button>
+      </div>
+
+      <div id="round-browser" class="hide">
+        <div class="list-top">
+          <div>
+            <h1>My rounds</h1>
+            <p class="gray-text" id="round-count"></p>
+          </div>
+          <button type="button" class="btn main big" data-action="new-round">New round</button>
+        </div>
+        <input class="search-box" data-field="search-box" placeholder="Search title, topic, tournament, or opponent">
+        <p class="gray-text hide" id="no-match">No rounds match that search.</p>
+        <div class="card-list" id="card-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- New round form -->
+  <div id="new-round-box" class="popup-cover hide">
+    <div class="popup">
+      <h2>New round</h2>
+      <div class="popup-body">
+        <label class="form-line"><span>Title</span><input id="new-title" value="Untitled round"></label>
+        <label class="form-line"><span>Topic</span><input id="new-topic"></label>
+        <label class="form-line"><span>Tournament</span><input id="new-tournament"></label>
+        <label class="form-line"><span>Round label</span><input id="new-round-label"></label>
+        <label class="form-line"><span>Opponent</span><input id="new-opponent"></label>
+        <label class="form-line"><span>Your side</span>
+          <select id="new-side">
+            <option value="pro">Pro</option>
+            <option value="con">Con</option>
+            <option value="observer">Observer</option>
+          </select>
+        </label>
+        <label class="form-line"><span>First speaking side</span>
+          <select id="new-first">
+            <option value="pro">Pro</option>
+            <option value="con">Con</option>
+          </select>
+        </label>
+        <label class="form-line"><span>Starting preflow</span>
+          <select id="new-opening"><option value="">Blank</option></select>
+        </label>
+      </div>
+      <div class="popup-buttons">
+        <button type="button" class="btn" data-action="close-dialog">Cancel</button>
+        <button type="button" class="btn main" data-action="create-round">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rename form -->
+  <div id="rename-box" class="popup-cover hide">
+    <div class="popup">
+      <h2>Rename round</h2>
+      <div class="popup-body">
+        <label class="form-line"><span>Title</span><input id="rename-title"></label>
+      </div>
+      <div class="popup-buttons">
+        <button type="button" class="btn" data-action="close-dialog">Cancel</button>
+        <button type="button" class="btn main" data-action="save-rename">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Yes / no question -->
+  <div id="confirm-box" class="popup-cover hide">
+    <div class="popup">
+      <h2 id="confirm-title"></h2>
+      <div class="popup-body"><p id="confirm-text"></p></div>
+      <div class="popup-buttons">
+        <button type="button" class="btn" data-action="close-dialog">Cancel</button>
+        <button type="button" class="btn main" id="confirm-ok">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="hide" id="tpl-round-card">
+    <div class="card">
+      <div class="card-top">
+        <h2 class="card-name"></h2>
+        <span class="side-tag"></span>
+      </div>
+      <p class="info-line card-line"></p>
+      <p class="gray-text card-topic"></p>
+      <p class="info-line card-time"></p>
+      <div class="button-row">
+        <button type="button" class="btn main" data-action="open-round">Open</button>
+        <button type="button" class="btn plain" data-action="rename-round">Rename</button>
+        <button type="button" class="btn plain" data-action="duplicate-round">Duplicate</button>
+        <button type="button" class="btn plain" data-action="export-round">Export</button>
+        <button type="button" class="btn red" data-action="delete-round">Delete</button>
+      </div>
+    </div>
+  </div>
+  <div class="hide" id="tpl-option"><option></option></div>
+
+  <script src="js/rounds.js?v=28"></script>
+  <script src="js/lineup.js?v=28"></script>
+  <script src="js/clean.js?v=28"></script>
+  <script src="js/save.js?v=28"></script>
+  <script src="js/helpers.js?v=28"></script>
+  <script src="js/app.js?v=28"></script>
+</body>
+</html>
