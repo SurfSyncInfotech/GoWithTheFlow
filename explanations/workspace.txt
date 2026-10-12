@@ -1,0 +1,294 @@
+================================================================================
+EXPLANATION: workspace.js
+Purpose: Manages the interactive Flow Sheet Workspace (workspace.html) where
+users flow debate speeches, align arguments, record evidence, and run timers.
+================================================================================
+
+//--------------------------------------------------------------------------------
+FUNCTION: updateColumnControls()
+//--------------------------------------------------------------------------------
+This function manages the toolbar controls at the top of the flow sheet that toggle speech columns and scroll horizontally.
+
+What it does:
+It checks which speech columns are currently visible on the screen for the active debate side. It enables or disables the horizontal scroll buttons depending on whether more columns can be shifted into view on the left or right. It also updates the active visual state on speech toggle buttons so the user can easily see which speech columns are currently open or collapsed.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: renderWorkspace()
+//--------------------------------------------------------------------------------
+This is the master rendering function that coordinates the entire flow sheet display.
+
+What it does:
+First, it calls updateTopBarAndSidebar to refresh the round title, topic, side switch links, and timer button in the top navigation bar. It updates the column toolbar controls, then calls buildFlowSheet to construct the entire argument grid. Once the HTML elements are placed in the DOM, it measures the real rendered heights of all cards using measurePointHeights and calculates their vertical positions using applyPointPositions. This ensures that answers and rebuttals are aligned horizontally with the arguments they answer. Finally, if the right-side evidence drawer is currently open, it re-renders that drawer as well.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: buildFlowSheet()
+//--------------------------------------------------------------------------------
+This function constructs the visual structure of the debate flow sheet.
+
+What it does:
+It calculates the width of each speech column based on the browser window size. It creates the sticky header row displaying the names of the speeches (such as Constructive, Rebuttal, Summary, and Final Focus). Then, it loops through all contentions belonging to the active debate case (Pro or Con) and calls renderContentionSection to build each contention block.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: renderContentionSection(contention, caseSide, view, width)
+//--------------------------------------------------------------------------------
+This function renders a single contention row on the flow sheet.
+
+What it does:
+It creates the contention header containing the contention title (like "Contention 1: Economic Impact"), a collapse and expand toggle button, reordering arrows to move the contention up or down, and a delete button. If the contention is expanded, it renders a grid of speech columns. Inside each column, it places all argument cards belonging to that speech, and at the bottom of the column, it adds an input box where the user can quickly type a new argument.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: renderPointCard(note)
+//--------------------------------------------------------------------------------
+This function constructs the DOM element for an individual debate argument card.
+
+What it does:
+It builds the card container and applies marker tags (such as Turn, Drop, Extend, or Cross-apply) if the user labeled the argument. It inserts an auto-resizing textarea containing the argument's text so the user can edit it at any time. If evidence or quotes are attached to the card, it displays an evidence badge icon. Finally, it adds a three-dots menu button that gives the user options to duplicate, delete, move, or re-link the argument card.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: measurePointHeights()
+//--------------------------------------------------------------------------------
+This function measures the exact rendered pixel height of every argument card on the screen.
+
+What it does:
+Because text length varies, cards have different heights. This function iterates through all argument cards currently in the browser DOM, reads their real rendered heights, and stores these measurements in a temporary lookup table so the positioning algorithm can align rebuttals accurately.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: applyPointPositions(width)
+//--------------------------------------------------------------------------------
+This function calculates the vertical layout of cards across speech columns to keep debates cleanly aligned.
+
+What it does:
+In debate flowing, an answer must sit level with the argument it is answering, even if that argument was made in an earlier column. This function traverses the argument tree structure, calculates the required vertical space for each argument and all of its replies, and applies smooth vertical offsets to every card. This guarantees that connected arguments remain horizontally aligned without overlapping.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: renderEvidencePanel()
+//--------------------------------------------------------------------------------
+This function renders the slide-over evidence drawer on the right side of the screen.
+
+What it does:
+It retrieves the currently selected argument card and checks if it contains attached research evidence, quotes, or article citations. It builds the evidence view where the user can read the evidence, view author credentials, highlight important phrases, or paste new quotes.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: getEvidencePointsList(contentionId, caseSide)
+//--------------------------------------------------------------------------------
+This function finds all argument cards that contain evidence within a contention or case.
+
+What it does:
+It scans the cards belonging to the specified contention or side, filters out those that do not have any evidence attached, and returns an array of cards that do have evidence so they can be shown in the evidence drawer.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: renderEvidenceCard(note, current)
+//--------------------------------------------------------------------------------
+This function builds an individual evidence card inside the evidence drawer.
+
+What it does:
+It formats the evidence snippet, displaying its plain text, formatted HTML (with bold text and highlighted sentences), and citation notes. If this evidence belongs to the currently active card, it adds an active visual highlight around the card.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: selectPointCard(id, openEvidence)
+//--------------------------------------------------------------------------------
+This function selects a card when clicked and manages active focus states.
+
+What it does:
+It removes the active selection outline from any previously selected card, adds the active outline to the newly clicked card, updates the application state with the selected card's ID, and optionally slides open the evidence drawer if the user requested it.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: focusPointInput(id, caret)
+//--------------------------------------------------------------------------------
+This function positions keyboard focus inside an argument card's textarea.
+
+What it does:
+It finds the card's textarea on the page, activates keyboard focus, and sets the typing cursor position to either the beginning or the end of the text as requested.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: createReplyFromInput(slot, text)
+//--------------------------------------------------------------------------------
+This function creates an answer or reply card linked directly under an existing parent argument.
+
+What it does:
+When a user types inside a reply slot and presses Enter or Tab, this function reads the text, creates a new child card connected to the parent argument, adds it to the round, clears the input slot, triggers a background save, and re-renders the flow sheet with the new card.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: createNewPointFromInput(starter)
+//--------------------------------------------------------------------------------
+This function creates a new root-level argument card inside a constructive column.
+
+What it does:
+When the user types inside a constructive column starter box and presses Enter, this function creates a brand new top-level argument (a shell claim) without any parent, attaches it to the contention, clears the starter box, saves the round, and refreshes the flow sheet.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: splitPointOnEnter(area)
+//--------------------------------------------------------------------------------
+This function splits an argument card into two separate cards when the user presses Enter while typing.
+
+What it does:
+It detects the exact cursor position inside the textarea. It keeps the text before the cursor in the current card and creates a brand new card containing the text after the cursor. It places the new card directly after the current one, updates the round data, saves the changes, and moves the typing cursor into the new card.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: saveEvidenceText(body, pasteNotice)
+//--------------------------------------------------------------------------------
+This function sanitizes and saves evidence text pasted or typed into the evidence drawer.
+
+What it does:
+It removes any harmful or unwanted styling from the pasted HTML while preserving useful tags like bolding and highlights. It assigns the cleaned text to the card's evidence record, triggers an auto-save, and updates the evidence indicator on the argument card.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: searchWordsInRound()
+//--------------------------------------------------------------------------------
+This function searches for words across all argument cards and evidence in the round.
+
+What it does:
+It reads the search query entered by the user, converts it to lowercase, and scans every contention title, card text, and attached evidence body. It compiles a list of matching results with details about where each match was found.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: goToSearchResult(hit)
+//--------------------------------------------------------------------------------
+This function navigates the user directly to a selected search result.
+
+What it does:
+It closes the search popup, switches to the correct debate side (Pro or Con) if needed, smoothly scrolls the browser window to the matching argument card, selects it, and momentarily highlights it with an animation so the user can easily spot it.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: renderSearchResults()
+//--------------------------------------------------------------------------------
+This function draws the list of search matches inside the search dropdown popup.
+
+What it does:
+It reads the list of search hits compiled by searchWordsInRound, clears the previous results list, and generates clickable result items showing the matching text snippet and contention name.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: openSearchModal(anchor)
+//--------------------------------------------------------------------------------
+This function toggles the search input popup on the screen.
+
+What it does:
+If the search popup is already open, it closes it. Otherwise, it positions the search popup below the search button, clears any previous search terms, displays the popup, and places keyboard focus inside the search input.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: openTimerModal(anchor)
+//--------------------------------------------------------------------------------
+This function toggles the speech timer control popup.
+
+What it does:
+It positions the timer menu below the top timer button and renders controls for starting, pausing, or resetting the speech timer, switching to preparation time for either team, and advancing to the next speech in the round.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: handleMarkerClick(note, markerId)
+//--------------------------------------------------------------------------------
+This function applies or removes debate label badges on an argument card.
+
+What it does:
+When the user clicks a marker button (like Turn, Drop, Extend, or Cross-apply), it checks debate rules for any warnings (for example, marking "Drop" on an opening constructive). If the card already has this marker, it removes it; otherwise, it applies the marker to the card, saves the change, and re-renders the card.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: openPointActionsMenu(anchor, noteId)
+//--------------------------------------------------------------------------------
+This function displays the dropdown action menu for a specific argument card.
+
+What it does:
+It positions a menu below the card's three-dots button with actions to duplicate the card, move it up or down in order, delete the card, or change which parent argument it is linked under.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: openLinkReplyMenu(anchor, note)
+//--------------------------------------------------------------------------------
+This function opens a menu allowing the user to reconnect an answer card under a different argument.
+
+What it does:
+It scans the earlier speech columns in the contention to find valid arguments that this card can legally answer according to debate rules. It presents a list of valid parents, and when the user clicks one, it moves the card under that new argument and re-aligns the sheet.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: confirmDeletePoint(note)
+//--------------------------------------------------------------------------------
+This function prompts the user before deleting an argument card.
+
+What it does:
+It opens a confirmation modal asking if the user is sure they want to delete the card. If confirmed, it deletes the card from the round, re-attaches any child responses to the parent level so the debate chain does not break, saves the round, and refreshes the flow sheet.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: switchDebateSide(side)
+//--------------------------------------------------------------------------------
+This function switches the active view between the Pro case and the Con case.
+
+What it does:
+It updates the active case side in application state (Pro or Con), scrolls the page to the top, and re-renders the flow sheet so the arguments for the selected side are displayed.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: startFeatureTour() & renderTourStep() & closeFeatureTour()
+//--------------------------------------------------------------------------------
+These functions manage the interactive walkthrough tour for new users.
+
+What it does:
+They guide beginner students through the core features of the flow sheet step by step, highlighting key elements like argument cards, reply slots, markers, and timers with helpful explanatory tooltips.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: createDemoRound()
+//--------------------------------------------------------------------------------
+This function generates a pre-filled sample debate round for practice.
+
+What it does:
+It populates a round with sample constructive arguments, counter-rebuttals, and evidence on a sample topic, allowing students to explore flowing features without having to type everything from scratch.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: openEditRoundDetails() & saveEditRoundDetails()
+//--------------------------------------------------------------------------------
+These functions manage the modal for editing round metadata.
+
+What it does:
+openEditRoundDetails populates and displays the modal form with the round's current tournament name, round label, topic, opponent team, and speaking order. saveEditRoundDetails validates the updated fields, writes them into the round object, updates localStorage, and refreshes the header labels.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: preparePrintLayout(includeEvidence)
+//--------------------------------------------------------------------------------
+This function transforms the interactive flow sheet into a clean, printable layout.
+
+What it does:
+It adjusts card styles and column widths for standard printing or PDF saving, optionally appends an evidence appendix at the end, and opens the browser's native print dialog.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: navigatePointsWithArrows(id, key)
+//--------------------------------------------------------------------------------
+This function enables keyboard arrow navigation between argument cards.
+
+What it does:
+When the user presses Up, Down, Left, or Right arrow keys outside of text editing, it calculates which card is adjacent in that direction and moves selection and keyboard focus to it, allowing rapid navigation without a mouse.
+
+
+//--------------------------------------------------------------------------------
+EVENT LISTENERS: Click, Input, Keydown, and Paste Listeners
+//--------------------------------------------------------------------------------
+These event listeners handle user interaction across the workspace:
+- The Click listener handles toolbar actions, marker selections, menu toggles, and modal buttons.
+- The Input listener debounces live text edits and triggers background saving to localStorage.
+- The Keydown listener intercepts keyboard shortcuts like Enter to split cards, Tab to create replies, and Escape to close menus.
+- The Paste listener intercepts pasted research quotes, cleans away messy web formatting, and inserts sanitized text.
+================================================================================

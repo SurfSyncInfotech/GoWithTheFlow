@@ -1,0 +1,99 @@
+================================================================================
+EXPLANATION: index.js
+Purpose: Manages the Home page (index.html) — displays saved rounds, live search,
+modal creation, renaming, duplicating, exporting, and deleting debate rounds.
+================================================================================
+
+//--------------------------------------------------------------------------------
+FUNCTION: loadPreflowDropdown()
+//--------------------------------------------------------------------------------
+This function populates the preflow template selector inside the "New Round" popup modal.
+
+What it does:
+It finds the dropdown select element on the page. It keeps the default "None" option and removes any previously generated options so they do not duplicate. Then it loops through all saved preflow templates in the database and creates an option element for each one, setting its value to the preflow's ID and its label to the preflow's title. Finally, it adds these options into the dropdown so the user can choose a pre-prepared case when creating a round.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: openNewRoundModal()
+//--------------------------------------------------------------------------------
+This function prepares and displays the popup modal for creating a brand new debate round.
+
+What it does:
+It resets all the modal's input fields back to their default values. The title is set to "Untitled round", the topic, tournament name, round number label, and opponent team name are cleared, and both your side and the speaking order are set to "Pro". It then calls loadPreflowDropdown to ensure the preflow template list is up to date, and finally makes the modal window visible on the screen.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: createRoundFromForm()
+//--------------------------------------------------------------------------------
+This function reads user input from the "New Round" modal and constructs a new debate round in storage.
+
+What it does:
+It gathers all the information entered by the user from the form inputs, including the title, topic, tournament name, round label, opponent team name, which side the user is debating (Pro, Con, or Observer), and which team speaks first.
+
+It then passes these details to createNewRound, which builds a complete debate round data structure with default contentions, speech timers, and metadata.
+
+If the user selected a preflow template from the dropdown, it retrieves that preflow from the database and copies all of its contentions and arguments directly into the newly created round.
+
+It inserts the new round into the database and saves the updated database to browser localStorage. If browser storage is full, it shows an error message. Otherwise, it immediately opens the round by saving the round's ID in session storage and redirecting the browser to the workspace.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: openRenameModal(roundId)
+//--------------------------------------------------------------------------------
+This function opens a modal dialog that allows the user to change the title of an existing round.
+
+What it does:
+It finds the rename modal window, attaches the ID of the round being edited to the modal element for reference, pre-fills the input field with the round's current title, and reveals the modal on the screen.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: displayRoundsList()
+//--------------------------------------------------------------------------------
+This function renders all saved round cards on the home page and filters them based on active search terms.
+
+What it does:
+First, it checks whether automatic data recovery had occurred earlier, showing or hiding a notification banner accordingly.
+
+It gathers all saved rounds from the database into a list and retrieves any active search query from the search input. It loops through every round and checks if the search query matches the round's title, topic, tournament name, or opponent name.
+
+It sorts all matching rounds by their last modified date so the newest and most recently updated rounds appear at the top.
+
+If there are zero rounds in storage and no search query was entered, it displays an empty-state welcome screen inviting the user to create their first round.
+
+Otherwise, it shows the round browser, updates the badge showing how many rounds exist, clears the card container, and loops through the sorted rounds to build a visual card for each one. For every card, it sets the title, applies colored badges indicating the side (Pro, Con, or Observer), displays tournament and topic information, formats the last modified date, and attaches the round's ID to all action buttons (Open, Rename, Duplicate, Export, Delete).
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: window.renderCurrentPage()
+//--------------------------------------------------------------------------------
+This function connects the home page to the universal application rendering cycle.
+
+What it does:
+Whenever the application triggers a screen refresh, this function calls displayRoundsList to redraw all round cards with the latest database records.
+
+
+//--------------------------------------------------------------------------------
+EVENT LISTENER: Click Event Listener (document click)
+//--------------------------------------------------------------------------------
+This event listener handles all user clicks on interactive buttons across the home page.
+
+What it does:
+It checks which action button was clicked by examining the element's data attribute:
+- If "new-round" was clicked, it opens the round creation modal.
+- If "open-round" was clicked, it navigates the user into the workspace for that round.
+- If "create-round" was clicked, it triggers createRoundFromForm to build and save the round.
+- If "rename-round" was clicked, it opens the rename modal.
+- If "save-rename" was clicked, it updates the round's title in storage, saves the database, closes the modal, and refreshes the cards.
+- If "duplicate-round" was clicked, it creates a full clone of the round with a new ID and saves it to storage.
+- If "delete-round" was clicked, it prompts the user with a confirmation dialog before deleting the round from storage.
+- If "export-round" was clicked, it downloads the round as a JSON file to the user's computer.
+
+
+//--------------------------------------------------------------------------------
+EVENT LISTENER: Input Event Listener (document input)
+//--------------------------------------------------------------------------------
+This event listener handles user typing in the search box.
+
+What it does:
+Whenever the user types or deletes characters in the search bar, it updates the application's search query state and immediately calls displayRoundsList, providing instantaneous live filtering of round cards as the user types.
+================================================================================

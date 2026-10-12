@@ -1,0 +1,550 @@
+================================================================================
+EXPLANATION: common.js
+Purpose: Core application engine — contains debate data structures, Public Forum
+debate rules, storage mechanisms (localStorage), undo/redo history, timer engine,
+alignment math, and universal UI helper functions shared across all pages.
+================================================================================
+
+//--------------------------------------------------------------------------------
+SECTION: Global Constants and Debate Rules
+//--------------------------------------------------------------------------------
+This section defines the fundamental rules and configurations for debate:
+- MARKERS defines the labels used on debate argument cards: "turn" (flipping an argument onto the opponent), "dropped" (conceding an argument by leaving it unanswered), "extend" (advancing an argument from an earlier speech), and "cross-apply" (applying an argument across contentions).
+- SPEECHES and PF_SPEECH_ORDER define the official order and types of speeches in Public Forum debate (Constructive, Rebuttal, Summary, Final Focus, and Crossfire periods).
+- PF_MIN_TIMES and PF_MAX_TIMES define the minimum and maximum permitted seconds for each speech duration in settings.
+- JUMP_COLORS defines the color palette used for quick-jump contention indicators.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: cloneTemplate(id)
+//--------------------------------------------------------------------------------
+Clones an HTML template element by its ID and returns a fresh, clean DOM node ready to be populated with data and inserted into the page.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: showElement(node)
+//--------------------------------------------------------------------------------
+Reveals an HTML element on the page by removing any hidden attributes and clearing display:none styles.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: hideElement(node)
+//--------------------------------------------------------------------------------
+Hides an HTML element from view by adding the hidden attribute and applying display:none styling.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: clearElement(node)
+//--------------------------------------------------------------------------------
+Safely removes all child elements and text from inside a DOM node, leaving it completely empty.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: setElementText(node, text)
+//--------------------------------------------------------------------------------
+Updates the text content of a DOM element if the element exists, safely avoiding errors if the element is null.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: objectValuesToList(obj)
+//--------------------------------------------------------------------------------
+Takes a JavaScript dictionary object and converts all of its values into an array list, making it easy to loop over or sort.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: joinNonEmptyText(list, joiner)
+//--------------------------------------------------------------------------------
+Takes an array of text strings, ignores any blank or empty strings, and joins the remaining non-empty strings with a separator like a bullet or dash.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: sortByRecentDate(list)
+//--------------------------------------------------------------------------------
+Sorts a list of records in descending order according to their last-modified timestamp, ensuring the newest items always appear first.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: formatSecondsToClock(secondsOrMs)
+//--------------------------------------------------------------------------------
+Converts a raw number of seconds or milliseconds into a human-readable clock format, such as turning 240 seconds into "4:00".
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: formatSideName(side)
+//--------------------------------------------------------------------------------
+Converts internal debate side keys ("pro", "con", "observer") into clean display names ("Pro", "Con", "Observer").
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: getMarkerLabel(markerId)
+//--------------------------------------------------------------------------------
+Returns the human-readable display label for a marker ID (for example, converting "cross-apply" to "Cross-apply").
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: createSafeFileName(title)
+//--------------------------------------------------------------------------------
+Replaces illegal characters that cannot be used in computer file names (like slashes, colons, and question marks) with clean dashes so exported files can be saved safely.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: downloadRoundAsJson(round)
+//--------------------------------------------------------------------------------
+Takes a debate round object, packages it into a formatted JSON text file, and triggers a browser download so the user can save a backup file to their computer.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: cleanPastedHtml(html)
+//--------------------------------------------------------------------------------
+Sanitizes HTML copied from web pages and articles. It strips away dangerous scripts, fonts, and inline styles while preserving necessary debate formatting like bold text and highlight marks.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: convertLinesToHtml(text)
+//--------------------------------------------------------------------------------
+Converts plain text newline characters into clean HTML paragraphs or line breaks for display.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: insertHtmlAtCursor(html)
+//--------------------------------------------------------------------------------
+Inserts cleaned HTML directly at the user's current keyboard cursor position inside an active text editor.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: createBlankSaveData()
+//--------------------------------------------------------------------------------
+Constructs a default, empty database structure containing empty collections for rounds and preflows, standard default settings, and no previously selected round.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: readFromLocalStorage()
+//--------------------------------------------------------------------------------
+Reads the application's stored JSON string from the browser's localStorage and parses it into a working JavaScript object.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: isStorageFull(err)
+//--------------------------------------------------------------------------------
+Checks if an error caught while saving data was caused by the browser's localStorage reaching its maximum capacity limit.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: saveToLocalStorage(data)
+//--------------------------------------------------------------------------------
+Converts the database object into a JSON string and writes it to localStorage. If storage is full, it catches the error and returns a helpful message for the user.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: loadSavedData()
+//--------------------------------------------------------------------------------
+Runs during application startup to load data from localStorage. If the stored data is damaged or corrupted, it automatically repairs the round records and marks a recovery flag so the user doesn't lose their data.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: validateSpeechTime(presetKey, rawValue)
+//--------------------------------------------------------------------------------
+Validates that a duration entered by the user in settings is a positive whole number within official debate time limits.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: repairTimerSettings(settings)
+//--------------------------------------------------------------------------------
+Verifies that all speech durations exist in the settings object, filling in standard default times if any are missing or invalid.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: getDefaultSettings()
+//--------------------------------------------------------------------------------
+Returns the official standard Public Forum settings, including standard durations for constructive speeches, rebuttals, crossfires, summaries, final focus speeches, and prep time.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: createUniqueId(prefix)
+//--------------------------------------------------------------------------------
+Generates a random unique identifier string with a given prefix to prevent ID collisions between rounds, contentions, argument cards, and evidence snippets.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: sortPointsByOrder(points)
+//--------------------------------------------------------------------------------
+Sorts an array of argument cards numerically based on their order property so cards appear in the proper sequence from top to bottom.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: getSpeechOrder(firstSide)
+//--------------------------------------------------------------------------------
+Returns the correct sequence of speech IDs based on which side (Pro or Con) speaks first in the debate.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: getSpeechesForSide(round, side)
+//--------------------------------------------------------------------------------
+Returns the list of speech IDs that belong specifically to the requested debate side (Pro or Con) within that round.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: getSpeechName(speechId)
+//--------------------------------------------------------------------------------
+Returns the human-friendly name of a speech (such as "Pro Constructive" or "1st Rebuttal").
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: getTeamName(round, side)
+//--------------------------------------------------------------------------------
+Returns the custom team name or opponent name assigned to that side, or falls back to "Pro" or "Con" if no custom name was entered.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: getTimerSteps(firstSide, durations)
+//--------------------------------------------------------------------------------
+Builds an ordered sequence of timer steps for the entire debate, calculating the proper duration and label for each speech and crossfire period.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: createCrossNotesObject()
+//--------------------------------------------------------------------------------
+Creates an empty data object with placeholder slots for recording notes during each of the three crossfire periods and the grand crossfire.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: createNewTimer(durations)
+//--------------------------------------------------------------------------------
+Initializes the timer state object for a round, setting initial preparation times for both teams and preparing the speech clock.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: createContentionGroup(name, side)
+//--------------------------------------------------------------------------------
+Constructs a new contention object containing a unique ID, a contention title, the assigned side, and an empty list of starting root argument cards.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: createNewCase(side)
+//--------------------------------------------------------------------------------
+Creates a debate case object (either Pro or Con) holding an ordered list of contention IDs.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: createNewRound(options, settings)
+//--------------------------------------------------------------------------------
+Builds a complete, fully configured debate round data object, setting up Pro and Con cases, default contention groups, speech timers, crossfire notes, and metadata.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: createNewPreflow(options)
+//--------------------------------------------------------------------------------
+Creates a pre-prepared case template (preflow) for a single debate side with an initial contention and metadata.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: convertPreflowToRound(preflow)
+//--------------------------------------------------------------------------------
+Converts a preflow into a round-compatible format so it can be seamlessly opened and edited within the full workspace environment.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: getContentionSide(round, contentionId)
+//--------------------------------------------------------------------------------
+Determines whether a given contention belongs to the Pro case or the Con case.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: getPointsInContention(round, contentionId, speechId)
+//--------------------------------------------------------------------------------
+Finds and returns all argument cards belonging to a specific contention within a designated speech column.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: getReplyPoints(round, parentId, speechId)
+//--------------------------------------------------------------------------------
+Finds and returns all child reply cards linked directly under a specific parent argument card within a speech column.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: getSpeechesAfter(round, speechId, side)
+//--------------------------------------------------------------------------------
+Returns a list of speech columns that occur chronologically after a given speech for that debate side.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: getNextOrderNumber(points)
+//--------------------------------------------------------------------------------
+Calculates the next available numerical order value so newly added cards are placed at the bottom of a list without conflicting with existing cards.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: createNewPoint(data)
+//--------------------------------------------------------------------------------
+Constructs a new argument card object with a unique ID, text, parent link, and order number.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: addMainPoint(round, contentionId, speechId, text, copyFromId)
+//--------------------------------------------------------------------------------
+Creates a top-level root argument card (a shell claim) inside a constructive speech column with no parent link.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: addReplyPoint(round, parentId, speechId, text, copyFromId)
+//--------------------------------------------------------------------------------
+Creates an answer or extension argument card linked directly under an existing parent card.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: getAllChildPoints(round, noteId, visited)
+//--------------------------------------------------------------------------------
+Recursively gathers all descendant cards (replies, counter-replies, and extensions) that stem from a specific argument card.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: checkIfCanLinkPoints(round, noteId, parentId)
+//--------------------------------------------------------------------------------
+Enforces debate linking rules to prevent illegal connections. It verifies that cards belong to the same contention, that an answer is placed in a later speech column than the argument it answers, and that no circular loops are created. Returns an empty string if valid, or an error message if disallowed.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: canLinkPoints(round, noteId, parentId)
+//--------------------------------------------------------------------------------
+A convenience helper that returns true if two cards can be legally linked according to debate rules, or false otherwise.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: getMarkerWarning(round, note, markerId)
+//--------------------------------------------------------------------------------
+Checks if a debate label (like Turn, Drop, or Extend) seems unusual in context (such as marking "Drop" in an opening speech) and returns an advisory warning message for the user.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: removeIdFromList(list, id)
+//--------------------------------------------------------------------------------
+Filters an ID out of an array list and returns a clean array without that ID.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: linkPointToParent(round, noteId, parentId)
+//--------------------------------------------------------------------------------
+Connects an argument card under a new parent argument or moves it to the root level if parentId is null, recalculating order numbers.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: deletePoint(round, noteId)
+//--------------------------------------------------------------------------------
+Deletes an argument card from the round and safely attaches any child reply cards to the deleted card's parent so the argument chain remains unbroken.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: duplicatePoint(round, noteId)
+//--------------------------------------------------------------------------------
+Creates an exact duplicate copy of an argument card, including its text, marker label, and attached research evidence.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: movePointOrder(round, noteId, direction)
+//--------------------------------------------------------------------------------
+Moves an argument card up or down within its column by swapping its position with adjacent sibling cards.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: checkIfRoundHasContent(round)
+//--------------------------------------------------------------------------------
+Checks whether a round has any user-written arguments, notes, or evidence, helping prevent accidental deletion of important rounds.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: addContention(round, caseSide, name)
+//--------------------------------------------------------------------------------
+Creates a new contention group and adds it to the designated case (Pro or Con).
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: deleteContention(round, contentionId)
+//--------------------------------------------------------------------------------
+Deletes a contention and all of its associated argument cards from the round.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: moveContention(round, contentionId, direction)
+//--------------------------------------------------------------------------------
+Swaps the position of a contention with an adjacent contention to reorder contentions on the sheet.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: checkIfContentionHasContent(round, contentionId)
+//--------------------------------------------------------------------------------
+Checks whether a specific contention contains any written arguments or cards before allowing quick deletion.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: getVisibleSpeeches(round, side)
+//--------------------------------------------------------------------------------
+Returns the list of speech columns that the user has chosen to display on the flow sheet for that side.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: cloneRound(round, settings)
+//--------------------------------------------------------------------------------
+Creates a complete duplicate of an entire debate round, remapping all contention IDs, card IDs, and evidence IDs to brand new unique IDs so the copy operates independently of the original.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: applyPreflowToRound(round, preflow)
+//--------------------------------------------------------------------------------
+Copies all pre-prepared contentions and argument cards from a preflow template into an active debate round.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: convertCaseToPreflow(round, caseSide)
+//--------------------------------------------------------------------------------
+Exports an existing case from an active round into a reusable preflow template.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: repairRoundData(round, settings)
+//--------------------------------------------------------------------------------
+Scans a round object for missing properties, broken parent links, or invalid IDs, repairing any discrepancies to ensure stability.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: repairPreflowData(preflow)
+//--------------------------------------------------------------------------------
+Scans a preflow object and repairs any missing fields or corrupted structure.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: calculateCardHeight(lineCount)
+//--------------------------------------------------------------------------------
+Estimates the minimum pixel height for an argument card based on how many lines of text it contains.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: getRepliesInColumn(round, parentId, columnSpeechId)
+//--------------------------------------------------------------------------------
+Finds all direct child reply cards linked under a parent card that reside within a specific speech column.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: calculateSpaceForPoint(round, pointId, columnSpeechId)
+//--------------------------------------------------------------------------------
+Calculates the total vertical height required by an argument and all of its downstream replies across later columns, preventing overlapping text.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: calculatePointPosition(round, pointId, columnSpeechId, topOffset)
+//--------------------------------------------------------------------------------
+Recursively calculates the exact Y-coordinate positions for an argument card and its children so replies align level with earlier claims.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: calculateContentionLayout(round, contentionId, visibleSpeeches)
+//--------------------------------------------------------------------------------
+Coordinates the vertical positioning for all arguments across all speech columns within a contention, producing the aligned debate flow layout.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: getCurrentTimerStep()
+//--------------------------------------------------------------------------------
+Determines which speech or crossfire step the round timer is currently set to in the debate sequence.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: getTimerButtonLabel()
+//--------------------------------------------------------------------------------
+Generates the text displayed on the top navigation bar timer button, showing the speech name or prep time side and remaining countdown time.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: updateTimerButton()
+//--------------------------------------------------------------------------------
+Refreshes the timer button on the navigation bar, updating its label, running color, and time-up alert state.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: beep()
+//--------------------------------------------------------------------------------
+Plays an audible 880Hz alert tone using the browser's Web Audio API when a speech or prep timer reaches zero.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: startTimer(mode, side)
+//--------------------------------------------------------------------------------
+Starts the countdown clock for either a speech or a team preparation period, setting the target deadline timestamp and scheduling an auto-save.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: calculateColumnWidth(pane, count)
+//--------------------------------------------------------------------------------
+Calculates how wide each speech column should be in pixels based on the available screen width and the number of visible columns.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: showDropdownMenu(anchor, node)
+//--------------------------------------------------------------------------------
+Positions and displays a dropdown popup menu directly below an anchor button.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: closeDropdownMenu()
+//--------------------------------------------------------------------------------
+Closes and hides any currently open dropdown popup menu.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: getBallotInfoText()
+//--------------------------------------------------------------------------------
+Generates a summary string of the round's ballot information, including the user's side, opponent team, and which team speaks first.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: updateRoundHeaderInfo()
+//--------------------------------------------------------------------------------
+Updates the header banner at the top of the workspace with the tournament name, round number, topic, and debate side details.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: renderContentionJumpLinks()
+//--------------------------------------------------------------------------------
+Renders colorful shortcut buttons in the sidebar that allow the user to instantly scroll to any contention on the sheet.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: updateTopBarAndSidebar()
+//--------------------------------------------------------------------------------
+Coordinates updates across the top navigation bar and sidebar, synchronizing headers, side-switching links, timer chips, font size indicators, and menu states.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: beginTyping()
+//--------------------------------------------------------------------------------
+Saves an undo snapshot of the current round state before the user begins typing so any mistakes can be undone with Ctrl+Z.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: undo() & FUNCTION: redo()
+//--------------------------------------------------------------------------------
+Restores earlier or later snapshots from the undo history stack when the user presses Undo or Redo.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: saveSoon(immediate)
+//--------------------------------------------------------------------------------
+Provides intelligent debounced saving. Instead of saving on every keystroke, it waits 300 milliseconds after typing stops before writing to localStorage, ensuring high performance while preventing data loss.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: openRound(id) & FUNCTION: openOpening(id)
+//--------------------------------------------------------------------------------
+Records the selected round or preflow ID into session storage and redirects the browser to workspace.html.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: askConfirm(title, text, okLabel, run)
+//--------------------------------------------------------------------------------
+Displays an accessible confirmation dialog before dangerous actions like deleting a round or contention.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: startApp()
+//--------------------------------------------------------------------------------
+The main application entry point that executes when DOMContentLoaded fires. It detects the active page, loads data from localStorage, binds global modal handlers, and triggers the initial page render.
+================================================================================

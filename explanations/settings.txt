@@ -1,0 +1,42 @@
+================================================================================
+EXPLANATION: settings.js
+Purpose: Manages the Settings page (settings.html) for configuring debate speech
+durations, sound alerts, and general preferences.
+================================================================================
+
+//--------------------------------------------------------------------------------
+FUNCTION: loadSettingsForm()
+//--------------------------------------------------------------------------------
+This function fills the settings form with the current configuration values stored in the database.
+
+What it does:
+First, it finds the informational note element regarding font size. If present, it checks the database for the user's preferred font size (or defaults to 14 pixels) and displays a helpful message explaining what size is currently active and that users can adjust it anytime directly in the workspace toolbar.
+
+Next, it locates all speech duration input fields on the page (for constructive speeches, rebuttals, crossfires, summaries, final focus speeches, and preparation time). It iterates through each input, reads which speech type it corresponds to, and fills the input field with the saved duration in seconds.
+
+Finally, it checks the audio toggle checkbox element. It sets the checkbox state to either checked or unchecked depending on whether the user has sound alerts enabled in the database.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: window.renderCurrentPage()
+//--------------------------------------------------------------------------------
+This function connects the Settings screen to the universal page rendering system.
+
+What it does:
+When called by the core application, it executes loadSettingsForm so the form inputs are always synchronized with the latest saved settings.
+
+
+//--------------------------------------------------------------------------------
+EVENT LISTENER: Click Event Listener (document click)
+//--------------------------------------------------------------------------------
+This event listener handles button clicks on the Settings page, specifically saving user preferences.
+
+What it does:
+When the user clicks the "Save Settings" button, it collects every duration input field on the page and validates the entered numbers using validateSpeechTime. It checks that every duration is a valid positive number within official debate rules.
+
+If any input contains an invalid number, it halts the save process immediately and displays a clear error message on the screen so the user knows what needs fixing.
+
+If all values pass validation, it updates the database settings object with the new duration times for each speech, updates the sound alert preference based on the checkbox, and saves the updated database into browser localStorage.
+
+If browser storage is full and cannot save, it reports an error message to the user. Otherwise, once saving succeeds, it automatically redirects the user back to the home page (index.html).
+================================================================================

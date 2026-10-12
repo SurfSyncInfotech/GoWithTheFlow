@@ -1,0 +1,46 @@
+================================================================================
+EXPLANATION: preflows.js
+Purpose: Manages the Preflows list page (preflows.html) where users create, view,
+open, and delete pre-prepared debate case templates.
+================================================================================
+
+//--------------------------------------------------------------------------------
+FUNCTION: renderPreflowsList()
+//--------------------------------------------------------------------------------
+This function reads all saved preflow templates from the database and builds visual cards for them on the screen.
+
+What it does:
+It starts by locating the preflow list container element on the page. If the element cannot be found, it stops immediately.
+
+It converts the preflows stored in the database from an object into an array list, and sorts them by date so that the most recently updated or created preflows appear right at the top.
+
+It clears out any existing cards inside the list container so the list does not duplicate itself when refreshed.
+
+Then, it loops through each preflow in the sorted list. For every preflow, it creates a clean clone of the card template. It sets the card title to the preflow's title, formats the debate side (Pro or Con), and appends the topic if one was provided. It finds all action buttons on the card (like Open and Delete) and attaches the preflow's unique ID to their data attributes so click events know which item was clicked. Finally, it appends the finished card into the container on the screen.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: window.renderCurrentPage()
+//--------------------------------------------------------------------------------
+This function connects the page to the application rendering cycle.
+
+What it does:
+Whenever the app triggers a screen update, it runs renderPreflowsList to fetch the latest preflow data and rebuild the cards on the screen.
+
+
+//--------------------------------------------------------------------------------
+EVENT LISTENER: Click Event Listener (document click)
+//--------------------------------------------------------------------------------
+This event listener handles all user clicks on interactive buttons across the preflows page.
+
+What it does:
+When a user clicks anywhere on the page, it checks if the clicked element (or its parent) has an action attribute. If not, it ignores the click.
+
+If the action is "open-opening", it calls openOpening with the preflow's ID. This records the preflow selection in session storage and redirects the browser to the workspace where the user can view and edit the case.
+
+If the action is "new-opening", it prepares the creation modal popup. It resets the input fields to default values (title to "Untitled preflow", topic to empty, and side to "pro") and then reveals the modal dialog on the screen.
+
+If the action is "make-opening", the user has clicked "Create" inside the modal. It reads the title, topic, and side entered by the user, creates a brand new preflow data structure with a unique ID, saves it to the database, writes the database to browser localStorage, and immediately opens the newly created preflow in the workspace.
+
+If the action is "delete-opening", it prompts the user with a confirmation dialog asking if they are sure they want to delete the preflow. If the user confirms, it removes the preflow from the database, updates localStorage, and re-renders the list so the card disappears from view.
+================================================================================

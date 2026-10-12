@@ -1,0 +1,13 @@
+================================================================================
+EXPLANATION: help.js
+Purpose: Manages the Help and Debate Rules page (help.html).
+================================================================================
+
+//--------------------------------------------------------------------------------
+FUNCTION: window.renderCurrentPage()
+//--------------------------------------------------------------------------------
+This function handles the page rendering hook for the Help and Rules screen.
+
+What it does:
+When the application starts or navigates to a new page, the core engine in common.js invokes window.renderCurrentPage to draw dynamic components. Because the Help page displays static debate rules, instructions, and user guides that are already defined directly in HTML, there is no database fetching or card generation needed here. This empty function satisfies the application interface so the page loads cleanly without any missing function errors.
+================================================================================

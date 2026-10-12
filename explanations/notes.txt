@@ -1,0 +1,41 @@
+================================================================================
+EXPLANATION: notes.js
+Purpose: Manages the Crossfire Notes page of the debate round.
+================================================================================
+
+//--------------------------------------------------------------------------------
+FUNCTION: renderCrossfireNotes()
+//--------------------------------------------------------------------------------
+This function is responsible for displaying and refreshing all the crossfire note boxes on the page.
+
+What it does:
+First, it verifies whether a debate round is currently loaded. If no round exists, it stops execution immediately to prevent errors.
+
+Next, it calls updateTopBarAndSidebar to make sure the top navigation bar, round title, topic, and sidebar menus show the most up-to-date round information.
+
+It then searches the page for all note textareas that have the class "note-box". It loops through every single textarea found on the screen. For each textarea, it reads the "data-cross" attribute to identify which crossfire period it belongs to (such as the first crossfire or second crossfire). It looks into the database to see if the user previously wrote notes for that crossfire period. If text was saved before, it places that text inside the textarea, but only if the user is not actively typing inside that box right now. This check ensures that a user typing into a box will not have their cursor interrupted or their text overwritten.
+
+Finally, it checks session storage to see if another page requested keyboard focus on a specific note box. If so, it removes the flag from session storage, finds that note box on the screen, and places the typing cursor directly into it so the user can start typing immediately.
+
+
+//--------------------------------------------------------------------------------
+FUNCTION: window.renderCurrentPage()
+//--------------------------------------------------------------------------------
+This function connects the page to the global rendering system.
+
+What it does:
+Whenever the common application script needs to re-render or refresh the current screen, it calls window.renderCurrentPage. In this file, it simply runs renderCrossfireNotes so the crossfire note textareas are refreshed with the latest data.
+
+
+//--------------------------------------------------------------------------------
+EVENT LISTENER: Input Event Listener (document input)
+//--------------------------------------------------------------------------------
+This event listener listens for any typing activity inside input fields or textareas on the page.
+
+What it does:
+First, it checks that an active round exists and that a valid input target triggered the event.
+
+If the user typed into the round title input field at the top of the page, it updates the title of the round in memory and schedules a background auto-save to browser storage.
+
+If the user typed into one of the crossfire note boxes, it first calls beginTyping to record an undo snapshot (so the user can undo their changes if needed). It then ensures the round has a crossfire notes data object, updates the text for that specific crossfire section, and calls saveSoon to automatically save the updated notes into browser storage.
+================================================================================
