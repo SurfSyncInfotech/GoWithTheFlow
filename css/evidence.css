@@ -74,6 +74,10 @@
   font-size: 13px;
 }
 
+.proof-tools {
+  display: none;
+}
+
 .proof-list {
   display: flex;
   flex-direction: column;

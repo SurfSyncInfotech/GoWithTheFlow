@@ -1,41 +1,96 @@
-================================================================================
-EXPLANATION: notes.js
-Purpose: Manages the Crossfire Notes page of the debate round.
-================================================================================
+notes.js
+Notes page. This file fills the crossfire boxes and saves what is typed there.
 
-//--------------------------------------------------------------------------------
-FUNCTION: renderCrossfireNotes()
-//--------------------------------------------------------------------------------
-This function is responsible for displaying and refreshing all the crossfire note boxes on the page.
+Read it from top to bottom. Each code line is followed by what that line does.
 
-What it does:
-First, it verifies whether a debate round is currently loaded. If no round exists, it stops execution immediately to prevent errors.
+function renderCrossfireNotes() {
+This is the renderCrossfireNotes function. It fills the crossfire note boxes from the saved round.
 
-Next, it calls updateTopBarAndSidebar to make sure the top navigation bar, round title, topic, and sidebar menus show the most up-to-date round information.
+  if (!state.round) return;
+If state.round is missing, stop here.
 
-It then searches the page for all note textareas that have the class "note-box". It loops through every single textarea found on the screen. For each textarea, it reads the "data-cross" attribute to identify which crossfire period it belongs to (such as the first crossfire or second crossfire). It looks into the database to see if the user previously wrote notes for that crossfire period. If text was saved before, it places that text inside the textarea, but only if the user is not actively typing inside that box right now. This check ensures that a user typing into a box will not have their cursor interrupted or their text overwritten.
+  updateTopBarAndSidebar();
+Update the top bar and the sidebar.
 
-Finally, it checks session storage to see if another page requested keyboard focus on a specific note box. If so, it removes the flag from session storage, finds that note box on the screen, and places the typing cursor directly into it so the user can start typing immediately.
+  var textAreas = document.querySelectorAll("textarea.note-box");
+Find every page piece matching "textarea.note-box" and save the list as textAreas.
 
+  for (var i = 0; i < textAreas.length; i++) {
+Loop through textAreas. i is the position, starting at 0.
 
-//--------------------------------------------------------------------------------
-FUNCTION: window.renderCurrentPage()
-//--------------------------------------------------------------------------------
-This function connects the page to the global rendering system.
+    var area = textAreas[i];
+Make area and set it to textAreas[i].
 
-What it does:
-Whenever the common application script needs to re-render or refresh the current screen, it calls window.renderCurrentPage. In this file, it simply runs renderCrossfireNotes so the crossfire note textareas are refreshed with the latest data.
+    var fieldKey = area.dataset.cross;
+Copy area.dataset.cross into fieldKey.
 
+    var savedText = "";
+Make savedText and set it to "".
 
-//--------------------------------------------------------------------------------
-EVENT LISTENER: Input Event Listener (document input)
-//--------------------------------------------------------------------------------
-This event listener listens for any typing activity inside input fields or textareas on the page.
+    if (state.round.crossNotes && state.round.crossNotes[fieldKey]) {
+If state.round.crossNotes && state.round.crossNotes[fieldKey], do the next lines.
 
-What it does:
-First, it checks that an active round exists and that a valid input target triggered the event.
+      savedText = state.round.crossNotes[fieldKey];
+Set savedText to state.round.crossNotes[fieldKey].
 
-If the user typed into the round title input field at the top of the page, it updates the title of the round in memory and schedules a background auto-save to browser storage.
+    }
+    if (document.activeElement !== area) {
+If document.activeElement !== area, do the next lines.
 
-If the user typed into one of the crossfire note boxes, it first calls beginTyping to record an undo snapshot (so the user can undo their changes if needed). It then ensures the round has a crossfire notes data object, updates the text for that specific crossfire section, and calls saveSoon to automatically save the updated notes into browser storage.
-================================================================================
+      area.value = savedText;
+Set area.value to savedText.
+
+    }
+  }
+}
+
+window.renderCurrentPage = function () {
+This is the renderCurrentPage function for this page. The shared script calls it when the page should draw.
+
+  renderCrossfireNotes();
+Run renderCrossfireNotes.
+
+};
+document.addEventListener("input", function (event) {
+Listen on the page for typing in a box. When it happens, run the steps below.
+
+  var target = event.target;
+Copy event.target into target.
+
+  if (!state.round || !target) return;
+If !state.round || !target, stop here.
+
+  if (target.dataset.field === "title-input") {
+If target.dataset.field === "title-input", do the next lines.
+
+    state.round.title = target.value;
+Set state.round.title to target.value.
+
+    saveRoundAfterAMoment(false);
+Save after a short wait, or save now if the flag says so.
+
+    return;
+Stop this function here.
+
+  }
+  if (target.dataset.cross) {
+If target.dataset.cross, do the next lines.
+
+    startTypingUndo();
+Start one undo step for this burst of typing.
+
+    if (!state.round.crossNotes) {
+If state.round.crossNotes is empty or missing, do the next lines.
+
+      state.round.crossNotes = {};
+Set state.round.crossNotes to {}.
+
+    }
+    state.round.crossNotes[target.dataset.cross] = target.value;
+Set state.round.crossNotes[target.dataset.cross] to target.value.
+
+    saveRoundAfterAMoment(false);
+Save after a short wait, or save now if the flag says so.
+
+  }
+});

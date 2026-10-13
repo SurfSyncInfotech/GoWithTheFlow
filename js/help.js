@@ -1,2 +1,0 @@
-window.renderCurrentPage = function () {
-};

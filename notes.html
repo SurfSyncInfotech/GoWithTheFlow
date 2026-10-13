@@ -3,15 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1C3144">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="images/logo.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="images/icon-192.png">
   <title>Notes — Go With the Flow</title>
-  <link rel="stylesheet" href="css/page.css?v=31">
+  <link rel="stylesheet" href="css/page.css?v=32">
   <link rel="stylesheet" href="css/buttons.css?v=31">
   <link rel="stylesheet" href="css/home.css?v=31">
   <link rel="stylesheet" href="css/sidebar.css?v=31">
-  <link rel="stylesheet" href="css/workspace.css?v=31">
-  <link rel="stylesheet" href="css/evidence.css?v=31">
+  <link rel="stylesheet" href="css/workspace.css?v=38">
+  <link rel="stylesheet" href="css/evidence.css?v=32">
   <link rel="stylesheet" href="css/popups.css?v=31">
-  <link rel="stylesheet" href="css/phone.css?v=31">
+  <link rel="stylesheet" href="css/phone.css?v=39">
   <link rel="stylesheet" href="css/print.css?v=31">
 </head>
 <body class="page" data-page="notes">
@@ -28,15 +34,12 @@
       <div id="case-links">
         <button type="button" class="menu-link" id="link-pro" data-action="case-pro" data-tour="cases">Pro Case</button>
         <button type="button" class="menu-link" id="link-con" data-action="case-con" data-tour="cases">Con Case</button>
-        <button type="button" class="menu-link active" id="link-notes" data-action="show-notes" data-tour="notes">Notes</button>
       </div>
       <div class="link-list" data-tour="jumps">
         <div id="jump-links"></div>
         <button type="button" class="add-link" data-action="add-group">+ Add contention</button>
       </div>
       <div class="push-down"></div>
-      <button type="button" class="menu-link bottom-link" data-action="show-settings">Settings</button>
-      <button type="button" class="menu-link bottom-link" data-action="show-help">Help</button>
     </div>
 
     <div class="work-box">
@@ -62,21 +65,18 @@
       <div class="side-bar" id="side-bar">
         <button type="button" class="side-btn" id="switch-pro" data-action="case-pro">Pro Case</button>
         <button type="button" class="side-btn" id="switch-con" data-action="case-con">Con Case</button>
-        <button type="button" class="side-btn active" id="switch-notes" data-action="show-notes">Notes</button>
       </div>
 
       <div class="tool-bar">
-        <button type="button" class="btn main add-btn" data-action="add-group" data-tour="add">+ Add contention</button>
+        <button type="button" class="btn main add-btn" data-action="add-group" data-tour="add">+ <span class="add-full">Add contention</span><span class="add-short">Add</span></button>
         <button type="button" class="btn tool-btn" data-action="undo">Undo</button>
         <button type="button" class="btn tool-btn" data-action="redo">Redo</button>
-        <button type="button" class="btn tool-btn" data-action="find-toggle">Find</button>
         <select class="tool-select size-select" data-field="font-size">
           <option value="12">12 px</option>
           <option value="14">14 px</option>
           <option value="16">16 px</option>
           <option value="18">18 px</option>
         </select>
-        <button type="button" class="btn tool-btn tool-right" data-action="timer-toggle">Timers</button>
       </div>
 
       <div class="notes-area" id="notes-area">
@@ -105,34 +105,16 @@
     <button type="button" data-action="export">Export</button>
     <button type="button" data-action="print">Print</button>
     <button type="button" data-action="save-opening">Save case as preflow</button>
-    <button type="button" data-action="show-help">Help</button>
     <button type="button" data-action="home">Back to rounds</button>
   </div>
   <div id="timer-popover" class="small-popup hide">
     <h2>Timer</h2>
-    <p id="timer-activity"></p>
-    <p id="popover-clock"></p>
-    <button type="button" class="btn main" id="timer-start-btn" data-action="timer-start">Start</button>
-    <button type="button" class="btn" data-action="timer-reset">Reset</button>
-    <button type="button" class="btn" data-action="timer-next">Next activity</button>
-    <h2>Prep</h2>
+    <p id="popover-clock">0:00</p>
+    <label class="form-line"><span>Minutes</span><input id="timer-minutes" type="number" min="0" value="4"></label>
+    <label class="form-line"><span>Seconds</span><input id="timer-seconds" type="number" min="0" max="59" value="0"></label>
     <div class="button-row">
-      <span id="prep-pro-label"></span>
-      <button type="button" class="btn" id="prep-pro-btn" data-action="prep-toggle" data-side="pro">Start</button>
-    </div>
-    <div class="button-row">
-      <span id="prep-con-label"></span>
-      <button type="button" class="btn" id="prep-con-btn" data-action="prep-toggle" data-side="con">Start</button>
-    </div>
-    <button type="button" class="btn" data-action="prep-reset">Reset prep</button>
-  </div>
-  <div id="find-popover" class="small-popup hide">
-    <h2>Find</h2>
-    <input class="search-box" id="find-input" placeholder="Search notes, evidence, and crossfire">
-    <div class="find-list" id="find-hits"></div>
-    <div class="button-row">
-      <button type="button" class="btn" data-action="find-prev">Previous</button>
-      <button type="button" class="btn" data-action="find-next">Next</button>
+      <button type="button" class="btn main" id="timer-start-btn" data-action="timer-start">Start</button>
+      <button type="button" class="btn" data-action="timer-reset">Reset</button>
     </div>
   </div>
 
@@ -143,7 +125,7 @@
         <label class="form-line"><span>Title</span><input id="edit-title"></label>
         <label class="form-line"><span>Topic</span><input id="edit-topic"></label>
         <label class="form-line"><span>Tournament</span><input id="edit-tournament"></label>
-        <label class="form-line"><span>Round label</span><input id="edit-round-label"></label>
+        <label class="form-line"><span>Round Number</span><input id="edit-round-label"></label>
         <label class="form-line"><span>Opponent</span><input id="edit-opponent"></label>
         <label class="form-line"><span>Your side</span>
           <select id="edit-side">
@@ -230,7 +212,7 @@
     <div class="print-note"><h3 class="print-note-name"></h3><div class="print-note-words"></div></div>
   </div>
 
-  <script src="js/common.js?v=33"></script>
-  <script src="js/notes.js?v=33"></script>
+  <script src="js/common.js?v=53"></script>
+  <script src="js/notes.js?v=37"></script>
 </body>
 </html>

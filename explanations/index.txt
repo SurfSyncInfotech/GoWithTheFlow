@@ -1,99 +1,611 @@
-================================================================================
-EXPLANATION: index.js
-Purpose: Manages the Home page (index.html) — displays saved rounds, live search,
-modal creation, renaming, duplicating, exporting, and deleting debate rounds.
-================================================================================
+index.js
+Home page. This file draws the round list and handles New round, Rename, Duplicate, Delete, and Export.
 
-//--------------------------------------------------------------------------------
-FUNCTION: loadPreflowDropdown()
-//--------------------------------------------------------------------------------
-This function populates the preflow template selector inside the "New Round" popup modal.
+Read it from top to bottom. Each code line is followed by what that line does.
 
-What it does:
-It finds the dropdown select element on the page. It keeps the default "None" option and removes any previously generated options so they do not duplicate. Then it loops through all saved preflow templates in the database and creates an option element for each one, setting its value to the preflow's ID and its label to the preflow's title. Finally, it adds these options into the dropdown so the user can choose a pre-prepared case when creating a round.
+function loadPreflowDropdown() {
+This is the loadPreflowDropdown function. It fills the Starting preflow list on the New round form.
 
+  var select = document.getElementById("new-opening");
+Find the Starting preflow box (id new-opening) and save it as select.
 
-//--------------------------------------------------------------------------------
-FUNCTION: openNewRoundModal()
-//--------------------------------------------------------------------------------
-This function prepares and displays the popup modal for creating a brand new debate round.
+  if (!select) return;
+If select is missing, stop here.
 
-What it does:
-It resets all the modal's input fields back to their default values. The title is set to "Untitled round", the topic, tournament name, round number label, and opponent team name are cleared, and both your side and the speaking order are set to "Pro". It then calls loadPreflowDropdown to ensure the preflow template list is up to date, and finally makes the modal window visible on the screen.
+  var preflowIds = Object.keys(db.preflows);
+Get the saved ids from db.preflows and save them as preflowIds.
 
+  while (select.options.length > 1) {
+Keep looping while select.options.length > 1.
 
-//--------------------------------------------------------------------------------
-FUNCTION: createRoundFromForm()
-//--------------------------------------------------------------------------------
-This function reads user input from the "New Round" modal and constructs a new debate round in storage.
+    select.remove(1);
+Remove option number 1, so old choices do not pile up. Option 0 stays.
 
-What it does:
-It gathers all the information entered by the user from the form inputs, including the title, topic, tournament name, round label, opponent team name, which side the user is debating (Pro, Con, or Observer), and which team speaks first.
+  }
+  for (var i = 0; i < preflowIds.length; i++) {
+Loop through preflowIds. i is the position, starting at 0.
 
-It then passes these details to createNewRound, which builds a complete debate round data structure with default contentions, speech timers, and metadata.
+    var option = cloneTemplate("opt-sample");
+Copy a hidden sample from the page and save it as option.
 
-If the user selected a preflow template from the dropdown, it retrieves that preflow from the database and copies all of its contentions and arguments directly into the newly created round.
+    option.value = preflowIds[i];
+Set option.value to preflowIds[i].
 
-It inserts the new round into the database and saves the updated database to browser localStorage. If browser storage is full, it shows an error message. Otherwise, it immediately opens the round by saving the round's ID in session storage and redirecting the browser to the workspace.
+    var savedPreflow = db.preflows[preflowIds[i]];
+Make savedPreflow and set it to db.preflows[preflowIds[i]].
 
+    if (savedPreflow.topic) {
+If savedPreflow.topic, do the next lines.
 
-//--------------------------------------------------------------------------------
-FUNCTION: openRenameModal(roundId)
-//--------------------------------------------------------------------------------
-This function opens a modal dialog that allows the user to change the title of an existing round.
+      option.textContent = savedPreflow.topic;
+Set option.textContent to savedPreflow.topic.
 
-What it does:
-It finds the rename modal window, attaches the ID of the round being edited to the modal element for reference, pre-fills the input field with the round's current title, and reveals the modal on the screen.
+    } else {
+Otherwise, do the next lines.
 
+      option.textContent = savedPreflow.title;
+Set option.textContent to savedPreflow.title.
 
-//--------------------------------------------------------------------------------
-FUNCTION: displayRoundsList()
-//--------------------------------------------------------------------------------
-This function renders all saved round cards on the home page and filters them based on active search terms.
+    }
+    select.appendChild(option);
+Put option inside this box.
 
-What it does:
-First, it checks whether automatic data recovery had occurred earlier, showing or hiding a notification banner accordingly.
+  }
+}
 
-It gathers all saved rounds from the database into a list and retrieves any active search query from the search input. It loops through every round and checks if the search query matches the round's title, topic, tournament name, or opponent name.
+function openNewRoundModal() {
+This is the openNewRoundModal function. It clears the New round form and shows it.
 
-It sorts all matching rounds by their last modified date so the newest and most recently updated rounds appear at the top.
+  document.getElementById("new-topic").value = "";
+Find the Topic box (id new-topic) and empty it.
 
-If there are zero rounds in storage and no search query was entered, it displays an empty-state welcome screen inviting the user to create their first round.
+  document.getElementById("new-tournament").value = "";
+Find the Tournament box (id new-tournament) and empty it.
 
-Otherwise, it shows the round browser, updates the badge showing how many rounds exist, clears the card container, and loops through the sorted rounds to build a visual card for each one. For every card, it sets the title, applies colored badges indicating the side (Pro, Con, or Observer), displays tournament and topic information, formats the last modified date, and attaches the round's ID to all action buttons (Open, Rename, Duplicate, Export, Delete).
+  document.getElementById("new-round-label").value = "";
+Find the Round Number box (id new-round-label) and empty it.
 
+  document.getElementById("new-opponent").value = "";
+Find the Opponent box (id new-opponent) and empty it.
 
-//--------------------------------------------------------------------------------
-FUNCTION: window.renderCurrentPage()
-//--------------------------------------------------------------------------------
-This function connects the home page to the universal application rendering cycle.
+  document.getElementById("new-side").value = "pro";
+Find the Your side box (id new-side) and set it to pro.
 
-What it does:
-Whenever the application triggers a screen refresh, this function calls displayRoundsList to redraw all round cards with the latest database records.
+  document.getElementById("new-first").value = "pro";
+Find the First speaking side box (id new-first) and set it to pro.
 
+  loadPreflowDropdown();
+Fill the Starting preflow list.
 
-//--------------------------------------------------------------------------------
-EVENT LISTENER: Click Event Listener (document click)
-//--------------------------------------------------------------------------------
-This event listener handles all user clicks on interactive buttons across the home page.
+  showElement(document.getElementById("new-round-box"));
+Show the New round box (id new-round-box).
 
-What it does:
-It checks which action button was clicked by examining the element's data attribute:
-- If "new-round" was clicked, it opens the round creation modal.
-- If "open-round" was clicked, it navigates the user into the workspace for that round.
-- If "create-round" was clicked, it triggers createRoundFromForm to build and save the round.
-- If "rename-round" was clicked, it opens the rename modal.
-- If "save-rename" was clicked, it updates the round's title in storage, saves the database, closes the modal, and refreshes the cards.
-- If "duplicate-round" was clicked, it creates a full clone of the round with a new ID and saves it to storage.
-- If "delete-round" was clicked, it prompts the user with a confirmation dialog before deleting the round from storage.
-- If "export-round" was clicked, it downloads the round as a JSON file to the user's computer.
+}
 
+function createRoundFromForm() {
+This is the createRoundFromForm function. It reads the New round form, saves the round, and opens it.
 
-//--------------------------------------------------------------------------------
-EVENT LISTENER: Input Event Listener (document input)
-//--------------------------------------------------------------------------------
-This event listener handles user typing in the search box.
+  var topic = document.getElementById("new-topic").value.trim();
+Read the Topic box (id new-topic), trim the spaces, and save it as topic.
 
-What it does:
-Whenever the user types or deletes characters in the search bar, it updates the application's search query state and immediately calls displayRoundsList, providing instantaneous live filtering of round cards as the user types.
-================================================================================
+  var title = topic;
+Copy topic into title.
+
+  if (!title) {
+If title is empty or missing, do the next lines.
+
+    title = "Untitled round";
+Set title to "Untitled round".
+
+  }
+  var tournament = document.getElementById("new-tournament").value.trim();
+Read the Tournament box (id new-tournament), trim the spaces, and save it as tournament.
+
+  var roundLabel = document.getElementById("new-round-label").value.trim();
+Read the Round Number box (id new-round-label), trim the spaces, and save it as roundLabel.
+
+  var opponent = document.getElementById("new-opponent").value.trim();
+Read the Opponent box (id new-opponent), trim the spaces, and save it as opponent.
+
+  var yourSide = document.getElementById("new-side").value;
+Read the Your side box (id new-side) and save it as yourSide.
+
+  var firstSide = document.getElementById("new-first").value;
+Read the First speaking side box (id new-first) and save it as firstSide.
+
+  var round = createNewRound({
+This line continues the step above.
+
+    title: title,
+On this object, title is title.
+
+    topic: topic,
+On this object, topic is topic.
+
+    tournament: tournament,
+On this object, tournament is tournament.
+
+    roundLabel: roundLabel,
+On this object, roundLabel is roundLabel.
+
+    opponent: opponent,
+On this object, opponent is opponent.
+
+    yourSide: yourSide,
+On this object, yourSide is yourSide.
+
+    firstSide: firstSide
+On this object, firstSide is firstSide.
+
+  }, db.settings);
+  var preflowId = document.getElementById("new-opening").value;
+Read the Starting preflow box (id new-opening) and save it as preflowId.
+
+  var preflow = null;
+Copy null into preflow.
+
+  if (preflowId) {
+If preflowId, do the next lines.
+
+    preflow = db.preflows[preflowId];
+Set preflow to db.preflows[preflowId].
+
+  }
+  var errorElement = document.getElementById("new-round-error");
+Find the New round error box (id new-round-error) and save it as errorElement.
+
+  if (preflow && (preflow.side === "pro" || preflow.side === "con")) {
+If preflow && (preflow.side === "pro" || preflow.side === "con"), do the next lines.
+
+    applyPreflowToRound(round, preflow);
+Copy the chosen preflow into the new round.
+
+  }
+  db.rounds[round.id] = round;
+Set db.rounds[round.id] to round.
+
+  var saveError = saveToLocalStorage(db);
+Make saveError and set it to saveToLocalStorage(db).
+
+  if (saveError) {
+If saveError, do the next lines.
+
+    delete db.rounds[round.id];
+This line continues the step above.
+
+    if (errorElement) {
+If errorElement, do the next lines.
+
+      errorElement.textContent = saveError;
+Set errorElement.textContent to saveError.
+
+    }
+    return;
+Stop this function here.
+
+  }
+  if (errorElement) {
+If errorElement, do the next lines.
+
+    errorElement.textContent = "";
+Set errorElement.textContent to "".
+
+  }
+  openRound(round.id);
+Open the round round.id.
+
+}
+
+function openRenameModal(roundId) {
+This is the openRenameModal function. It opens the Rename box for one round.
+
+  var box = document.getElementById("rename-box");
+Find the Rename box (id rename-box) and save it as box.
+
+  box.dataset.id = roundId;
+Set box.dataset.id to roundId.
+
+  document.getElementById("rename-title").value = db.rounds[roundId].title;
+Find the Rename title box (id rename-title) and put db.rounds[roundId].title in it.
+
+  showElement(box);
+Show box.
+
+}
+
+function displayRoundsList() {
+This is the displayRoundsList function. It draws the saved rounds on the home page.
+
+  var banner = document.getElementById("recovered-banner");
+Find the recovered-rounds banner box (id recovered-banner) and save it as banner.
+
+  if (banner) {
+If banner, do the next lines.
+
+    if (db.recovered) {
+If db.recovered, do the next lines.
+
+      showElement(banner);
+Show banner.
+
+    } else {
+Otherwise, do the next lines.
+
+      hideElement(banner);
+Hide banner.
+
+    }
+  }
+  var allRounds = getListFromObject(db.rounds);
+Make allRounds and set it to getListFromObject(db.rounds).
+
+  var searchText = state.query.trim().toLowerCase();
+Make searchText and set it to state.query.trim().toLowerCase().
+
+  var matchedRounds = [];
+Make matchedRounds and set it to [].
+
+  for (var i = 0; i < allRounds.length; i++) {
+Loop through allRounds. i is the position, starting at 0.
+
+    var roundData = allRounds[i];
+Make roundData and set it to allRounds[i].
+
+    var combinedText = [
+This line continues the step above.
+
+      roundData.title,
+This line continues the step above.
+
+      roundData.topic,
+This line continues the step above.
+
+      roundData.tournament,
+This line continues the step above.
+
+      roundData.opponent
+This line continues the step above.
+
+    ].join(" ").toLowerCase();
+This line continues the step above.
+
+    if (!searchText || combinedText.indexOf(searchText) !== -1) {
+If !searchText || combinedText.indexOf(searchText) !== -1, do the next lines.
+
+      matchedRounds.push(roundData);
+Add roundData to the list.
+
+    }
+  }
+  var sortedRounds = sortByRecentDate(matchedRounds);
+Make sortedRounds and set it to sortByRecentDate(matchedRounds).
+
+  var emptyState = document.getElementById("empty-home");
+Find the empty home message box (id empty-home) and save it as emptyState.
+
+  var browserSection = document.getElementById("round-browser");
+Find the round list box (id round-browser) and save it as browserSection.
+
+  if (sortedRounds.length === 0 && !searchText) {
+If sortedRounds.length === 0 && !searchText, do the next lines.
+
+    showElement(emptyState);
+Show emptyState.
+
+    hideElement(browserSection);
+Hide browserSection.
+
+    return;
+Stop this function here.
+
+  }
+  hideElement(emptyState);
+Hide emptyState.
+
+  showElement(browserSection);
+Show browserSection.
+
+  var countBadge = document.getElementById("round-count");
+Find the round count box (id round-count) and save it as countBadge.
+
+  if (countBadge) {
+If countBadge, do the next lines.
+
+    var roundWord = " rounds";
+Make roundWord and set it to " rounds".
+
+    if (sortedRounds.length === 1) {
+If sortedRounds.length === 1, do the next lines.
+
+      roundWord = " round";
+Set roundWord to " round".
+
+    }
+    countBadge.textContent = sortedRounds.length + roundWord + " in this browser";
+Set countBadge.textContent to sortedRounds.length + roundWord + " in this browser".
+
+  }
+  var searchInput = document.querySelector("[data-field='search-box']");
+Find the first page piece matching "[data-field='search-box']" and save it as searchInput.
+
+  if (searchInput && document.activeElement !== searchInput) {
+If searchInput && document.activeElement !== searchInput, do the next lines.
+
+    searchInput.value = state.query;
+Set searchInput.value to state.query.
+
+  }
+  var cardList = document.getElementById("card-list");
+Find the round cards box (id card-list) and save it as cardList.
+
+  clearElement(cardList);
+Empty cardList.
+
+  var noMatchElement = document.getElementById("no-match");
+Find the no match message box (id no-match) and save it as noMatchElement.
+
+  if (sortedRounds.length === 0) {
+If sortedRounds.length === 0, do the next lines.
+
+    showElement(noMatchElement);
+Show noMatchElement.
+
+  } else {
+Otherwise, do the next lines.
+
+    hideElement(noMatchElement);
+Hide noMatchElement.
+
+  }
+  for (var j = 0; j < sortedRounds.length; j++) {
+Loop through sortedRounds. j is the position, starting at 0.
+
+    var singleRound = sortedRounds[j];
+Make singleRound and set it to sortedRounds[j].
+
+    var card = cloneTemplate("sample-round");
+Copy a hidden sample from the page and save it as card.
+
+    card.querySelector(".card-name").textContent = singleRound.title;
+This line continues the step above.
+
+    var sideTag = card.querySelector(".side-tag");
+Make sideTag and set it to card.querySelector(".side-tag").
+
+    var sideName = formatSideName(singleRound.yourSide);
+Make sideName and set it to formatSideName(singleRound.yourSide).
+
+    if (!sideName) {
+If sideName is empty or missing, do the next lines.
+
+      sideName = "Pro";
+Set sideName to "Pro".
+
+    }
+    sideTag.textContent = sideName;
+Set sideTag.textContent to sideName.
+
+    sideTag.classList.remove("pro-tag", "con-tag", "obs-tag");
+Remove option number "pro-tag", "con-tag", "obs-tag", so old choices do not pile up. Option 0 stays.
+
+    if (singleRound.yourSide === "con") {
+If singleRound.yourSide === "con", do the next lines.
+
+      sideTag.classList.add("con-tag");
+Run sideTag.classList.add, passing "con-tag".
+
+    } else if (singleRound.yourSide === "observer") {
+Otherwise, if singleRound.yourSide === "observer", do the next lines.
+
+      sideTag.classList.add("obs-tag");
+Run sideTag.classList.add, passing "obs-tag".
+
+    } else {
+Otherwise, do the next lines.
+
+      sideTag.classList.add("pro-tag");
+Run sideTag.classList.add, passing "pro-tag".
+
+    }
+    var detailsText = joinFilledText(
+This line continues the step above.
+
+      [singleRound.tournament, singleRound.roundLabel],
+This line continues the step above.
+
+      " · "
+Keep this pasted style:  · .
+
+    );
+This line continues the step above.
+
+    setElementText(card.querySelector(".card-line"), detailsText);
+Write text into card.querySelector(".card-line"), detailsText.
+
+    var topicLine = "";
+Make topicLine and set it to "".
+
+    if (singleRound.topic && singleRound.topic !== singleRound.title) {
+If singleRound.topic && singleRound.topic !== singleRound.title, do the next lines.
+
+      topicLine = singleRound.topic;
+Set topicLine to singleRound.topic.
+
+    }
+    setElementText(card.querySelector(".card-topic"), topicLine);
+Write text into card.querySelector(".card-topic"), topicLine.
+
+    card.querySelector(".card-time").textContent =
+This line continues the step above.
+
+      "Edited " + new Date(singleRound.updatedAt).toLocaleString();
+This line continues the step above.
+
+    var buttons = card.querySelectorAll("button");
+Make buttons and set it to card.querySelectorAll("button").
+
+    for (var b = 0; b < buttons.length; b++) {
+Loop through buttons. b is the position, starting at 0.
+
+      buttons[b].dataset.id = singleRound.id;
+Set buttons[b].dataset.id to singleRound.id.
+
+    }
+    cardList.appendChild(card);
+Put card inside this box.
+
+  }
+}
+
+window.renderCurrentPage = function () {
+This is the renderCurrentPage function for this page. The shared script calls it when the page should draw.
+
+  displayRoundsList();
+Draw the round list again.
+
+};
+document.addEventListener("click", function (event) {
+Listen on the page for a click. When it happens, run the steps below.
+
+  var trigger = event.target.closest("[data-action]");
+Make trigger and set it to event.target.closest("[data-action]").
+
+  if (!trigger) return;
+If trigger is missing, stop here.
+
+  var action = trigger.dataset.action;
+Copy trigger.dataset.action into action.
+
+  var id = trigger.dataset.id;
+Copy trigger.dataset.id into id.
+
+  if (action === "new-round") {
+If the clicked action is "new-round", do the next lines.
+
+    openNewRoundModal();
+Open the New round form.
+
+  } else if (action === "open-round") {
+Otherwise, if the clicked action is "open-round", do the next lines.
+
+    openRound(id);
+Open the round id.
+
+  } else if (action === "create-round") {
+Otherwise, if the clicked action is "create-round", do the next lines.
+
+    createRoundFromForm();
+Create the round from the form.
+
+  } else if (action === "rename-round") {
+Otherwise, if the clicked action is "rename-round", do the next lines.
+
+    openRenameModal(id);
+Open the Rename box for id.
+
+  } else if (action === "save-rename") {
+Otherwise, if the clicked action is "save-rename", do the next lines.
+
+    var renameId = document.getElementById("rename-box").dataset.id;
+Make renameId and set it to document.getElementById("rename-box").dataset.id.
+
+    var existingRound = db.rounds[renameId];
+Make existingRound and set it to db.rounds[renameId].
+
+    if (existingRound) {
+If existingRound, do the next lines.
+
+      var nextTitle = document.getElementById("rename-title").value.trim();
+Read the Rename title box (id rename-title), trim the spaces, and save it as nextTitle.
+
+      if (!nextTitle) {
+If nextTitle is empty or missing, do the next lines.
+
+        nextTitle = "Untitled round";
+Set nextTitle to "Untitled round".
+
+      }
+      existingRound.title = nextTitle;
+Set existingRound.title to nextTitle.
+
+      existingRound.updatedAt = new Date().toISOString();
+Set existingRound.updatedAt to new Date().toISOString().
+
+      saveToLocalStorage(db);
+Save the data in this browser.
+
+    }
+    closePopups();
+Close the open dialogs.
+
+    render();
+Draw the page again.
+
+  } else if (action === "duplicate-round") {
+Otherwise, if the clicked action is "duplicate-round", do the next lines.
+
+    var copy = cloneRound(db.rounds[id], db.settings);
+Make copy and set it to cloneRound(db.rounds[id], db.settings).
+
+    db.rounds[copy.id] = copy;
+Set db.rounds[copy.id] to copy.
+
+    saveToLocalStorage(db);
+Save the data in this browser.
+
+    render();
+Draw the page again.
+
+  } else if (action === "delete-round") {
+Otherwise, if the clicked action is "delete-round", do the next lines.
+
+    askConfirm(
+This line continues the step above.
+
+      "Delete this round?",
+Keep this pasted style: Delete this round?.
+
+      "This removes the round from this browser.",
+Keep this pasted style: This removes the round from this browser..
+
+      "Delete",
+Keep this pasted style: Delete.
+
+      function () {
+This line continues the step above.
+
+        delete db.rounds[id];
+This line continues the step above.
+
+        saveToLocalStorage(db);
+Save the data in this browser.
+
+        render();
+Draw the page again.
+
+      }
+    );
+This line continues the step above.
+
+  } else if (action === "export-round") {
+Otherwise, if the clicked action is "export-round", do the next lines.
+
+    downloadRoundAsJson(db.rounds[id]);
+Download db.rounds[id] as a JSON file.
+
+  }
+});
+document.addEventListener("input", function (event) {
+Listen on the page for typing in a box. When it happens, run the steps below.
+
+  if (event.target.dataset.field === "search-box") {
+If event.target.dataset.field === "search-box", do the next lines.
+
+    state.query = event.target.value;
+Set state.query to event.target.value.
+
+    displayRoundsList();
+Draw the round list again.
+
+  }
+});

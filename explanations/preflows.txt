@@ -1,46 +1,182 @@
-================================================================================
-EXPLANATION: preflows.js
-Purpose: Manages the Preflows list page (preflows.html) where users create, view,
-open, and delete pre-prepared debate case templates.
-================================================================================
+preflows.js
+Preflows page. This file draws the preflow cards and handles New preflow and Delete.
 
-//--------------------------------------------------------------------------------
-FUNCTION: renderPreflowsList()
-//--------------------------------------------------------------------------------
-This function reads all saved preflow templates from the database and builds visual cards for them on the screen.
+Read it from top to bottom. Each code line is followed by what that line does.
 
-What it does:
-It starts by locating the preflow list container element on the page. If the element cannot be found, it stops immediately.
+function renderPreflowsList() {
+This is the renderPreflowsList function. It draws the saved preflows.
 
-It converts the preflows stored in the database from an object into an array list, and sorts them by date so that the most recently updated or created preflows appear right at the top.
+  var list = document.getElementById("preflow-list");
+Find the preflow list box (id preflow-list) and save it as list.
 
-It clears out any existing cards inside the list container so the list does not duplicate itself when refreshed.
+  if (!list) return;
+If list is missing, stop here.
 
-Then, it loops through each preflow in the sorted list. For every preflow, it creates a clean clone of the card template. It sets the card title to the preflow's title, formats the debate side (Pro or Con), and appends the topic if one was provided. It finds all action buttons on the card (like Open and Delete) and attaches the preflow's unique ID to their data attributes so click events know which item was clicked. Finally, it appends the finished card into the container on the screen.
+  var preflows = sortByRecentDate(getListFromObject(db.preflows));
+Make preflows and set it to sortByRecentDate(getListFromObject(db.preflows)).
 
+  clearElement(list);
+Empty list.
 
-//--------------------------------------------------------------------------------
-FUNCTION: window.renderCurrentPage()
-//--------------------------------------------------------------------------------
-This function connects the page to the application rendering cycle.
+  for (var i = 0; i < preflows.length; i++) {
+Loop through preflows. i is the position, starting at 0.
 
-What it does:
-Whenever the app triggers a screen update, it runs renderPreflowsList to fetch the latest preflow data and rebuild the cards on the screen.
+    var singlePreflow = preflows[i];
+Make singlePreflow and set it to preflows[i].
 
+    var card = cloneTemplate("sample-pf");
+Copy a hidden sample from the page and save it as card.
 
-//--------------------------------------------------------------------------------
-EVENT LISTENER: Click Event Listener (document click)
-//--------------------------------------------------------------------------------
-This event listener handles all user clicks on interactive buttons across the preflows page.
+    var cardName = singlePreflow.topic;
+Copy singlePreflow.topic into cardName.
 
-What it does:
-When a user clicks anywhere on the page, it checks if the clicked element (or its parent) has an action attribute. If not, it ignores the click.
+    if (!cardName) {
+If cardName is empty or missing, do the next lines.
 
-If the action is "open-opening", it calls openOpening with the preflow's ID. This records the preflow selection in session storage and redirects the browser to the workspace where the user can view and edit the case.
+      cardName = singlePreflow.title;
+Set cardName to singlePreflow.title.
 
-If the action is "new-opening", it prepares the creation modal popup. It resets the input fields to default values (title to "Untitled preflow", topic to empty, and side to "pro") and then reveals the modal dialog on the screen.
+    }
+    if (!cardName) {
+If cardName is empty or missing, do the next lines.
 
-If the action is "make-opening", the user has clicked "Create" inside the modal. It reads the title, topic, and side entered by the user, creates a brand new preflow data structure with a unique ID, saves it to the database, writes the database to browser localStorage, and immediately opens the newly created preflow in the workspace.
+      cardName = "Untitled preflow";
+Set cardName to "Untitled preflow".
 
-If the action is "delete-opening", it prompts the user with a confirmation dialog asking if they are sure they want to delete the preflow. If the user confirms, it removes the preflow from the database, updates localStorage, and re-renders the list so the card disappears from view.
-================================================================================
+    }
+    card.querySelector(".card-name").textContent = cardName;
+This line continues the step above.
+
+    card.querySelector(".card-extra").textContent = formatSideName(singlePreflow.side);
+This line continues the step above.
+
+    var buttons = card.querySelectorAll("button");
+Make buttons and set it to card.querySelectorAll("button").
+
+    for (var b = 0; b < buttons.length; b++) {
+Loop through buttons. b is the position, starting at 0.
+
+      buttons[b].dataset.id = singlePreflow.id;
+Set buttons[b].dataset.id to singlePreflow.id.
+
+    }
+    list.appendChild(card);
+Put card inside this box.
+
+  }
+}
+
+window.renderCurrentPage = function () {
+This is the renderCurrentPage function for this page. The shared script calls it when the page should draw.
+
+  renderPreflowsList();
+Draw the preflow list again.
+
+};
+document.addEventListener("click", function (event) {
+Listen on the page for a click. When it happens, run the steps below.
+
+  var trigger = event.target.closest("[data-action]");
+Make trigger and set it to event.target.closest("[data-action]").
+
+  if (!trigger) return;
+If trigger is missing, stop here.
+
+  var action = trigger.dataset.action;
+Copy trigger.dataset.action into action.
+
+  var id = trigger.dataset.id;
+Copy trigger.dataset.id into id.
+
+  if (action === "open-opening") {
+If the clicked action is "open-opening", do the next lines.
+
+    openOpening(id);
+Open the preflow id.
+
+  } else if (action === "new-opening") {
+Otherwise, if the clicked action is "new-opening", do the next lines.
+
+    document.getElementById("preflow-topic").value = "";
+Find the Preflow topic box (id preflow-topic) and empty it.
+
+    document.getElementById("preflow-side").value = "pro";
+Find the Preflow side box (id preflow-side) and set it to pro.
+
+    showElement(document.getElementById("new-opening-box"));
+Show the New preflow box (id new-opening-box).
+
+  } else if (action === "make-opening") {
+Otherwise, if the clicked action is "make-opening", do the next lines.
+
+    var topic = document.getElementById("preflow-topic").value.trim();
+Read the Preflow topic box (id preflow-topic), trim the spaces, and save it as topic.
+
+    var side = document.getElementById("preflow-side").value;
+Read the Preflow side box (id preflow-side) and save it as side.
+
+    var preflowTitle = topic;
+Copy topic into preflowTitle.
+
+    if (!preflowTitle) {
+If preflowTitle is empty or missing, do the next lines.
+
+      preflowTitle = "Untitled preflow";
+Set preflowTitle to "Untitled preflow".
+
+    }
+    var made = createNewPreflow({
+This line continues the step above.
+
+      title: preflowTitle,
+On this object, title is preflowTitle.
+
+      topic: topic,
+On this object, topic is topic.
+
+      side: side
+On this object, side is side.
+
+    });
+    db.preflows[made.id] = made;
+Set db.preflows[made.id] to made.
+
+    saveToLocalStorage(db);
+Save the data in this browser.
+
+    openOpening(made.id);
+Open the preflow made.id.
+
+  } else if (action === "delete-opening") {
+Otherwise, if the clicked action is "delete-opening", do the next lines.
+
+    askConfirm(
+This line continues the step above.
+
+      "Delete this preflow?",
+Keep this pasted style: Delete this preflow?.
+
+      "Rounds already created from it stay as they are.",
+Keep this pasted style: Rounds already created from it stay as they are..
+
+      "Delete",
+Keep this pasted style: Delete.
+
+      function () {
+This line continues the step above.
+
+        delete db.preflows[id];
+This line continues the step above.
+
+        saveToLocalStorage(db);
+Save the data in this browser.
+
+        render();
+Draw the page again.
+
+      }
+    );
+This line continues the step above.
+
+  }
+});

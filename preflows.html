@@ -3,15 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1C3144">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="images/logo.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="images/icon-192.png">
   <title>Preflows — Go With the Flow</title>
-  <link rel="stylesheet" href="css/page.css?v=31">
+  <link rel="stylesheet" href="css/page.css?v=32">
   <link rel="stylesheet" href="css/buttons.css?v=31">
   <link rel="stylesheet" href="css/home.css?v=31">
   <link rel="stylesheet" href="css/sidebar.css?v=31">
-  <link rel="stylesheet" href="css/workspace.css?v=31">
-  <link rel="stylesheet" href="css/evidence.css?v=31">
+  <link rel="stylesheet" href="css/workspace.css?v=38">
+  <link rel="stylesheet" href="css/evidence.css?v=32">
   <link rel="stylesheet" href="css/popups.css?v=31">
-  <link rel="stylesheet" href="css/phone.css?v=31">
+  <link rel="stylesheet" href="css/phone.css?v=39">
   <link rel="stylesheet" href="css/print.css?v=31">
 </head>
 <body class="page" data-page="preflows">
@@ -26,8 +32,6 @@
       <div class="top-menu">
         <a class="btn plain" href="preflows.html">Preflows</a>
         <button type="button" class="btn plain" data-action="tour">Feature tour</button>
-        <a class="btn plain" href="settings.html">Settings</a>
-        <a class="btn plain" href="help.html">Help</a>
       </div>
     </div>
 
@@ -35,7 +39,7 @@
       <div class="list-top">
         <div>
           <h1>Preflows</h1>
-          <p class="gray-text">A preflow is the opening constructive and its evidence. Applying one copies it into a new round.</p>
+          <p class="gray-text">Pre-write your arguments</p>
         </div>
         <button type="button" class="btn main" data-action="new-opening">New preflow</button>
       </div>
@@ -50,7 +54,6 @@
     <div class="popup">
       <h2>New preflow</h2>
       <div class="popup-body">
-        <label class="form-line"><span>Title</span><input id="preflow-title" value="Untitled preflow"></label>
         <label class="form-line"><span>Topic</span><input id="preflow-topic"></label>
         <label class="form-line"><span>Side</span>
           <select id="preflow-side">
@@ -88,7 +91,7 @@
     </div>
   </div>
 
-  <script src="js/common.js?v=33"></script>
-  <script src="js/preflows.js?v=33"></script>
+  <script src="js/common.js?v=53"></script>
+  <script src="js/preflows.js?v=36"></script>
 </body>
 </html>

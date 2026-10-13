@@ -33,21 +33,20 @@ var TOUR = [
   { target: "[data-tour='add']", text: "Add a named section for a major reason. Type individual points inside it." },
   { target: "[data-tour='point']", text: "Enter makes the next point box. Shift+Enter adds a line inside the same box." },
   { target: ".reply-box, .point", text: "Responses align with the point they answer. Longer notes make room automatically." },
-  { target: "[data-tour='clip-btn']", text: "Attach evidence to any selected note, including a response or summary point." },
-  { target: "[data-tour='proof-panel']", text: "Paste formatted Docs or Word text here. Your flow stays visible. Click a note to find its evidence, or scroll to browse." },
-  { target: "[data-field='columns-count']", text: "Choose how many columns to focus on and where to start. Show all restores this case’s full sequence." },
-  { target: "[data-tour='notes']", text: "Record crossfire questions and answers here." },
-  { target: "[data-tour='timer']", text: "Time speeches and each team’s prep. Only one countdown runs at once." },
+  { target: "[data-tour='clip-btn']", text: "The ev button attaches evidence to the selected note, including a response." },
+  { target: "[data-tour='proof-panel']", text: "Paste from Docs or Word. Bold text and highlights stay. Your flow stays visible." },
+  { target: "[data-tour='timer']", text: "Type the minutes and seconds, then press Start." },
   { target: "[data-tour='save']", text: "Notes save in this browser. Export downloads a record; version 1 does not import rounds." }
 ];
 
 function createUniqueId(prefix) {
   var randomPart = Math.floor(Math.random() * 100000).toString(36);
   var timePart = Date.now().toString(36);
+
   return prefix + "-" + timePart + "-" + randomPart;
 }
 
-function timerTimes() {
+function getDefaultSpeechTimes() {
   return {
     constructive: 240,
     rebuttal: 240,
@@ -59,49 +58,25 @@ function timerTimes() {
   };
 }
 
-function validateSpeechTime(kind, rawTime) {
-  var num = Number(rawTime);
-  var label = kind;
-  if (kind === "final") {
-    label = "final focus";
-  } else if (kind === "grand") {
-    label = "grand cross";
-  } else if (kind === "prep") {
-    label = "prep";
-  }
-
-  if (!isFinite(num) || num <= 0) {
-    return { ok: false, seconds: 0, message: label + " has to be a positive time." };
-  }
-  if (num > 20 * 60) {
-    return { ok: false, seconds: 0, message: label + " over 20 minutes isn't a PF clock." };
-  }
-  if (num <= 15) {
-    var inSeconds = Math.round(num * 60);
-    return {
-      ok: true,
-      seconds: inSeconds,
-      message: label + ": " + num + " min saved as " + inSeconds + " seconds."
-    };
-  }
-  return { ok: true, seconds: Math.round(num), message: "" };
-}
-
-function repairTimerSettings(durations) {
-  var base = timerTimes();
+function fixSpeechTimes(durations) {
+  var base = getDefaultSpeechTimes();
   var keys = Object.keys(base);
+
   if (!durations || typeof durations !== "object") {
     return base;
   }
+
   for (var i = 0; i < keys.length; i++) {
     var key = keys[i];
     var n = Number(durations[key]);
+
     if (!isFinite(n) || n <= 0 || n > 20 * 60) {
       durations[key] = base[key];
     } else {
       durations[key] = Math.round(n);
     }
   }
+
   return durations;
 }
 
@@ -109,12 +84,13 @@ function getDefaultSettings() {
   return {
     fontSize: 14,
     sound: false,
-    durations: timerTimes()
+    durations: getDefaultSpeechTimes()
   };
 }
 
 function sortPointsByOrder(list) {
   var temp;
+
   for (var i = 0; i < list.length; i++) {
     for (var j = i + 1; j < list.length; j++) {
       if (list[j].order < list[i].order || (list[j].order === list[i].order && list[j].id < list[i].id)) {
@@ -124,6 +100,7 @@ function sortPointsByOrder(list) {
       }
     }
   }
+
   return list;
 }
 
@@ -135,6 +112,7 @@ function getSpeechOrder(firstSide) {
     ["pro-final", "con-final"]
   ];
   var list = [];
+
   for (var i = 0; i < pairs.length; i++) {
     if (firstSide === "con") {
       list.push(pairs[i][1], pairs[i][0]);
@@ -142,6 +120,7 @@ function getSpeechOrder(firstSide) {
       list.push(pairs[i][0], pairs[i][1]);
     }
   }
+
   return list;
 }
 
@@ -149,19 +128,24 @@ function getSpeechesForSide(round, caseSide) {
   if (round.isPreflow) {
     return [caseSide + "-constructive"];
   }
+
   var all = getSpeechOrder(round.firstSide);
   var start = all.indexOf(caseSide + "-constructive");
+
   if (start < 0) {
     return all.slice();
   }
+
   return all.slice(start);
 }
 
 function getSpeechName(id, full) {
   var info = SPEECHES[id];
+
   if (!info) {
     return id;
   }
+
   if (full) {
     return info.full;
   } else {
@@ -178,9 +162,23 @@ function getTeamName(side) {
 }
 
 function getTimerSteps(firstSide, durations) {
-  var first = (firstSide === "con") ? "con" : "pro";
-  var second = (first === "pro") ? "con" : "pro";
-  var times = durations || timerTimes();
+  var first = "pro";
+
+  if (firstSide === "con") {
+    first = "con";
+  }
+
+  var second = "pro";
+
+  if (first === "pro") {
+    second = "con";
+  }
+
+  var times = durations;
+
+  if (!times) {
+    times = getDefaultSpeechTimes();
+  }
 
   return [
     { id: "first-constructive", label: getTeamName(first) + " Constructive", seconds: times.constructive },
@@ -198,22 +196,58 @@ function getTimerSteps(firstSide, durations) {
 }
 
 function createCrossNotesObject(notes) {
-  var src = notes || {};
+  var src = notes;
+
+  if (!src) {
+    src = {};
+  }
+
+  var firstCrossfire = src.firstCrossfire;
+
+  if (!firstCrossfire) {
+    firstCrossfire = "";
+  }
+
+  var secondCrossfire = src.secondCrossfire;
+
+  if (!secondCrossfire) {
+    secondCrossfire = "";
+  }
+
+  var grandCrossfire = src.grandCrossfire;
+
+  if (!grandCrossfire) {
+    grandCrossfire = "";
+  }
+
+  var reflections = src.reflections;
+
+  if (!reflections) {
+    reflections = "";
+  }
+
   return {
-    firstCrossfire: src.firstCrossfire || "",
-    secondCrossfire: src.secondCrossfire || "",
-    grandCrossfire: src.grandCrossfire || "",
-    reflections: src.reflections || ""
+    firstCrossfire: firstCrossfire,
+    secondCrossfire: secondCrossfire,
+    grandCrossfire: grandCrossfire,
+    reflections: reflections
   };
 }
 
 function createNewTimer(firstSide, durations) {
-  var plan = getTimerSteps(firstSide, durations);
+  var times = durations;
+
+  if (!times) {
+    times = getDefaultSpeechTimes();
+  }
+
+  var plan = getTimerSteps(firstSide, times);
   var allotted = {};
-  var times = durations || timerTimes();
+
   for (var i = 0; i < plan.length; i++) {
     allotted[plan[i].id] = plan[i].seconds;
   }
+
   return {
     index: 0,
     running: false,
@@ -241,6 +275,7 @@ function createContentionGroup(name) {
 
 function createNewCase() {
   var contention = createContentionGroup("Contention 1");
+
   return {
     contentionIds: [contention.id],
     contention: contention
@@ -250,20 +285,68 @@ function createNewCase() {
 function createNewRound(fields, settings) {
   var pro = createNewCase();
   var con = createNewCase();
-  var times = (settings && settings.durations) || timerTimes();
+  var times = getDefaultSpeechTimes();
+
+  if (settings && settings.durations) {
+    times = settings.durations;
+  }
+
   var groups = {};
+
   groups[pro.contention.id] = pro.contention;
   groups[con.contention.id] = con.contention;
 
+  var title = fields.title;
+
+  if (!title) {
+    title = "Untitled round";
+  }
+
+  var topic = fields.topic;
+
+  if (!topic) {
+    topic = "";
+  }
+
+  var tournament = fields.tournament;
+
+  if (!tournament) {
+    tournament = "";
+  }
+
+  var roundLabel = fields.roundLabel;
+
+  if (!roundLabel) {
+    roundLabel = "";
+  }
+
+  var opponent = fields.opponent;
+
+  if (!opponent) {
+    opponent = "";
+  }
+
+  var yourSide = fields.yourSide;
+
+  if (!yourSide) {
+    yourSide = "pro";
+  }
+
+  var firstSide = "pro";
+
+  if (fields.firstSide === "con") {
+    firstSide = "con";
+  }
+
   return {
     id: createUniqueId("round"),
-    title: fields.title || "Untitled round",
-    topic: fields.topic || "",
-    tournament: fields.tournament || "",
-    roundLabel: fields.roundLabel || "",
-    opponent: fields.opponent || "",
-    yourSide: fields.yourSide || "pro",
-    firstSide: (fields.firstSide === "con") ? "con" : "pro",
+    title: title,
+    topic: topic,
+    tournament: tournament,
+    roundLabel: roundLabel,
+    opponent: opponent,
+    yourSide: yourSide,
+    firstSide: firstSide,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     cases: {
@@ -274,7 +357,7 @@ function createNewRound(fields, settings) {
     notes: {},
     evidence: {},
     crossNotes: createCrossNotesObject(),
-    timers: createNewTimer((fields.firstSide === "con") ? "con" : "pro", times),
+    timers: createNewTimer(firstSide, times),
     columnFocus: {
       pro: { count: null, start: 0 },
       con: { count: null, start: 0 }
@@ -284,15 +367,33 @@ function createNewRound(fields, settings) {
 }
 
 function createNewPreflow(fields) {
-  var side = (fields.side === "con") ? "con" : "pro";
+  var side = "pro";
+
+  if (fields.side === "con") {
+    side = "con";
+  }
+
   var contention = createContentionGroup("Contention 1");
   var groups = {};
+
   groups[contention.id] = contention;
+
+  var title = fields.title;
+
+  if (!title) {
+    title = "Untitled preflow";
+  }
+
+  var topic = fields.topic;
+
+  if (!topic) {
+    topic = "";
+  }
 
   return {
     id: createUniqueId("preflow"),
-    title: fields.title || "Untitled preflow",
-    topic: fields.topic || "",
+    title: title,
+    topic: topic,
     side: side,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -326,7 +427,7 @@ function convertPreflowToRound(preflow) {
     notes: preflow.notes,
     evidence: preflow.evidence,
     crossNotes: createCrossNotesObject(),
-    timers: createNewTimer(preflow.side, timerTimes()),
+    timers: createNewTimer(preflow.side, getDefaultSpeechTimes()),
     columnFocus: {
       pro: { count: null, start: 0 },
       con: { count: null, start: 0 }
@@ -339,53 +440,65 @@ function getContentionSide(round, contentionId) {
   if (round.cases.pro.contentionIds.indexOf(contentionId) !== -1) {
     return "pro";
   }
+
   if (round.cases.con.contentionIds.indexOf(contentionId) !== -1) {
     return "con";
   }
+
   return null;
 }
 
 function getPointsInContention(round, contentionId) {
   var names = Object.keys(round.notes);
   var list = [];
+
   for (var i = 0; i < names.length; i++) {
     var card = round.notes[names[i]];
+
     if (card.contentionId === contentionId) {
       list.push(card);
     }
   }
+
   return list;
 }
 
 function getReplyPoints(round, parentId, speechId) {
   var parent = round.notes[parentId];
   if (!parent) return [];
+
   var notes = getPointsInContention(round, parent.contentionId);
   var list = [];
+
   for (var i = 0; i < notes.length; i++) {
     if (notes[i].parentId === parentId && notes[i].speechId === speechId) {
       list.push(notes[i]);
     }
   }
+
   return sortPointsByOrder(list);
 }
 
 function getSpeechesAfter(round, caseSide, speechId) {
   var list = getSpeechesForSide(round, caseSide);
   var index = list.indexOf(speechId);
+
   if (index < 0) {
     return [];
   }
+
   return list.slice(index + 1);
 }
 
 function getNextOrderNumber(list) {
   var max = 0;
+
   for (var i = 0; i < list.length; i++) {
     if (list[i].order >= max) {
       max = list[i].order + 1;
     }
   }
+
   return max;
 }
 
@@ -397,6 +510,7 @@ function createNewPoint(contentionId, speechId, parentId, order, text) {
     parentId: parentId || null,
     order: order,
     text: text || "",
+    html: "",
     marker: "",
     evidenceId: null
   };
@@ -406,12 +520,14 @@ function addMainPoint(round, contentionId, speechId, text, afterId) {
   var contention = round.contentions[contentionId];
   var note = createNewPoint(contentionId, speechId, null, contention.startingPointIds.length, text);
   var index = contention.startingPointIds.length;
+
   if (afterId) {
     index = contention.startingPointIds.indexOf(afterId) + 1;
     if (index <= 0) {
       index = contention.startingPointIds.length;
     }
   }
+
   contention.startingPointIds.splice(index, 0, note.id);
   round.notes[note.id] = note;
   return note;
@@ -421,134 +537,70 @@ function addReplyPoint(round, parentId, speechId, text, afterId) {
   var parent = round.notes[parentId];
   var siblings = getReplyPoints(round, parentId, speechId);
   var note = createNewPoint(parent.contentionId, speechId, parentId, getNextOrderNumber(siblings), text);
+
   if (afterId && round.notes[afterId]) {
     note.order = round.notes[afterId].order + 0.5;
   }
+
   round.notes[note.id] = note;
   return note;
 }
 
 function getAllChildPoints(round, noteId, list) {
   var names = Object.keys(round.notes);
+
   list.push(noteId);
   for (var i = 0; i < names.length; i++) {
     if (round.notes[names[i]].parentId === noteId) {
       getAllChildPoints(round, names[i], list);
     }
   }
+
   return list;
-}
-
-function checkIfCanLinkPoints(round, noteId, parentId) {
-  var note = round.notes[noteId];
-  var parent = round.notes[parentId];
-  if (!note || !parent) {
-    return "That card isn't on this flow anymore.";
-  }
-  if (noteId === parentId) {
-    return "A card can't answer itself.";
-  }
-  if (note.contentionId !== parent.contentionId) {
-    return "Stay on this contention. Another contention is a different sheet.";
-  }
-  var under = getAllChildPoints(round, noteId, []);
-  if (under.indexOf(parentId) !== -1) {
-    return "That loops the line — the extension would be answering itself.";
-  }
-  var side = getContentionSide(round, note.contentionId);
-  var cols = getSpeechesForSide(round, side);
-  var parentCol = cols.indexOf(parent.speechId);
-  var cardCol = cols.indexOf(note.speechId);
-  if (parentCol < 0 || cardCol < 0 || parentCol >= cardCol) {
-    return "Answers go in a later column. A constructive shell can't hang under rebuttal.";
-  }
-  return "";
-}
-
-function canLinkPoints(round, noteId, parentId) {
-  return checkIfCanLinkPoints(round, noteId, parentId) === "";
-}
-
-function getMarkerWarning(round, note, markerId) {
-  if (!note || !markerId) return "";
-  var info = SPEECHES[note.speechId];
-  var side = getContentionSide(round, note.contentionId);
-  if (markerId === "dropped" && info && info.type === "constructive") {
-    return "Dropped on a constructive shell doesn't track — that speech is the argument, nothing has gone unanswered yet. Label it anyway?";
-  }
-  if (markerId === "turn" && round.yourSide && round.yourSide !== "observer" && side === round.yourSide && info && info.type === "constructive") {
-    return "A turn is their argument, flipped onto them. This card is on your constructive. Label it anyway?";
-  }
-  if (markerId === "extend" && !note.parentId) {
-    return "Extend means you're kicking an earlier line back up. This card isn't under anything yet. Label it anyway?";
-  }
-  return "";
 }
 
 function removeIdFromList(list, id) {
   var kept = [];
+
   for (var i = 0; i < list.length; i++) {
     if (list[i] !== id) {
       kept.push(list[i]);
     }
   }
-  return kept;
-}
 
-function linkPointToParent(round, noteId, parentId) {
-  var note = round.notes[noteId];
-  var contention;
-  if (!note) return false;
-  if (note.parentId === null) {
-    contention = round.contentions[note.contentionId];
-    contention.startingPointIds = removeIdFromList(contention.startingPointIds, noteId);
-  }
-  if (!parentId) {
-    note.parentId = null;
-    contention = round.contentions[note.contentionId];
-    if (contention.startingPointIds.indexOf(noteId) === -1) {
-      contention.startingPointIds.push(noteId);
-    }
-    return true;
-  }
-  if (!canLinkPoints(round, noteId, parentId)) {
-    return false;
-  }
-  note.parentId = parentId;
-  var siblings = [];
-  var family = getReplyPoints(round, parentId, note.speechId);
-  for (var i = 0; i < family.length; i++) {
-    if (family[i].id !== noteId) {
-      siblings.push(family[i]);
-    }
-  }
-  note.order = getNextOrderNumber(siblings);
-  return true;
+  return kept;
 }
 
 function deletePoint(round, noteId) {
   var note = round.notes[noteId];
   if (!note) return;
+
   var names = Object.keys(round.notes);
   var children = [];
+
   for (var i = 0; i < names.length; i++) {
     var child = round.notes[names[i]];
+
     if (child.parentId === noteId) {
       children.push(child);
     }
   }
+
   for (var c1 = 0; c1 < children.length; c1++) {
     for (var c2 = c1 + 1; c2 < children.length; c2++) {
       if (children[c2].order < children[c1].order) {
         var tempChild = children[c1];
+
         children[c1] = children[c2];
         children[c2] = tempChild;
       }
     }
   }
+
   if (note.evidenceId && round.evidence[note.evidenceId]) {
     delete round.evidence[note.evidenceId];
   }
+
   if (note.parentId) {
     for (var k = 0; k < children.length; k++) {
       children[k].parentId = note.parentId;
@@ -557,6 +609,7 @@ function deletePoint(round, noteId) {
   } else {
     var contention = round.contentions[note.contentionId];
     var index = contention.startingPointIds.indexOf(noteId);
+
     contention.startingPointIds = removeIdFromList(contention.startingPointIds, noteId);
     for (var m = 0; m < children.length; m++) {
       children[m].parentId = null;
@@ -565,90 +618,48 @@ function deletePoint(round, noteId) {
       }
     }
   }
+
   delete round.notes[noteId];
-}
-
-function duplicatePoint(round, noteId) {
-  var note = round.notes[noteId];
-  if (!note) return null;
-  var copy;
-  if (note.parentId) {
-    copy = addReplyPoint(round, note.parentId, note.speechId, note.text, noteId);
-  } else {
-    copy = addMainPoint(round, note.contentionId, note.speechId, note.text, noteId);
-  }
-  copy.marker = note.marker;
-  if (note.evidenceId && round.evidence[note.evidenceId]) {
-    var evidence = round.evidence[note.evidenceId];
-    copy.evidenceId = createUniqueId("ev");
-    round.evidence[copy.evidenceId] = {
-      id: copy.evidenceId,
-      noteId: copy.id,
-      html: evidence.html,
-      plain: evidence.plain
-    };
-  }
-  return copy;
-}
-
-function movePointOrder(round, noteId, direction) {
-  var note = round.notes[noteId];
-  if (!note) return;
-  var list = [];
-  var ids;
-  if (note.parentId) {
-    list = getReplyPoints(round, note.parentId, note.speechId);
-  } else {
-    ids = round.contentions[note.contentionId].startingPointIds;
-    for (var i = 0; i < ids.length; i++) {
-      if (round.notes[ids[i]]) {
-        list.push(round.notes[ids[i]]);
-      }
-    }
-  }
-  var index = -1;
-  for (var j = 0; j < list.length; j++) {
-    if (list[j].id === noteId) {
-      index = j;
-    }
-  }
-  var swap = index + direction;
-  if (index < 0 || swap < 0 || swap >= list.length) {
-    return;
-  }
-  if (!note.parentId) {
-    ids = round.contentions[note.contentionId].startingPointIds;
-    var tempId = ids[index];
-    ids[index] = ids[swap];
-    ids[swap] = tempId;
-    return;
-  }
-  var order = list[index].order;
-  list[index].order = list[swap].order;
-  list[swap].order = order;
 }
 
 function checkIfRoundHasContent(round) {
   var names = Object.keys(round.notes);
+
   for (var i = 0; i < names.length; i++) {
     if (round.notes[names[i]].text || round.notes[names[i]].evidenceId) {
       return true;
     }
   }
+
   return Object.keys(round.evidence).length > 0;
 }
 
 function addContention(round, caseSide) {
   var ids = round.cases[caseSide].contentionIds;
   var n = 1;
+
   for (var i = 0; i < ids.length; i++) {
-    var name = round.contentions[ids[i]] ? round.contentions[ids[i]].name : "";
-    var num = /^Contention (\d+)$/.exec(name || "");
+    var name = "";
+
+    if (round.contentions[ids[i]]) {
+      name = round.contentions[ids[i]].name;
+    }
+
+    var nameToCheck = name;
+
+    if (!nameToCheck) {
+      nameToCheck = "";
+    }
+
+    var num = /^Contention (\d+)$/.exec(nameToCheck);
+
     if (num && Number(num[1]) >= n) {
       n = Number(num[1]) + 1;
     }
   }
+
   var contention = createContentionGroup("Contention " + n);
+
   round.contentions[contention.id] = contention;
   round.cases[caseSide].contentionIds.push(contention.id);
   return contention;
@@ -657,21 +668,27 @@ function addContention(round, caseSide) {
 function deleteContention(round, contentionId) {
   var caseSide = getContentionSide(round, contentionId);
   if (!caseSide) return false;
+
   var notes = getPointsInContention(round, contentionId);
+
   for (var i = 0; i < notes.length; i++) {
     if (notes[i].evidenceId) {
       delete round.evidence[notes[i].evidenceId];
     }
+
     delete round.notes[notes[i].id];
   }
+
   delete round.contentions[contentionId];
   var ids = round.cases[caseSide].contentionIds;
   var kept = [];
+
   for (var j = 0; j < ids.length; j++) {
     if (ids[j] !== contentionId) {
       kept.push(ids[j]);
     }
   }
+
   round.cases[caseSide].contentionIds = kept;
   return true;
 }
@@ -679,71 +696,66 @@ function deleteContention(round, contentionId) {
 function moveContention(round, contentionId, direction) {
   var caseSide = getContentionSide(round, contentionId);
   if (!caseSide) return;
+
   var ids = round.cases[caseSide].contentionIds;
   var index = ids.indexOf(contentionId);
+
   if (index < 0 || index + direction < 0 || index + direction >= ids.length) {
     return;
   }
+
   var temp = ids[index];
+
   ids[index] = ids[index + direction];
   ids[index + direction] = temp;
 }
 
 function checkIfContentionHasContent(round, contentionId) {
   var notes = getPointsInContention(round, contentionId);
+
   for (var i = 0; i < notes.length; i++) {
     if (notes[i].text || notes[i].evidenceId) {
       return true;
     }
   }
+
   return false;
 }
 
 function getVisibleSpeeches(round, caseSide) {
   var all = getSpeechesForSide(round, caseSide);
-  var focus = round.columnFocus[caseSide] || { count: null, start: 0 };
-  var count = focus.count;
-  var start = focus.start || 0;
-  if (!count || count >= all.length) {
-    return { all: all, visible: all.slice(), start: 0, count: all.length };
-  }
-  if (start < 0) {
-    start = 0;
-  }
-  if (start + count > all.length) {
-    start = Math.max(0, all.length - count);
-  }
-  return {
-    all: all,
-    visible: all.slice(start, start + count),
-    start: start,
-    count: count
-  };
+
+  return { all: all, visible: all.slice(), start: 0, count: all.length };
 }
 
-function getClonedId(map, oldId) {
+function getNewIdForCopy(map, oldId) {
   if (!oldId) return null;
+
   if (!map[oldId]) {
     map[oldId] = createUniqueId("id");
   }
+
   return map[oldId];
 }
 
-function cloneRoundParts(source) {
+function copyContentionsNotesAndEvidence(source) {
   var map = {};
   var groups = {};
   var notes = {};
   var evidence = {};
   var names = Object.keys(source.contentions);
+
   for (var i = 0; i < names.length; i++) {
     var oldId = names[i];
-    var next = getClonedId(map, oldId);
+    var next = getNewIdForCopy(map, oldId);
     var group = source.contentions[oldId];
     var oldStarts = group.startingPointIds;
     var newStarts = [];
+
     for (var n = 0; n < oldStarts.length; n++) {
-      newStarts.push(getClonedId(map, oldStarts[n]));
+      newStarts.push(getNewIdForCopy(map, oldStarts[n]));
     }
+
     groups[next] = {
       id: next,
       name: group.name,
@@ -751,47 +763,72 @@ function cloneRoundParts(source) {
       startingPointIds: newStarts
     };
   }
+
   names = Object.keys(source.notes);
   for (var j = 0; j < names.length; j++) {
     var noteId = names[j];
     var note = source.notes[noteId];
-    var nextNoteId = getClonedId(map, noteId);
+    var nextNoteId = getNewIdForCopy(map, noteId);
+    var copiedParentId = null;
+
+    if (note.parentId) {
+      copiedParentId = getNewIdForCopy(map, note.parentId);
+    }
+
+    var copiedMarker = note.marker;
+
+    if (!copiedMarker) {
+      copiedMarker = "";
+    }
+
+    var copiedEvidenceId = null;
+
+    if (note.evidenceId) {
+      copiedEvidenceId = getNewIdForCopy(map, note.evidenceId);
+    }
+
     notes[nextNoteId] = {
       id: nextNoteId,
-      contentionId: getClonedId(map, note.contentionId),
+      contentionId: getNewIdForCopy(map, note.contentionId),
       speechId: note.speechId,
-      parentId: note.parentId ? getClonedId(map, note.parentId) : null,
+      parentId: copiedParentId,
       order: note.order,
       text: note.text,
-      marker: note.marker || "",
-      evidenceId: note.evidenceId ? getClonedId(map, note.evidenceId) : null
+      html: note.html || "",
+      marker: copiedMarker,
+      evidenceId: copiedEvidenceId
     };
   }
+
   names = Object.keys(source.evidence || {});
   for (var k = 0; k < names.length; k++) {
     var evId = names[k];
     var item = source.evidence[evId];
-    var nextEvId = getClonedId(map, evId);
+    var nextEvId = getNewIdForCopy(map, evId);
+
     evidence[nextEvId] = {
       id: nextEvId,
-      noteId: getClonedId(map, item.noteId),
+      noteId: getNewIdForCopy(map, item.noteId),
       html: item.html,
       plain: item.plain
     };
   }
+
   return { map: map, contentions: groups, notes: notes, evidence: evidence };
 }
 
-function cloneIdList(ids, map) {
+function copyIdList(ids, map) {
   var list = [];
+
   for (var i = 0; i < ids.length; i++) {
     list.push(map[ids[i]]);
   }
+
   return list;
 }
 
 function cloneRound(round, settings) {
-  var cloned = cloneRoundParts(round);
+  var cloned = copyContentionsNotesAndEvidence(round);
   var copy = createNewRound({
     title: round.title + " (copy)",
     topic: round.topic,
@@ -802,8 +839,8 @@ function cloneRound(round, settings) {
     firstSide: round.firstSide
   }, settings);
   copy.cases = {
-    pro: { contentionIds: cloneIdList(round.cases.pro.contentionIds, cloned.map) },
-    con: { contentionIds: cloneIdList(round.cases.con.contentionIds, cloned.map) }
+    pro: { contentionIds: copyIdList(round.cases.pro.contentionIds, cloned.map) },
+    con: { contentionIds: copyIdList(round.cases.con.contentionIds, cloned.map) }
   };
   copy.contentions = cloned.contentions;
   copy.notes = cloned.notes;
@@ -817,7 +854,7 @@ function cloneRound(round, settings) {
 }
 
 function applyPreflowToRound(round, preflow) {
-  var cloned = cloneRoundParts({
+  var cloned = copyContentionsNotesAndEvidence({
     contentions: preflow.contentions,
     notes: preflow.notes,
     evidence: preflow.evidence
@@ -825,39 +862,53 @@ function applyPreflowToRound(round, preflow) {
   var side = preflow.side;
   var kept = [];
   var names = Object.keys(cloned.notes);
+
   for (var i = 0; i < names.length; i++) {
     var note = cloned.notes[names[i]];
+
     if (note.speechId !== side + "-constructive" || note.parentId) {
-      if (note.evidenceId) delete cloned.evidence[note.evidenceId];
+      if (note.evidenceId) {
+        delete cloned.evidence[note.evidenceId];
+      }
+
       delete cloned.notes[names[i]];
       continue;
     }
+
     kept.push(names[i]);
   }
+
   names = Object.keys(cloned.contentions);
   for (var j = 0; j < names.length; j++) {
     var oldIds = cloned.contentions[names[j]].startingPointIds;
     var newIds = [];
+
     for (var n = 0; n < oldIds.length; n++) {
       if (kept.indexOf(oldIds[n]) !== -1) {
         newIds.push(oldIds[n]);
       }
     }
+
     cloned.contentions[names[j]].startingPointIds = newIds;
   }
+
   var oldContIds = round.cases[side].contentionIds.slice();
+
   for (var k = 0; k < oldContIds.length; k++) {
     deleteContention(round, oldContIds[k]);
   }
-  round.cases[side].contentionIds = cloneIdList(preflow.contentionIds, cloned.map);
+
+  round.cases[side].contentionIds = copyIdList(preflow.contentionIds, cloned.map);
   names = Object.keys(cloned.contentions);
   for (var m = 0; m < names.length; m++) {
     round.contentions[names[m]] = cloned.contentions[names[m]];
   }
+
   names = Object.keys(cloned.notes);
   for (var p = 0; p < names.length; p++) {
     round.notes[names[p]] = cloned.notes[names[p]];
   }
+
   names = Object.keys(cloned.evidence);
   for (var q = 0; q < names.length; q++) {
     round.evidence[names[q]] = cloned.evidence[names[q]];
@@ -867,20 +918,27 @@ function applyPreflowToRound(round, preflow) {
 function convertCaseToPreflow(round, caseSide, title) {
   var preflow = createNewPreflow({ title: title, topic: round.topic, side: caseSide });
   var speech = caseSide + "-constructive";
+
   delete preflow.contentions[preflow.contentionIds[0]];
   preflow.contentionIds = [];
   var groupIds = round.cases[caseSide].contentionIds;
+
   for (var i = 0; i < groupIds.length; i++) {
     var source = round.contentions[groupIds[i]];
     var contention = createContentionGroup(source.name);
+
     preflow.contentions[contention.id] = contention;
     preflow.contentionIds.push(contention.id);
     var starts = source.startingPointIds;
+
     for (var n = 0; n < starts.length; n++) {
       var note = round.notes[starts[n]];
       if (!note || note.speechId !== speech) continue;
+
       var copy = createNewPoint(contention.id, speech, null, contention.startingPointIds.length, note.text);
+
       copy.marker = note.marker;
+      copy.html = note.html || "";
       contention.startingPointIds.push(copy.id);
       preflow.notes[copy.id] = copy;
       if (note.evidenceId && round.evidence[note.evidenceId]) {
@@ -894,16 +952,20 @@ function convertCaseToPreflow(round, caseSide, title) {
       }
     }
   }
+
   if (!preflow.contentionIds.length) {
     var blank = createContentionGroup("Contention 1");
+
     preflow.contentions[blank.id] = blank;
     preflow.contentionIds.push(blank.id);
   }
+
   return preflow;
 }
 
-function resetPointToMain(round, note) {
+function makePointAMainPoint(round, note) {
   var cont = round.contentions[note.contentionId];
+
   note.parentId = null;
   if (cont && cont.startingPointIds.indexOf(note.id) === -1) {
     cont.startingPointIds.push(note.id);
@@ -912,113 +974,204 @@ function resetPointToMain(round, note) {
 
 function repairRoundData(round) {
   if (!round || typeof round !== "object") return;
+
   if (round.yourSide !== "con" && round.yourSide !== "observer") {
     round.yourSide = "pro";
   }
+
   if (round.firstSide !== "con") {
     round.firstSide = "pro";
   }
-  if (!round.cases) round.cases = {};
-  if (!round.cases.pro) round.cases.pro = { contentionIds: [] };
-  if (!round.cases.con) round.cases.con = { contentionIds: [] };
-  if (!round.cases.pro.contentionIds) round.cases.pro.contentionIds = [];
-  if (!round.cases.con.contentionIds) round.cases.con.contentionIds = [];
-  if (!round.contentions) round.contentions = {};
-  if (!round.notes) round.notes = {};
-  if (!round.evidence) round.evidence = {};
+
+  if (!round.cases) {
+    round.cases = {};
+  }
+
+  if (!round.cases.pro) {
+    round.cases.pro = { contentionIds: [] };
+  }
+
+  if (!round.cases.con) {
+    round.cases.con = { contentionIds: [] };
+  }
+
+  if (!round.cases.pro.contentionIds) {
+    round.cases.pro.contentionIds = [];
+  }
+
+  if (!round.cases.con.contentionIds) {
+    round.cases.con.contentionIds = [];
+  }
+
+  if (!round.contentions) {
+    round.contentions = {};
+  }
+
+  if (!round.notes) {
+    round.notes = {};
+  }
+
+  if (!round.evidence) {
+    round.evidence = {};
+  }
+
   round.crossNotes = createCrossNotesObject(round.crossNotes);
-  if (!round.columnFocus) round.columnFocus = {};
-  if (!round.columnFocus.pro) round.columnFocus.pro = { count: null, start: 0 };
-  if (!round.columnFocus.con) round.columnFocus.con = { count: null, start: 0 };
-  if (!round.scroll) round.scroll = { pro: 0, con: 0 };
-  if (typeof round.scroll.pro !== "number") round.scroll.pro = 0;
-  if (typeof round.scroll.con !== "number") round.scroll.con = 0;
+  if (!round.columnFocus) {
+    round.columnFocus = {};
+  }
+
+  if (!round.columnFocus.pro) {
+    round.columnFocus.pro = { count: null, start: 0 };
+  }
+
+  if (!round.columnFocus.con) {
+    round.columnFocus.con = { count: null, start: 0 };
+  }
+
+  if (!round.scroll) {
+    round.scroll = { pro: 0, con: 0 };
+  }
+
+  if (typeof round.scroll.pro !== "number") {
+    round.scroll.pro = 0;
+  }
+
+  if (typeof round.scroll.con !== "number") {
+    round.scroll.con = 0;
+  }
+
   if (!round.timers || !round.timers.prepLeft) {
-    round.timers = createNewTimer(round.firstSide, timerTimes());
+    round.timers = createNewTimer(round.firstSide, getDefaultSpeechTimes());
   } else {
-    if (round.timers.prepLeft.pro == null || round.timers.prepLeft.pro < 0) round.timers.prepLeft.pro = 0;
-    if (round.timers.prepLeft.con == null || round.timers.prepLeft.con < 0) round.timers.prepLeft.con = 0;
-    if (!round.timers.allotted) round.timers.allotted = {};
+    if (round.timers.prepLeft.pro == null || round.timers.prepLeft.pro < 0) {
+      round.timers.prepLeft.pro = 0;
+    }
+
+    if (round.timers.prepLeft.con == null || round.timers.prepLeft.con < 0) {
+      round.timers.prepLeft.con = 0;
+    }
+
+    if (!round.timers.allotted) {
+      round.timers.allotted = {};
+    }
   }
 
   var sides = ["pro", "con"];
+
   for (var s = 0; s < sides.length; s++) {
     var ids = round.cases[sides[s]].contentionIds;
     var kept = [];
     var seen = {};
+
     for (var i = 0; i < ids.length; i++) {
       var id = ids[i];
       if (seen[id]) continue;
+
       var cont = round.contentions[id];
       if (!cont) continue;
+
       seen[id] = true;
-      if (!cont.name) cont.name = "Contention " + (kept.length + 1);
-      if (!cont.startingPointIds) cont.startingPointIds = [];
+      if (!cont.name) {
+        cont.name = "Contention " + (kept.length + 1);
+      }
+
+      if (!cont.startingPointIds) {
+        cont.startingPointIds = [];
+      }
+
       var starts = [];
+
       for (var n = 0; n < cont.startingPointIds.length; n++) {
         var note = round.notes[cont.startingPointIds[n]];
         if (!note || note.contentionId !== id || note.parentId) continue;
+
         starts.push(note.id);
       }
+
       cont.startingPointIds = starts;
       kept.push(id);
     }
+
     if (!kept.length) {
       var newCont = createContentionGroup("Contention 1");
+
       round.contentions[newCont.id] = newCont;
       kept.push(newCont.id);
     }
+
     round.cases[sides[s]].contentionIds = kept;
   }
 
   var names = Object.keys(round.notes);
+
   for (var j = 0; j < names.length; j++) {
     var nItem = round.notes[names[j]];
+
     if (!nItem || !round.contentions[nItem.contentionId]) {
       if (nItem && nItem.evidenceId && round.evidence[nItem.evidenceId]) {
         delete round.evidence[nItem.evidenceId];
       }
+
       delete round.notes[names[j]];
       continue;
     }
+
     if (!SPEECHES[nItem.speechId]) {
-      var side = getContentionSide(round, nItem.contentionId) || "pro";
+      var side = getContentionSide(round, nItem.contentionId);
+
+      if (!side) {
+        side = "pro";
+      }
+
       nItem.speechId = side + "-constructive";
     }
-    if (!nItem.marker) nItem.marker = "";
+
+    if (!nItem.marker) {
+      nItem.marker = "";
+    }
   }
 
   names = Object.keys(round.notes);
   for (var k = 0; k < names.length; k++) {
     var checkNote = round.notes[names[k]];
     if (!checkNote) continue;
+
     var loopSeen = {};
     var currId = checkNote.id;
     var stepCount = 0;
+
     while (currId && stepCount < 40) {
       if (loopSeen[currId]) {
-        resetPointToMain(round, checkNote);
+        makePointAMainPoint(round, checkNote);
         break;
       }
+
       loopSeen[currId] = true;
       var parent = round.notes[currId];
+
       currId = parent && parent.parentId;
       stepCount++;
     }
+
     if (checkNote.parentId && !round.notes[checkNote.parentId]) {
-      resetPointToMain(round, checkNote);
+      makePointAMainPoint(round, checkNote);
       continue;
     }
+
     if (!checkNote.parentId) continue;
+
     var parentObj = round.notes[checkNote.parentId];
+
     if (parentObj.contentionId !== checkNote.contentionId) {
-      resetPointToMain(round, checkNote);
+      makePointAMainPoint(round, checkNote);
       continue;
     }
+
     var cSide = getContentionSide(round, checkNote.contentionId);
     var sOrder = getSpeechesForSide(round, cSide);
+
     if (sOrder.indexOf(parentObj.speechId) < 0 || sOrder.indexOf(checkNote.speechId) < 0 || sOrder.indexOf(parentObj.speechId) >= sOrder.indexOf(checkNote.speechId)) {
-      resetPointToMain(round, checkNote);
+      makePointAMainPoint(round, checkNote);
     }
   }
 
@@ -1026,7 +1179,9 @@ function repairRoundData(round) {
   for (var m = 0; m < names.length; m++) {
     var startNote = round.notes[names[m]];
     if (!startNote || startNote.parentId) continue;
+
     var cGroup = round.contentions[startNote.contentionId];
+
     if (cGroup && cGroup.startingPointIds.indexOf(startNote.id) === -1) {
       cGroup.startingPointIds.push(startNote.id);
     }
@@ -1035,54 +1190,90 @@ function repairRoundData(round) {
   names = Object.keys(round.evidence);
   for (var e = 0; e < names.length; e++) {
     var ev = round.evidence[names[e]];
+
     if (!ev || !ev.noteId || !round.notes[ev.noteId]) {
       delete round.evidence[names[e]];
       continue;
     }
+
     round.notes[ev.noteId].evidenceId = names[e];
   }
 }
 
 function repairPreflowData(pre) {
   if (!pre || typeof pre !== "object") return;
-  if (pre.side !== "con") pre.side = "pro";
-  if (!pre.contentions) pre.contentions = {};
-  if (!pre.notes) pre.notes = {};
-  if (!pre.evidence) pre.evidence = {};
-  if (!pre.contentionIds) pre.contentionIds = [];
+
+  if (pre.side !== "con") {
+    pre.side = "pro";
+  }
+
+  if (!pre.contentions) {
+    pre.contentions = {};
+  }
+
+  if (!pre.notes) {
+    pre.notes = {};
+  }
+
+  if (!pre.evidence) {
+    pre.evidence = {};
+  }
+
+  if (!pre.contentionIds) {
+    pre.contentionIds = [];
+  }
+
   var kept = [];
   var seen = {};
+
   for (var i = 0; i < pre.contentionIds.length; i++) {
     var id = pre.contentionIds[i];
     if (seen[id] || !pre.contentions[id]) continue;
+
     seen[id] = true;
     var cont = pre.contentions[id];
-    if (!cont.name) cont.name = "Contention " + (kept.length + 1);
-    if (!cont.startingPointIds) cont.startingPointIds = [];
+
+    if (!cont.name) {
+      cont.name = "Contention " + (kept.length + 1);
+    }
+
+    if (!cont.startingPointIds) {
+      cont.startingPointIds = [];
+    }
+
     var starts = [];
+
     for (var n = 0; n < cont.startingPointIds.length; n++) {
       var note = pre.notes[cont.startingPointIds[n]];
+
       if (note && note.contentionId === id && !note.parentId) {
         starts.push(note.id);
       }
     }
+
     cont.startingPointIds = starts;
     kept.push(id);
   }
+
   if (!kept.length) {
     var newCont = createContentionGroup("Contention 1");
+
     pre.contentions[newCont.id] = newCont;
     kept.push(newCont.id);
   }
+
   pre.contentionIds = kept;
 
   var names = Object.keys(pre.notes);
+
   for (var j = 0; j < names.length; j++) {
     var pNote = pre.notes[names[j]];
+
     if (!pNote || !pre.contentions[pNote.contentionId]) {
       if (pNote && pNote.evidenceId) {
         delete pre.evidence[pNote.evidenceId];
       }
+
       delete pre.notes[names[j]];
     }
   }
@@ -1097,13 +1288,19 @@ function repairPreflowData(pre) {
 
 function pauseTimerOnOpen(round) {
   if (!round.timers || !round.timers.running || !round.timers.deadline) return;
+
   var left = round.timers.deadline - Date.now();
-  if (left < 0) left = 0;
+
+  if (left < 0) {
+    left = 0;
+  }
+
   if (round.timers.mode === "prep" && round.timers.prepSide) {
     round.timers.prepLeft[round.timers.prepSide] = left;
   } else {
     round.timers.remainingMs = left;
   }
+
   round.timers.running = false;
   round.timers.mode = null;
   round.timers.deadline = null;
@@ -1113,46 +1310,70 @@ function pauseTimerOnOpen(round) {
 function calculateCardHeight(note, heights) {
   var value = heights && heights[note.id];
   if (value && value >= 40) return value;
-  var lines = String(note.text || "").split("\n");
+
+  var noteText = note.text;
+
+  if (!noteText) {
+    noteText = "";
+  }
+
+  var lines = String(noteText).split("\n");
   var visual = 0;
+
   for (var i = 0; i < lines.length; i++) {
     visual += Math.max(1, Math.ceil((lines[i].length || 1) / 32));
   }
-  if (!visual) visual = 1;
+
+  if (!visual) {
+    visual = 1;
+  }
+
   return Math.max(40, visual * 22 + 16);
 }
 
 function getRepliesInColumn(round, parentId, speechId) {
   var parent = round.notes[parentId];
   if (!parent) return [];
+
   var names = Object.keys(round.notes);
   var list = [];
+
   for (var i = 0; i < names.length; i++) {
     var note = round.notes[names[i]];
+
     if (note.parentId === parentId && note.speechId === speechId && note.contentionId === parent.contentionId) {
       list.push(note);
     }
   }
+
   return sortPointsByOrder(list);
 }
 
 function calculateSpaceForPoint(round, note, caseSide, heights, saved) {
   if (saved[note.id]) return saved[note.id];
+
   var own = calculateCardHeight(note, heights);
   var later = getSpeechesAfter(round, caseSide, note.speechId);
   var maxStack = 0;
+
   for (var s = 0; s < later.length; s++) {
     var siblings = getRepliesInColumn(round, note.id, later[s]);
     if (!siblings.length) continue;
+
     var stack = 0;
+
     for (var i = 0; i < siblings.length; i++) {
       stack += calculateSpaceForPoint(round, siblings[i], caseSide, heights, saved);
-      if (i < siblings.length - 1) stack += 8;
+      if (i < siblings.length - 1) {
+        stack += 8;
+      }
     }
+
     if (stack > maxStack) {
       maxStack = stack;
     }
   }
+
   saved[note.id] = Math.max(own, maxStack);
   return saved[note.id];
 }
@@ -1160,6 +1381,7 @@ function calculateSpaceForPoint(round, note, caseSide, heights, saved) {
 function calculatePointPosition(round, note, top, caseSide, heights, saved, positions) {
   var own = calculateCardHeight(note, heights);
   var later = getSpeechesAfter(round, caseSide, note.speechId);
+
   positions[note.id] = {
     top: top,
     height: own,
@@ -1169,6 +1391,7 @@ function calculatePointPosition(round, note, top, caseSide, heights, saved, posi
   for (var s = 0; s < later.length; s++) {
     var siblings = getRepliesInColumn(round, note.id, later[s]);
     var y = top;
+
     for (var i = 0; i < siblings.length; i++) {
       calculatePointPosition(round, siblings[i], y, caseSide, heights, saved, positions);
       y += saved[siblings[i].id] + 8;
@@ -1180,11 +1403,13 @@ function checkEarlierReplies(round, noteId, speechId, caseSide) {
   var list = getSpeechesForSide(round, caseSide);
   var limit = list.indexOf(speechId);
   if (limit < 0) return false;
+
   for (var s = 0; s < limit; s++) {
     if (getRepliesInColumn(round, noteId, list[s]).length) {
       return true;
     }
   }
+
   return false;
 }
 
@@ -1193,30 +1418,38 @@ function calculateContentionLayout(round, contention, caseSide, heights) {
   var positions = {};
   var slots = [];
   var y = 0;
+
   positions._threads = [];
 
   for (var i = 0; i < contention.startingPointIds.length; i++) {
     var id = contention.startingPointIds[i];
     var note = round.notes[id];
     if (!note) continue;
+
     calculateSpaceForPoint(round, note, caseSide, heights, saved);
     calculatePointPosition(round, note, y, caseSide, heights, saved, positions);
     var threadSpace = saved[note.id];
+
     positions._threads.push({ id: note.id, top: y, reserved: threadSpace });
     y += threadSpace + 8;
   }
 
   var names = Object.keys(positions);
+
   for (var j = 0; j < names.length; j++) {
     if (names[j] === "_threads") continue;
+
     var item = positions[names[j]];
     var later = getSpeechesAfter(round, caseSide, item.speechId);
+
     for (var s = 0; s < later.length; s++) {
       var speechId = later[s];
       var siblings = getRepliesInColumn(round, names[j], speechId);
+
       if (siblings.length || checkEarlierReplies(round, names[j], speechId, caseSide)) {
         continue;
       }
+
       slots.push({
         parentId: names[j],
         speechId: speechId,
@@ -1226,8 +1459,10 @@ function calculateContentionLayout(round, contention, caseSide, heights) {
   }
 
   var bottom = y;
+
   for (var k = 0; k < slots.length; k++) {
     var slot = slots[k];
+
     if (slot.top + 48 > bottom) {
       bottom = slot.top + 48;
     }
@@ -1253,8 +1488,10 @@ function readFromLocalStorage(key) {
   try {
     var rawText = localStorage.getItem(key);
     if (!rawText) return null;
+
     var data = JSON.parse(rawText);
     if (!data || typeof data !== "object") return null;
+
     return data;
   } catch (error) {
     return null;
@@ -1264,6 +1501,7 @@ function readFromLocalStorage(key) {
 function loadSavedData() {
   var data = readFromLocalStorage(STORE_KEY);
   var backup = readFromLocalStorage(BACKUP_KEY);
+
   if (!data) {
     if (backup) {
       data = backup;
@@ -1272,30 +1510,48 @@ function loadSavedData() {
       data = createBlankSaveData();
     }
   }
-  if (!data.rounds) data.rounds = {};
-  if (!data.preflows) data.preflows = {};
-  if (!data.settings) data.settings = getDefaultSettings();
-  data.settings.durations = repairTimerSettings(data.settings.durations);
+
+  if (!data.rounds) {
+    data.rounds = {};
+  }
+
+  if (!data.preflows) {
+    data.preflows = {};
+  }
+
+  if (!data.settings) {
+    data.settings = getDefaultSettings();
+  }
+
+  data.settings.durations = fixSpeechTimes(data.settings.durations);
 
   var roundIds = Object.keys(data.rounds);
+
   for (var i = 0; i < roundIds.length; i++) {
     var currentRound = data.rounds[roundIds[i]];
+
     repairRoundData(currentRound);
     pauseTimerOnOpen(currentRound);
   }
 
   var preflowIds = Object.keys(data.preflows);
+
   for (var j = 0; j < preflowIds.length; j++) {
     var currentPreflow = data.preflows[preflowIds[j]];
+
     repairPreflowData(currentPreflow);
   }
+
   return data;
 }
 
 function isStorageFull(error) {
   if (!error) return false;
+
   if (error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED") return true;
+
   if (error.code === 22 || error.code === 1014) return true;
+
   return false;
 }
 
@@ -1307,43 +1563,54 @@ function saveToLocalStorage(store) {
     lastRoundId: store.lastRoundId || null
   };
   var jsonText;
+
   try {
     jsonText = JSON.stringify(copy);
   } catch (error) {
     return "This round couldn't be written. Copy the cards out before you close the tab.";
   }
+
   try {
     localStorage.setItem(STORE_KEY, jsonText);
   } catch (error) {
     if (isStorageFull(error)) {
       return "Browser storage is full. Export this round, then delete an old one.";
     }
+
     return "Could not save — export a copy";
   }
+
   try {
     localStorage.setItem(BACKUP_KEY, jsonText);
   } catch (error) {
     return "";
   }
+
   return "";
 }
 
 function cloneTemplate(id) {
   var templateElement = document.getElementById(id);
   if (!templateElement || !templateElement.firstElementChild) return null;
+
   return templateElement.firstElementChild.cloneNode(true);
 }
 
 function showElement(node) {
-  if (node) node.classList.remove("hide");
+  if (node) {
+    node.classList.remove("hide");
+  }
 }
 
 function hideElement(node) {
-  if (node) node.classList.add("hide");
+  if (node) {
+    node.classList.add("hide");
+  }
 }
 
 function clearElement(node) {
   if (!node) return;
+
   while (node.firstChild) {
     node.removeChild(node.firstChild);
   }
@@ -1351,7 +1618,14 @@ function clearElement(node) {
 
 function setElementText(node, text) {
   if (!node) return;
-  node.textContent = text || "";
+
+  var shownText = text;
+
+  if (!shownText) {
+    shownText = "";
+  }
+
+  node.textContent = shownText;
   if (text) {
     showElement(node);
   } else {
@@ -1359,36 +1633,53 @@ function setElementText(node, text) {
   }
 }
 
-function objectValuesToList(box) {
+function getListFromObject(box) {
   var list = [];
   if (!box) return list;
+
   for (var key in box) {
     if (Object.prototype.hasOwnProperty.call(box, key)) {
       list.push(box[key]);
     }
   }
+
   return list;
 }
 
-function joinNonEmptyText(parts, gap) {
+function joinFilledText(parts, gap) {
   var out = "";
+
   for (var i = 0; i < parts.length; i++) {
     if (!parts[i]) continue;
+
     if (out) {
       out = out + gap + parts[i];
     } else {
       out = String(parts[i]);
     }
   }
+
   return out;
 }
 
 function sortByRecentDate(list) {
   return list.sort(function (a, b) {
-    var dateA = a.updatedAt || "";
-    var dateB = b.updatedAt || "";
+    var dateA = a.updatedAt;
+
+    if (!dateA) {
+      dateA = "";
+    }
+
+    var dateB = b.updatedAt;
+
+    if (!dateB) {
+      dateB = "";
+    }
+
     if (dateB > dateA) return 1;
+
     if (dateB < dateA) return -1;
+
     return 0;
   });
 }
@@ -1397,14 +1688,22 @@ function formatSecondsToClock(ms) {
   var totalSeconds = Math.max(0, Math.ceil(ms / 1000));
   var minutes = Math.floor(totalSeconds / 60);
   var seconds = totalSeconds % 60;
-  var formattedSeconds = (seconds < 10 ? "0" : "") + seconds;
+  var formattedSeconds = "" + seconds;
+
+  if (seconds < 10) {
+    formattedSeconds = "0" + seconds;
+  }
+
   return minutes + ":" + formattedSeconds;
 }
 
 function formatSideName(side) {
   if (side === "con") return "Con";
+
   if (side === "pro") return "Pro";
+
   if (side === "observer") return "Observer";
+
   return "";
 }
 
@@ -1414,28 +1713,43 @@ function getMarkerLabel(id) {
       return MARKERS[i].label;
     }
   }
+
   return "";
 }
 
 function createSafeFileName(title) {
-  var text = String(title || "round").toLowerCase();
+  var rawTitle = title;
+
+  if (!rawTitle) {
+    rawTitle = "round";
+  }
+
+  var text = String(rawTitle).toLowerCase();
   var out = "";
+
   for (var i = 0; i < text.length; i++) {
     var letter = text.charAt(i);
+
     if ((letter >= "a" && letter <= "z") || (letter >= "0" && letter <= "9")) {
       out += letter;
+
     } else if (out && out.charAt(out.length - 1) !== "-") {
       out += "-";
     }
   }
+
   if (out.charAt(out.length - 1) === "-") {
     out = out.slice(0, out.length - 1);
   }
-  return out || "round";
+
+  if (!out) return "round";
+
+  return out;
 }
 
 function downloadRoundAsJson(round) {
   if (!round) return;
+
   var payload = {
     schemaVersion: 1,
     exportedAt: new Date().toISOString(),
@@ -1445,6 +1759,7 @@ function downloadRoundAsJson(round) {
   var file = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   var link = document.createElement("a");
   var name = createSafeFileName(round.title);
+
   link.href = URL.createObjectURL(file);
   link.download = name + "-" + new Date().toISOString().slice(0, 10) + ".json";
   link.click();
@@ -1464,128 +1779,385 @@ var SAFE_STYLES = [
   "font-weight", "font-style", "text-decoration", "text-align"
 ];
 
-function styleIsSafe(value) {
+function pastedStyleIsAllowed(value) {
   var lower = String(value || "").toLowerCase();
   if (lower.indexOf("url(") !== -1) return false;
+
   if (lower.indexOf("expression") !== -1) return false;
+
   if (lower.indexOf("javascript") !== -1) return false;
+
   if (lower.indexOf("@import") !== -1) return false;
+
   return true;
 }
 
-function keepStyle(style) {
+function copyAllowedStyles(style, raw) {
   var out = [];
   if (!style) return "";
+
   for (var i = 0; i < SAFE_STYLES.length; i++) {
     var val = style.getPropertyValue(SAFE_STYLES[i]);
     if (!val) continue;
-    if (!styleIsSafe(val)) continue;
+
+    if (!pastedStyleIsAllowed(val)) continue;
+
     out.push(SAFE_STYLES[i] + ":" + val);
   }
+
+  var joined = out.join(";");
+
+  if (joined.indexOf("background-color") === -1) {
+    var bg = style.getPropertyValue("background");
+
+    if (bg && bg.indexOf("url(") === -1 && bg.indexOf("gradient") === -1 && pastedStyleIsAllowed(bg)) {
+      var first = bg.split(" ")[0];
+
+      if (first) {
+        out.push("background-color:" + first);
+      }
+    }
+  }
+
+  joined = out.join(";");
+  var rawText = String(raw || "").toLowerCase();
+  var markAt = rawText.indexOf("mso-highlight:");
+
+  if (markAt !== -1 && joined.indexOf("background-color") === -1) {
+    var color = rawText.slice(markAt + "mso-highlight:".length).split(";")[0];
+
+    color = color.replace(/^\s+|\s+$/g, "");
+    if (color && color !== "none" && color !== "auto" && pastedStyleIsAllowed(color)) {
+      out.push("background-color:" + color);
+    }
+  }
+
+  copyBoldAndItalic(out, rawText);
   return out.join(";");
 }
 
-function keepLink(href) {
-  var value = String(href || "").trim();
-  var lower = value.toLowerCase();
-  if (lower.indexOf("https:") === 0) return value;
-  if (lower.indexOf("http:") === 0) return value;
-  if (lower.indexOf("mailto:") === 0) return value;
+function readRawStyleValue(rawText, name) {
+  var key = name + ":";
+  var at = rawText.indexOf(key);
+  if (at === -1) return "";
+
+  return rawText.slice(at + key.length).split(";")[0].replace(/^\s+|\s+$/g, "");
+}
+
+function findStyleInList(out, name) {
+  var i;
+
+  for (i = 0; i < out.length; i++) {
+    if (out[i].indexOf(name + ":") === 0) return out[i];
+  }
+
   return "";
 }
 
-function cleanInside(node, notice, fragment) {
+function putStyleInList(out, name, value) {
+  var i;
+
+  for (i = 0; i < out.length; i++) {
+    if (out[i].indexOf(name + ":") === 0) {
+      out[i] = name + ":" + value;
+      return;
+    }
+  }
+
+  out.push(name + ":" + value);
+}
+
+function copyBoldAndItalic(out, rawText) {
+  var weightMark = readRawStyleValue(rawText, "mso-ansi-font-weight");
+
+  if (!weightMark) {
+    weightMark = readRawStyleValue(rawText, "mso-bidi-font-weight");
+  }
+
+  var currentWeight = findStyleInList(out, "font-weight");
+  var weightIsPlain = !currentWeight || currentWeight.indexOf("normal") !== -1 || currentWeight.indexOf("400") !== -1;
+
+  if ((weightMark === "bold" || weightMark === "700") && weightIsPlain) {
+    putStyleInList(out, "font-weight", "bold");
+  }
+
+  var styleMark = readRawStyleValue(rawText, "mso-ansi-font-style");
+
+  if (!styleMark) {
+    styleMark = readRawStyleValue(rawText, "mso-bidi-font-style");
+  }
+
+  var currentStyle = findStyleInList(out, "font-style");
+
+  if (styleMark === "italic" && (!currentStyle || currentStyle.indexOf("normal") !== -1)) {
+    putStyleInList(out, "font-style", "italic");
+  }
+}
+
+function keepSafeLink(href) {
+  var value = String(href || "").trim();
+  var lower = value.toLowerCase();
+  if (lower.indexOf("https:") === 0) return value;
+
+  if (lower.indexOf("http:") === 0) return value;
+
+  if (lower.indexOf("mailto:") === 0) return value;
+
+  return "";
+}
+
+function cleanChildTags(node, notice, fragment) {
   var child = node.firstChild;
+
   while (child) {
     var next = child.nextSibling;
-    var cleaned = cleanTag(child, notice);
+    var cleaned = cleanOneTag(child, notice);
+
     if (cleaned) {
       fragment.appendChild(cleaned);
     }
+
     child = next;
   }
 }
 
-function cleanTag(node, notice) {
+function cleanOneTag(node, notice) {
   if (node.nodeType === 3) return document.createTextNode(node.textContent);
+
   if (node.nodeType !== 1) return null;
+
   if (node.tagName === "TABLE" || node.tagName === "IMG" || node.tagName === "IMAGE") {
-    if (notice.indexOf("simplified") === -1) notice.push("simplified");
-    var text = (node.tagName === "IMG") ? "" : (node.textContent || "");
-    return text ? document.createTextNode(text) : null;
+    if (notice.indexOf("simplified") === -1) {
+      notice.push("simplified");
+    }
+
+    var text = "";
+
+    if (node.tagName !== "IMG") {
+      text = node.textContent;
+      if (!text) {
+        text = "";
+      }
+    }
+
+    if (!text) return null;
+
+    return document.createTextNode(text);
   }
+
   if (node.tagName === "SCRIPT" || node.tagName === "STYLE" || node.tagName === "IFRAME" || node.tagName === "OBJECT") {
     return null;
   }
+
   if (!SAFE_TAGS[node.tagName]) {
     var copyFragment = document.createDocumentFragment();
-    cleanInside(node, notice, copyFragment);
+
+    cleanChildTags(node, notice, copyFragment);
     return copyFragment;
   }
+
   var copy;
+
   if (node.tagName === "FONT") {
     copy = document.createElement("span");
+
   } else if (node.tagName === "H1" || node.tagName === "H2" || node.tagName === "H3") {
     copy = document.createElement("p");
   } else {
     copy = document.createElement(node.tagName.toLowerCase());
   }
-  var style = keepStyle(node.style);
+
+  var style = copyAllowedStyles(node.style, node.getAttribute("style"));
+
   if (node.tagName === "FONT") {
-    if (node.color) style = (style ? style + ";" : "") + "color:" + node.color;
-    if (node.size) style = (style ? style + ";" : "") + "font-size:" + (Number(node.size) * 4 + 8) + "px";
+    if (node.color) {
+      if (style) {
+        style = style + ";color:" + node.color;
+      } else {
+        style = "color:" + node.color;
+      }
+    }
+
+    if (node.size) {
+      var fontPx = Number(node.size) * 4 + 8;
+
+      if (style) {
+        style = style + ";font-size:" + fontPx + "px";
+      } else {
+        style = "font-size:" + fontPx + "px";
+      }
+    }
   }
-  if (style) copy.setAttribute("style", style);
+
+  if (style) {
+    copy.setAttribute("style", style);
+  }
+
   if (copy.tagName === "A") {
-    var href = keepLink(node.getAttribute("href"));
+    var href = keepSafeLink(node.getAttribute("href"));
+
     if (!href) {
       var plainFragment = document.createDocumentFragment();
-      cleanInside(node, notice, plainFragment);
+
+      cleanChildTags(node, notice, plainFragment);
       return plainFragment;
     }
+
     copy.setAttribute("href", href);
   }
-  if (copy.tagName !== "BR") cleanInside(node, notice, copy);
+
+  if (copy.tagName !== "BR") {
+    cleanChildTags(node, notice, copy);
+  }
+
   return copy;
+}
+
+function classNameFromCssRule(selector) {
+  var name = String(selector || "").replace(/^\s+|\s+$/g, "");
+  if (!name) return "";
+
+  if (name.indexOf(" ") !== -1) return "";
+
+  if (name.indexOf(",") !== -1) return "";
+
+  if (name.indexOf(":") !== -1) return "";
+
+  if (name.indexOf("#") !== -1) return "";
+
+  var dot = name.indexOf(".");
+  if (dot === -1) return "";
+
+  if (name.indexOf(".", dot + 1) !== -1) return "";
+
+  var className = name.slice(dot + 1);
+  if (!className) return "";
+
+  var tag = name.slice(0, dot);
+  var t;
+
+  for (t = 0; t < tag.length; t++) {
+    var ch = tag.charAt(t).toLowerCase();
+    if (ch < "a" || ch > "z") return "";
+  }
+
+  return className;
+}
+
+function copyClassStylesOntoPaste(parsed) {
+  var styleTags = parsed.querySelectorAll("style");
+  var classStyles = {};
+  var s;
+
+  for (s = 0; s < styleTags.length; s++) {
+    var text = styleTags[s].textContent || "";
+    var chunks = text.split("}");
+    var c;
+
+    for (c = 0; c < chunks.length; c++) {
+      var chunk = chunks[c];
+      var open = chunk.indexOf("{");
+      if (open === -1) continue;
+
+      var className = classNameFromCssRule(chunk.slice(0, open));
+      if (!className) continue;
+
+      classStyles[className] = chunk.slice(open + 1);
+    }
+  }
+
+  var nodes = parsed.body.querySelectorAll("[class]");
+  var n;
+
+  for (n = 0; n < nodes.length; n++) {
+    var names = (nodes[n].getAttribute("class") || "").split(" ");
+    var extra = "";
+    var i;
+
+    for (i = 0; i < names.length; i++) {
+      if (classStyles[names[i]]) {
+        extra += classStyles[names[i]] + ";";
+      }
+    }
+
+    if (!extra) continue;
+
+    var current = nodes[n].getAttribute("style") || "";
+
+    nodes[n].setAttribute("style", extra + current);
+  }
+
+  return parsed.body;
 }
 
 function cleanPastedHtml(html) {
   var notice = [];
-  var parsed = new DOMParser().parseFromString("<div>" + String(html || "") + "</div>", "text/html");
-  var source = parsed.body.firstChild;
+  var htmlText = html;
+
+  if (!htmlText) {
+    htmlText = "";
+  }
+
+  var parsed = new DOMParser().parseFromString(String(htmlText), "text/html");
+  var source = copyClassStylesOntoPaste(parsed);
   var wrap = document.createElement("div");
-  if (source) cleanInside(source, notice, wrap);
+
+  if (source) {
+    cleanChildTags(source, notice, wrap);
+  }
+
+  var plain = wrap.textContent;
+
+  if (!plain) {
+    plain = "";
+  }
+
+  var noticeText = "";
+
+  if (notice.length > 0) {
+    noticeText = "Some pasted content was simplified so it stays readable.";
+  }
+
   return {
     html: wrap.innerHTML,
-    plain: wrap.textContent || "",
-    notice: (notice.length > 0) ? "Some pasted content was simplified so it stays readable." : ""
+    plain: plain,
+    notice: noticeText
   };
 }
 
 function convertLinesToHtml(text) {
   var lines = String(text || "").split("\n");
   var parts = [];
+
   for (var i = 0; i < lines.length; i++) {
     var lineBox = document.createElement("div");
+
     lineBox.textContent = lines[i];
     parts.push(lineBox.innerHTML);
   }
+
   return parts.join("<br>");
 }
 
 function insertHtmlAtCursor(html) {
   if (!html) return;
+
   var selection = window.getSelection();
   if (!selection || !selection.rangeCount) return;
+
   var range = selection.getRangeAt(0);
+
   range.deleteContents();
   var parsed = new DOMParser().parseFromString("<div>" + html + "</div>", "text/html");
   var fragment = document.createDocumentFragment();
   var holder = parsed.body.firstChild;
+
   while (holder && holder.firstChild) {
     fragment.appendChild(holder.firstChild);
   }
+
   var node = fragment.lastChild;
+
   range.insertNode(fragment);
   if (node) {
     range = document.createRange();
@@ -1610,9 +2182,6 @@ var state = {
   history: { past: [], future: [], typing: false },
   heights: {},
   popover: null,
-  findText: "",
-  findHits: [],
-  findAt: -1,
   tourStep: -1,
   demo: false,
   navOpen: false,
@@ -1622,26 +2191,34 @@ var state = {
 
 var confirmRun = null;
 
-function activeCase() {
+function getOpenCaseSide() {
   if (state.round && state.round.isPreflow) {
     return state.round.preflowSide;
   }
+
   return state.caseSide;
 }
 
-function textSize() {
-  return (db && db.settings && db.settings.fontSize) || 14;
+function getFontSize() {
+  var size = 14;
+
+  if (db && db.settings && db.settings.fontSize) {
+    size = db.settings.fontSize;
+  }
+
+  return size;
 }
 
-function resetHistory() {
+function clearUndoHistory() {
   state.history.past = [];
   state.history.future = [];
   state.history.typing = false;
   showUndoButtons();
 }
 
-function copyFlow() {
+function copyRoundForUndo() {
   if (!state.round) return null;
+
   return JSON.stringify({
     cases: state.round.cases,
     contentions: state.round.contentions,
@@ -1650,25 +2227,29 @@ function copyFlow() {
   });
 }
 
-function putFlowBack(json) {
+function restoreRoundFromUndo(json) {
   if (!state.round || !json) return;
+
   var data = JSON.parse(json);
+
   state.round.cases = data.cases;
   state.round.contentions = data.contentions;
   state.round.notes = data.notes;
   state.round.evidence = data.evidence;
   repairRoundData(state.round);
-  saveSoon(true);
+  saveRoundAfterAMoment(true);
   render();
 }
 
-function rememberStep() {
-  var snap = copyFlow();
+function saveUndoStep() {
+  var snap = copyRoundForUndo();
   if (!snap) return;
+
   state.history.past.push(snap);
   if (state.history.past.length > 30) {
     state.history.past.shift();
   }
+
   state.history.future = [];
   showUndoButtons();
 }
@@ -1676,54 +2257,62 @@ function rememberStep() {
 function showUndoButtons() {
   var undoBtn = document.querySelector("[data-action='undo']");
   var redoBtn = document.querySelector("[data-action='redo']");
+
   if (undoBtn) {
     undoBtn.disabled = (state.history.past.length === 0);
   }
+
   if (redoBtn) {
     redoBtn.disabled = (state.history.future.length === 0);
   }
 }
 
-function beginTyping() {
+function startTypingUndo() {
   if (!state.history.typing) {
-    rememberStep();
+    saveUndoStep();
     state.history.typing = true;
   }
+
   clearTimeout(state.typingTimer);
   state.typingTimer = setTimeout(function () {
     state.history.typing = false;
   }, 900);
 }
 
-function rememberBeforeChange() {
-  saveTypedWords();
-  rememberStep();
+function saveUndoBeforeChange() {
+  finishTypingUndo();
+  saveUndoStep();
 }
 
 function undo() {
-  saveTypedWords();
+  finishTypingUndo();
   if (!state.history.past.length) return;
-  var current = copyFlow();
+
+  var current = copyRoundForUndo();
   var previous = state.history.past.pop();
+
   state.history.future.push(current);
   state.history.typing = false;
-  putFlowBack(previous);
+  restoreRoundFromUndo(previous);
   showUndoButtons();
 }
 
 function redo() {
-  saveTypedWords();
+  finishTypingUndo();
   if (!state.history.future.length) return;
-  var current = copyFlow();
+
+  var current = copyRoundForUndo();
   var next = state.history.future.pop();
+
   state.history.past.push(current);
   state.history.typing = false;
-  putFlowBack(next);
+  restoreRoundFromUndo(next);
   showUndoButtons();
 }
 
 function updateSaveLabel() {
   var label = document.getElementById("save-label");
+
   if (label) {
     label.textContent = state.saveState;
   }
@@ -1731,9 +2320,11 @@ function updateSaveLabel() {
 
 function saveThisRound() {
   if (!state.round || state.demo) return;
+
   state.round.updatedAt = new Date().toISOString();
   if (state.round.isPreflow) {
     var pre = db.preflows[state.round.id];
+
     if (pre) {
       pre.title = state.round.title;
       pre.topic = state.round.topic;
@@ -1746,16 +2337,19 @@ function saveThisRound() {
   } else {
     db.rounds[state.round.id] = state.round;
   }
+
   var msg = saveToLocalStorage(db);
+
   if (msg) {
     state.saveState = msg;
   } else {
     state.saveState = "Saved in this browser";
   }
+
   updateSaveLabel();
 }
 
-function saveSoon(now) {
+function saveRoundAfterAMoment(now) {
   clearTimeout(state.saveTimer);
   state.saveState = "Saving…";
   updateSaveLabel();
@@ -1766,18 +2360,14 @@ function saveSoon(now) {
   }
 }
 
-function saveNow() {
-  clearTimeout(state.saveTimer);
-  saveThisRound();
-}
-
-function saveTypedWords() {
+function finishTypingUndo() {
   clearTimeout(state.typingTimer);
   state.history.typing = false;
 }
 
-function rememberRound() {
+function rememberOpenRound() {
   if (!state.round) return;
+
   try {
     sessionStorage.setItem("openRoundId", state.round.id);
     if (state.round.isPreflow) {
@@ -1790,13 +2380,108 @@ function rememberRound() {
   } catch (error) {}
 }
 
-function go(url) {
+function openPage(url) {
   window.location.href = url;
 }
 
+function createDemoRound() {
+  var round = createNewRound({
+    title: "Feature tour",
+    topic: "Schools should provide free lunches.",
+    yourSide: "pro",
+    firstSide: "pro"
+  }, db.settings);
+
+  var proId = round.cases.pro.contentionIds[0];
+
+  round.contentions[proId].name = "Student need";
+
+  var attendance = addMainPoint(round, proId, "pro-constructive", "Attendance improves");
+
+  addMainPoint(round, proId, "pro-constructive", "Nutrition supports learning");
+
+  var transport = addReplyPoint(round, attendance.id, "con-rebuttal", "Transport matters more");
+
+  addReplyPoint(round, attendance.id, "con-rebuttal", "Study is small");
+  addReplyPoint(round, transport.id, "pro-summary", "Lunch removes another barrier");
+
+  transport.evidenceId = createUniqueId("ev");
+  round.evidence[transport.evidenceId] = {
+    id: transport.evidenceId,
+    noteId: transport.id,
+    html: "Example paste: students missed fewer days when lunch was available at school.",
+    plain: "Example paste: students missed fewer days when lunch was available at school."
+  };
+
+  var conId = round.cases.con.contentionIds[0];
+
+  round.contentions[conId].name = "Cost";
+  addMainPoint(round, conId, "con-constructive", "Budgets are already tight");
+  return round;
+}
+
+function beginFeatureTour() {
+  var backId = "";
+
+  if (state.round && !state.demo && !state.round.isPreflow) {
+    backId = state.round.id;
+  }
+
+  sessionStorage.setItem("tourReturn", backId);
+
+  var demo = createDemoRound();
+
+  sessionStorage.setItem("tourDemo", "1");
+  sessionStorage.setItem("tourStep", "0");
+  sessionStorage.setItem("tourRound", JSON.stringify(demo));
+  sessionStorage.setItem("caseSide", "pro");
+  sessionStorage.removeItem("isOpenPreflow");
+
+  if (document.body.dataset.page === "workspace") {
+    state.demo = true;
+    state.round = demo;
+    state.caseSide = "pro";
+    state.evidenceOpen = false;
+    state.selectedId = null;
+    state.tourStep = 0;
+    clearUndoHistory();
+    render();
+    return;
+  }
+
+  openPage("workspace.html");
+}
+
 function loadOpenRound() {
+  try {
+    if (sessionStorage.getItem("tourDemo") === "1") {
+      var savedTour = sessionStorage.getItem("tourRound");
+
+      if (savedTour) {
+        state.round = JSON.parse(savedTour);
+        state.demo = true;
+        var savedSide = sessionStorage.getItem("caseSide");
+
+        if (!savedSide) {
+          savedSide = "pro";
+        }
+
+        state.caseSide = savedSide;
+        var savedStep = sessionStorage.getItem("tourStep");
+
+        if (!savedStep) {
+          savedStep = 0;
+        }
+
+        state.tourStep = Number(savedStep);
+        return true;
+      }
+    }
+  } catch (error) {}
+
   var id = null;
   var isPre = false;
+
   try {
     id = sessionStorage.getItem("openRoundId");
     isPre = sessionStorage.getItem("isOpenPreflow") === "yes";
@@ -1808,23 +2493,25 @@ function loadOpenRound() {
 
   if (isPre && id && db.preflows[id]) {
     state.round = convertPreflowToRound(db.preflows[id]);
-    rememberRound();
+    rememberOpenRound();
     return true;
   }
+
   if (id && db.rounds[id]) {
     state.round = db.rounds[id];
-    rememberRound();
+    rememberOpenRound();
     return true;
   }
 
-  var all = objectValuesToList(db.rounds);
+  var all = getListFromObject(db.rounds);
+
   if (all.length > 0) {
     state.round = sortByRecentDate(all)[0];
-    rememberRound();
+    rememberOpenRound();
     return true;
   }
 
-  go("index.html");
+  openPage("index.html");
   return false;
 }
 
@@ -1833,7 +2520,7 @@ function openRound(id) {
     sessionStorage.setItem("openRoundId", id);
     sessionStorage.removeItem("isOpenPreflow");
   } catch (error) {}
-  go("workspace.html");
+  openPage("workspace.html");
 }
 
 function openOpening(id) {
@@ -1841,24 +2528,39 @@ function openOpening(id) {
     sessionStorage.setItem("openRoundId", id);
     sessionStorage.setItem("isOpenPreflow", "yes");
   } catch (error) {}
-  go("workspace.html");
+  openPage("workspace.html");
 }
 
 function updateSideMenu() {
+  var shell = document.querySelector(".workspace");
   var side = document.querySelector(".sidebar");
-  if (!side) return;
+
   if (state.navOpen) {
-    side.classList.add("nav-active");
+    if (shell) {
+      shell.classList.add("menu-open");
+    }
+
+    if (side) {
+      side.classList.add("open");
+    }
   } else {
-    side.classList.remove("nav-active");
+    if (shell) {
+      shell.classList.remove("menu-open");
+    }
+
+    if (side) {
+      side.classList.remove("open");
+    }
   }
 }
 
 function closePopups() {
-  var boxes = document.querySelectorAll(".dialog-cover");
+  var boxes = document.querySelectorAll(".popup-cover");
+
   for (var i = 0; i < boxes.length; i++) {
     hideElement(boxes[i]);
   }
+
   closeDropdownMenu();
 }
 
@@ -1866,54 +2568,80 @@ function askConfirm(title, text, okLabel, run) {
   confirmRun = run;
   document.getElementById("confirm-title").textContent = title;
   document.getElementById("confirm-text").textContent = text;
-  document.getElementById("confirm-ok").textContent = okLabel || "OK";
-  showElement(document.getElementById("confirm-box"));
-}
+  var buttonLabel = okLabel;
 
-function getCurrentTimerStep() {
-  var timer = state.round.timers;
-  var plan = getTimerSteps(state.round.firstSide, db.settings.durations);
-  var index = Math.min(plan.length - 1, Math.max(0, timer.index || 0));
-  return { plan: plan, index: index, item: plan[index] };
+  if (!buttonLabel) {
+    buttonLabel = "OK";
+  }
+
+  document.getElementById("confirm-ok").textContent = buttonLabel;
+  showElement(document.getElementById("confirm-box"));
 }
 
 function getTimerButtonLabel() {
   var timer = state.round.timers;
-  if (timer.running && timer.mode === "prep" && timer.prepSide) {
-    return formatSideName(timer.prepSide) + " prep " + formatSecondsToClock(timer.deadline - Date.now());
+  if (!timer) return "Timer";
+
+  if (timer.running && timer.deadline) {
+    return formatSecondsToClock(timer.deadline - Date.now());
   }
-  if (timer.mode === "prep" && timer.prepSide) {
-    return formatSideName(timer.prepSide) + " prep " + formatSecondsToClock(timer.prepLeft[timer.prepSide]);
-  }
-  var ms = timer.running ? Math.max(0, timer.deadline - Date.now()) : timer.remainingMs;
-  var step = getCurrentTimerStep();
-  return step.item.label + " " + formatSecondsToClock(ms);
+
+  if (timer.timeUp) return "0:00";
+
+  return "Timer";
 }
 
 function updateTimerButton() {
   var btn = document.getElementById("timer-btn");
   if (!btn || !state.round || !state.round.timers) return;
+
   btn.textContent = getTimerButtonLabel();
   if (state.round.timers.running) {
     btn.classList.add("running");
   } else {
     btn.classList.remove("running");
   }
+
   if (state.round.timers.timeUp) {
     btn.classList.add("time-up");
   } else {
     btn.classList.remove("time-up");
   }
+
+  var clock = document.getElementById("popover-clock");
+
+  if (clock) {
+    var shown = state.round.timers.remainingMs;
+
+    if (state.round.timers.running && state.round.timers.deadline) {
+      shown = state.round.timers.deadline - Date.now();
+    }
+
+    clock.textContent = formatSecondsToClock(shown);
+  }
+
+  var startBtn = document.getElementById("timer-start-btn");
+
+  if (startBtn) {
+    if (state.round.timers.running) {
+      startBtn.textContent = "Pause";
+    } else {
+      startBtn.textContent = "Start";
+    }
+  }
 }
 
 function beep() {
   if (!db.settings.sound) return;
+
   try {
     var AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!AudioCtx) return;
+
     var ctx = new AudioCtx();
     var osc = ctx.createOscillator();
     var gain = ctx.createGain();
+
     osc.type = "sine";
     osc.frequency.setValueAtTime(880, ctx.currentTime);
     gain.gain.setValueAtTime(0.2, ctx.currentTime);
@@ -1925,24 +2653,233 @@ function beep() {
   } catch (error) {}
 }
 
+function readTimerLength() {
+  var minutesBox = document.getElementById("timer-minutes");
+  var secondsBox = document.getElementById("timer-seconds");
+  var minutes = 0;
+
+  if (minutesBox) {
+    minutes = Number(minutesBox.value);
+  }
+
+  var seconds = 0;
+
+  if (secondsBox) {
+    seconds = Number(secondsBox.value);
+  }
+
+  if (!minutes || minutes < 0) {
+    minutes = 0;
+  }
+
+  if (!seconds || seconds < 0) {
+    seconds = 0;
+  }
+
+  return (minutes * 60 + seconds) * 1000;
+}
+
+function fillTimerInputs(ms) {
+  var safeMs = ms;
+
+  if (!safeMs) {
+    safeMs = 0;
+  }
+
+  var total = Math.max(0, Math.ceil(safeMs / 1000));
+  var minutesBox = document.getElementById("timer-minutes");
+  var secondsBox = document.getElementById("timer-seconds");
+
+  if (minutesBox) {
+    minutesBox.value = String(Math.floor(total / 60));
+  }
+
+  if (secondsBox) {
+    secondsBox.value = String(total % 60);
+  }
+}
+
+function openSimpleTimer(anchor) {
+  if (!state.round || state.round.isPreflow || !state.round.timers) return;
+
+  var timers = state.round.timers;
+  var ms = timers.remainingMs;
+
+  if (timers.running && timers.deadline) {
+    ms = timers.deadline - Date.now();
+  }
+
+  var clock = document.getElementById("popover-clock");
+
+  if (clock) {
+    clock.textContent = formatSecondsToClock(ms);
+  }
+
+  if (!timers.running) {
+    fillTimerInputs(ms);
+  }
+
+  var startBtn = document.getElementById("timer-start-btn");
+
+  if (startBtn) {
+    if (timers.running) {
+      startBtn.textContent = "Pause";
+    } else {
+      startBtn.textContent = "Start";
+    }
+  }
+
+  showDropdownMenu(anchor, document.getElementById("timer-popover"));
+}
+
+function startOrPauseTimer() {
+  if (!state.round || !state.round.timers) return;
+
+  var timers = state.round.timers;
+
+  if (timers.running) {
+    timers.remainingMs = Math.max(0, timers.deadline - Date.now());
+    timers.running = false;
+    timers.deadline = null;
+    timers.mode = null;
+    saveRoundAfterAMoment(true);
+  } else {
+    var amount = readTimerLength();
+    if (amount <= 0) return;
+
+    timers.remainingMs = amount;
+    timers.timeUp = false;
+    startTimer("speech");
+  }
+
+  updateTimerButton();
+  var pop = document.getElementById("timer-popover");
+  if (state.popover === pop) return;
+
+  openSimpleTimer(document.getElementById("timer-btn"));
+}
+
+function resetSimpleTimer() {
+  if (!state.round || !state.round.timers) return;
+
+  var timers = state.round.timers;
+
+  timers.running = false;
+  timers.mode = null;
+  timers.deadline = null;
+  timers.timeUp = false;
+  timers.remainingMs = readTimerLength();
+  saveRoundAfterAMoment(true);
+  updateTimerButton();
+}
+
+function formatSelectedProof(command, value) {
+  var selection = window.getSelection();
+  if (!selection || !selection.rangeCount) return;
+
+  var node = selection.anchorNode;
+  if (!node) return;
+
+  var el = node.parentElement;
+
+  if (node.nodeType === 1) {
+    el = node;
+  }
+
+  if (!el || !el.closest) return;
+
+  var proof = el.closest(".proof-text");
+  var card = el.closest(".point-input, .reply-box, .new-box");
+  var editor = proof || card;
+  if (!editor) return;
+
+  document.execCommand("styleWithCSS", false, true);
+  if (value) {
+    document.execCommand(command, false, value);
+  } else {
+    document.execCommand(command, false, null);
+  }
+
+  if (proof && typeof saveEvidenceText === "function") {
+    startTypingUndo();
+    saveEvidenceText(proof);
+    saveRoundAfterAMoment(false);
+  }
+
+  if (card && card.classList.contains("point-input") && typeof savePointFormatting === "function") {
+    startTypingUndo();
+    savePointFormatting(card);
+    saveRoundAfterAMoment(false);
+  }
+}
+
 function startTimer(mode, side) {
   var timer = state.round.timers;
+
   timer.running = true;
   timer.mode = mode;
   timer.timeUp = false;
   if (mode === "prep") {
     timer.prepSide = side;
-    timer.deadline = Date.now() + (timer.prepLeft[side] || 0);
+    var prepMs = timer.prepLeft[side];
+
+    if (!prepMs) {
+      prepMs = 0;
+    }
+
+    timer.deadline = Date.now() + prepMs;
   } else {
     timer.deadline = Date.now() + timer.remainingMs;
   }
-  saveSoon(true);
+
+  saveRoundAfterAMoment(true);
 }
 
 function calculateColumnWidth(pane, count) {
-  var total = (pane && pane.clientWidth) || 800;
-  var w = Math.floor((total - (count - 1) * 12) / count);
-  return Math.max(220, w);
+  var total = 800;
+  var sidePad = 0;
+
+  if (pane && pane.clientWidth) {
+    total = pane.clientWidth;
+    var box = window.getComputedStyle(pane);
+
+    sidePad = parseFloat(box.paddingLeft) + parseFloat(box.paddingRight);
+
+  } else if (typeof pane === "number" && pane > 0) {
+    total = pane;
+  }
+
+  if (!count || count < 1) {
+    count = 1;
+  }
+
+  var gap = 20;
+  var minWidth = 220;
+  var columnsInView = count;
+
+  if (window.innerWidth <= 899) {
+    gap = 12;
+    minWidth = 148;
+    if (count < 2) {
+      columnsInView = count;
+    } else {
+      columnsInView = 2;
+    }
+  }
+
+  var inner = total - sidePad;
+
+  if (inner < minWidth) {
+    inner = total;
+  }
+
+  var w = Math.floor((inner - (columnsInView - 1) * gap) / columnsInView);
+
+  if (w < minWidth) {
+    w = minWidth;
+  }
+
+  return w;
 }
 
 function showDropdownMenu(anchor, node) {
@@ -1950,9 +2887,12 @@ function showDropdownMenu(anchor, node) {
     closeDropdownMenu();
     return;
   }
+
   closeDropdownMenu();
   if (!anchor || !node) return;
+
   var rect = anchor.getBoundingClientRect();
+
   node.style.top = (rect.bottom + 6) + "px";
   node.style.right = (window.innerWidth - rect.right) + "px";
   node.style.left = "auto";
@@ -1964,36 +2904,75 @@ function closeDropdownMenu() {
   if (state.popover) {
     hideElement(state.popover);
   }
+
   state.popover = null;
 }
 
 function getBallotInfoText() {
   var your = state.round.yourSide;
-  var opp = state.round.opponent ? " vs " + state.round.opponent : "";
-  var first = (state.round.firstSide === "con") ? "Con speaks first" : "Pro speaks first";
-  var side = (your === "observer") ? "Observer" : ("You are " + (your === "con" ? "Con" : "Pro"));
+  var opp = "";
+
+  if (state.round.opponent) {
+    opp = " vs " + state.round.opponent;
+  }
+
+  var first = "Pro speaks first";
+
+  if (state.round.firstSide === "con") {
+    first = "Con speaks first";
+  }
+
+  var side = "You are Pro";
+
+  if (your === "observer") {
+    side = "Observer";
+
+  } else if (your === "con") {
+    side = "You are Con";
+  }
+
   return side + opp + " · " + first;
 }
 
 function updateRoundHeaderInfo() {
-  var stamp = document.getElementById("round-stamp");
-  if (!stamp || !state.round) return;
-  var line1 = joinNonEmptyText([state.round.tournament, state.round.roundLabel], " · ");
-  var line2 = joinNonEmptyText([line1, state.round.topic], " — ");
-  var line3 = joinNonEmptyText([line2, getBallotInfoText()], " · ");
-  stamp.textContent = line3 || "Round";
+  if (!state.round) return;
+
+  var title = document.querySelector(".title-input");
+
+  if (title && document.activeElement !== title && title.value !== state.round.title) {
+    title.value = state.round.title;
+  }
+
+  var note = document.getElementById("title-note");
+  if (!note) return;
+
+  var line1 = joinFilledText([state.round.tournament, state.round.roundLabel], " · ");
+  var topicLine = "";
+
+  if (state.round.topic && state.round.topic !== state.round.title) {
+    topicLine = state.round.topic;
+  }
+
+  var line2 = joinFilledText([line1, topicLine], " — ");
+  var line3 = joinFilledText([line2, getBallotInfoText()], " · ");
+
+  note.textContent = line3;
 }
 
 function renderContentionJumpLinks() {
   var list = document.getElementById("jump-links");
   if (!list || !state.round) return;
+
   clearElement(list);
-  var caseSide = activeCase();
+  var caseSide = getOpenCaseSide();
   var ids = state.round.cases[caseSide].contentionIds;
+
   for (var i = 0; i < ids.length; i++) {
     var contention = state.round.contentions[ids[i]];
     if (!contention) continue;
+
     var jump = cloneTemplate("jump-sample");
+
     jump.dataset.id = ids[i];
     jump.querySelector(".color-dot").style.backgroundColor = JUMP_COLORS[i % JUMP_COLORS.length];
     jump.querySelector(".link-name").textContent = contention.name;
@@ -2003,6 +2982,7 @@ function renderContentionJumpLinks() {
 
 function setLinkActiveState(id, on) {
   var node = document.getElementById(id);
+
   if (node) {
     node.classList.toggle("active", on);
   }
@@ -2010,6 +2990,7 @@ function setLinkActiveState(id, on) {
 
 function updateActiveSideLinks() {
   var onNotes = (document.body.dataset.page === "notes");
+
   setLinkActiveState("link-pro", !onNotes && state.caseSide === "pro");
   setLinkActiveState("switch-pro", !onNotes && state.caseSide === "pro");
   setLinkActiveState("link-con", !onNotes && state.caseSide === "con");
@@ -2020,6 +3001,7 @@ function updateActiveSideLinks() {
 
 function updateTopBarAndSidebar() {
   if (!state.round) return;
+
   var preflow = state.round.isPreflow;
   var caseLinks = document.getElementById("case-links");
   var caseSwitch = document.getElementById("side-bar");
@@ -2029,6 +3011,8 @@ function updateTopBarAndSidebar() {
   var preMenu = document.getElementById("opening-menu-btn");
   var columnTools = document.getElementById("column-tools");
   var toolbarTimer = document.getElementById("toolbar-timer");
+  var findBtn = document.getElementById("find-btn");
+
   if (preflow) {
     hideElement(caseLinks);
     hideElement(caseSwitch);
@@ -2036,6 +3020,7 @@ function updateTopBarAndSidebar() {
     hideElement(roundMenu);
     hideElement(columnTools);
     hideElement(toolbarTimer);
+    hideElement(findBtn);
     showElement(preMenu);
     if (preLabel) {
       preLabel.textContent = formatSideName(state.round.preflowSide) + " preflow";
@@ -2048,14 +3033,26 @@ function updateTopBarAndSidebar() {
     showElement(roundMenu);
     showElement(columnTools);
     showElement(toolbarTimer);
+    showElement(findBtn);
     hideElement(preMenu);
     hideElement(preLabel);
   }
+
   updateActiveSideLinks();
   updateRoundHeaderInfo();
   renderContentionJumpLinks();
   var sizes = document.querySelector("[data-field='font-size']");
-  if (sizes) sizes.value = String(db.settings.fontSize || 14);
+
+  if (sizes) {
+    var chosenSize = db.settings.fontSize;
+
+    if (!chosenSize) {
+      chosenSize = 14;
+    }
+
+    sizes.value = String(chosenSize);
+  }
+
   showUndoButtons();
   updateSideMenu();
 }
@@ -2070,31 +3067,47 @@ setInterval(function () {
   if (!state.round || state.demo || state.round.isPreflow || !state.round.timers || !state.round.timers.running) {
     return;
   }
+
   var timer = state.round.timers;
   var left = timer.deadline - Date.now();
+
   if (left <= 0) {
     if (timer.mode === "prep") {
       timer.prepLeft[timer.prepSide] = 0;
     } else {
       timer.remainingMs = 0;
     }
+
     timer.running = false;
     timer.mode = null;
     timer.deadline = null;
     timer.timeUp = true;
     beep();
-    saveSoon(true);
+    saveRoundAfterAMoment(true);
   }
+
   updateTimerButton();
 }, 200);
 
+function keepProofSelection(event) {
+  var trigger = event.target.closest("[data-action='make-bold'], [data-action='make-highlight']");
+
+  if (trigger) {
+    event.preventDefault();
+  }
+}
+
+document.addEventListener("mousedown", keepProofSelection);
+document.addEventListener("pointerdown", keepProofSelection);
+
 document.addEventListener("click", function (event) {
   if (state.popover && !state.popover.contains(event.target) &&
-      !event.target.closest("[data-action='timer-toggle'], [data-action='find-toggle'], [data-action='round-menu'], [data-action='note-menu'], [data-action='opening-menu']")) {
+      !event.target.closest("[data-action='timer-toggle'], [data-action='round-menu'], [data-action='note-menu'], [data-action='opening-menu']")) {
     closeDropdownMenu();
   }
 
   var trigger = event.target.closest("[data-action]");
+
   if (!trigger) {
     return;
   }
@@ -2107,23 +3120,42 @@ document.addEventListener("click", function (event) {
   }
 
   if (action === "home") {
-    go("index.html");
-  } else if (action === "show-help") {
-    go("help.html");
-  } else if (action === "show-settings") {
-    go("settings.html");
+    openPage("index.html");
+
+  } else if (action === "tour") {
+    beginFeatureTour();
+
   } else if (action === "show-openings") {
-    go("preflows.html");
+    openPage("preflows.html");
+
   } else if (action === "show-notes") {
     if (document.body.dataset.page !== "notes") {
-      go("notes.html");
+      openPage("notes.html");
     }
+
   } else if (action === "toggle-nav") {
     state.navOpen = !state.navOpen;
+
   } else if (action === "close-nav") {
     state.navOpen = false;
+
   } else if (action === "close-dialog") {
     closePopups();
+
+  } else if (action === "timer-toggle") {
+    openSimpleTimer(trigger);
+
+  } else if (action === "timer-start") {
+    startOrPauseTimer();
+
+  } else if (action === "timer-reset") {
+    resetSimpleTimer();
+
+  } else if (action === "make-bold") {
+    formatSelectedProof("bold");
+
+  } else if (action === "make-highlight") {
+    formatSelectedProof("hiliteColor", "#fff3a0");
   }
 
   if (action === "toggle-nav" || action === "close-nav" || trigger.closest(".sidebar")) {
@@ -2131,24 +3163,121 @@ document.addEventListener("click", function (event) {
   }
 });
 
+var installPromptEvent = null;
+
+window.addEventListener("beforeinstallprompt", function (event) {
+  event.preventDefault();
+  installPromptEvent = event;
+  showInstallButton();
+});
+
+window.addEventListener("appinstalled", function () {
+  installPromptEvent = null;
+  hideInstallButton();
+});
+
+function appAlreadyInstalled() {
+  if (window.navigator.standalone) return true;
+  return window.matchMedia("(display-mode: standalone)").matches;
+}
+
+function isIosBrowser() {
+  var ua = window.navigator.userAgent || "";
+  if (/iphone|ipad|ipod/i.test(ua)) return true;
+  return window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1;
+}
+
+function showInstallButton() {
+  var wrap = document.getElementById("install-wrap");
+  if (wrap) showElement(wrap);
+}
+
+function hideInstallButton() {
+  var wrap = document.getElementById("install-wrap");
+  if (wrap) hideElement(wrap);
+}
+
+function setupInstallButton() {
+  if (document.body.dataset.page !== "home" || appAlreadyInstalled()) return;
+
+  var menu = document.querySelector(".top-menu");
+  var preflows = menu && menu.querySelector('a[href="preflows.html"]');
+  if (!menu || !preflows || document.getElementById("install-wrap")) return;
+
+  var wrap = document.createElement("div");
+  var note = document.createElement("p");
+  var button = document.createElement("button");
+
+  wrap.id = "install-wrap";
+  wrap.className = "install-wrap hide";
+  note.id = "install-note";
+  note.className = "install-note hide";
+  note.textContent = "On iPhone, tap Share, then Add to Home Screen.";
+  button.type = "button";
+  button.className = "btn main install-btn";
+  button.textContent = "Install";
+
+  button.addEventListener("click", function () {
+    if (installPromptEvent) {
+      var waiting = installPromptEvent;
+      installPromptEvent = null;
+      waiting.prompt();
+      waiting.userChoice.then(function () {
+        hideInstallButton();
+      });
+      return;
+    }
+
+    if (isIosBrowser()) {
+      if (note.classList.contains("hide")) showElement(note);
+      else hideElement(note);
+    }
+  });
+
+  wrap.appendChild(note);
+  wrap.appendChild(button);
+  preflows.insertAdjacentElement("afterend", wrap);
+
+  if (installPromptEvent || isIosBrowser()) showInstallButton();
+}
+
+function registerInstalledApp() {
+  if (!navigator.serviceWorker) return;
+  navigator.serviceWorker.register("sw.js");
+}
+
 function startApp() {
-  state.view = document.body.dataset.page || "home";
+  registerInstalledApp();
+  setupInstallButton();
+
+  state.view = document.body.dataset.page;
+  if (!state.view) {
+    state.view = "home";
+  }
 
   var okBtn = document.getElementById("confirm-ok");
+
   if (okBtn) {
     okBtn.addEventListener("click", function () {
       var run = confirmRun;
+
       confirmRun = null;
       hideElement(document.getElementById("confirm-box"));
-      if (run) run();
+      if (run) {
+        run();
+      }
     });
   }
 
   var icon = document.querySelector(".edit-mark");
+
   if (icon) {
     icon.addEventListener("click", function () {
       var title = document.querySelector(".title-input");
-      if (title) title.focus();
+
+      if (title) {
+        title.focus();
+      }
     });
   }
 

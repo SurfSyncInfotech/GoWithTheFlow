@@ -1,0 +1,157 @@
+sw.js
+Service worker. This file saves the app files on the phone so the installed app can open again.
+
+Read it from top to bottom. Each code line is followed by what that line does.
+
+var CACHE_NAME = "go-with-the-flow-v1";
+Name the saved file list go-with-the-flow-v1.
+
+var APP_FILES = [
+Start the list of files the installed app should keep.
+
+  "index.html",
+Keep the home page.
+
+  "workspace.html",
+Keep the debate page.
+
+  "notes.html",
+Keep the notes page.
+
+  "preflows.html",
+Keep the preflows page.
+
+  "manifest.json",
+Keep the install description.
+
+  "images/logo.svg",
+Keep the logo.
+
+  "images/icon-192.png",
+Keep the small home-screen icon.
+
+  "images/icon-512.png"
+Keep the large home-screen icon.
+
+];
+End the file list.
+
+self.addEventListener("install", function (event) {
+When the service worker installs, run the steps below.
+
+  event.waitUntil(
+Keep the install running until the next step finishes.
+
+    caches.open(CACHE_NAME).then(function (cache) {
+Open the saved file list.
+
+      return cache.addAll(APP_FILES);
+Save every app file into that list.
+
+    })
+This closes the step above.
+
+  );
+This closes the wait.
+
+});
+This closes the listener.
+
+self.addEventListener("activate", function (event) {
+When this service worker takes over, run the steps below.
+
+  event.waitUntil(
+Keep the install running until the next step finishes.
+
+    caches.keys().then(function (names) {
+Read every saved file-list name.
+
+      var jobs = [];
+Make an empty list named jobs for old lists to delete.
+
+      for (var i = 0; i < names.length; i++) {
+Loop through names. i is the position, starting at 0.
+
+        if (names[i] !== CACHE_NAME) {
+If this saved list is not the current one, do the next lines.
+
+          jobs.push(caches.delete(names[i]));
+Plan to delete that old list.
+
+        }
+This closes the block above.
+
+      }
+This closes the block above.
+
+      return Promise.all(jobs);
+Wait until every old list is deleted.
+
+    }).then(function () {
+After that, run the steps below.
+
+      return self.clients.claim();
+Let this service worker control the open pages.
+
+    })
+This closes the step above.
+
+  );
+This closes the wait.
+
+});
+This closes the listener.
+
+self.addEventListener("fetch", function (event) {
+When the page asks for a file, run the steps below.
+
+  var request = event.request;
+Copy the file request into request.
+
+  if (request.method !== "GET") return;
+If this is not a normal page or file load, stop here.
+
+  event.respondWith(
+Answer the request with the steps below.
+
+    fetch(request).then(function (response) {
+Load the file from the network, then run the steps below.
+
+      var address = new URL(request.url);
+Read the file address and save it as address.
+
+      if (response && response.status === 200 && address.origin === self.location.origin) {
+If the file loaded and it belongs to this site, do the next lines.
+
+        var copy = response.clone();
+Copy the file so it can be saved and also shown.
+
+        caches.open(CACHE_NAME).then(function (cache) {
+Open the saved file list.
+
+          cache.put(request, copy);
+Save this file for later.
+
+        });
+This closes the listener.
+
+      }
+This closes the block above.
+
+      return response;
+Show the file that just loaded.
+
+    }).catch(function () {
+If the network fails, run the steps below.
+
+      return caches.match(request);
+Hand back the saved copy of this file, if there is one.
+
+    })
+This closes the step above.
+
+  );
+This closes the wait.
+
+});
+This closes the listener.

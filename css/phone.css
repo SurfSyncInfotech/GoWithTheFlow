@@ -1,3 +1,7 @@
+.add-short {
+  display: none;
+}
+
 @media (max-width: 1199px) {
   .sidebar {
     width: 210px;
@@ -107,7 +111,7 @@
 
   .title-side {
     width: 100%;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 8px;
   }
 
@@ -120,7 +124,7 @@
   }
 
   .timer-btn {
-    max-width: 100%;
+    margin-left: auto;
   }
 
   .work-box {
@@ -160,16 +164,19 @@
   }
 
   .tool-bar {
+    box-sizing: border-box;
     position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
     z-index: 18;
+    display: flex;
     flex-wrap: nowrap;
+    align-items: center;
     gap: 4px;
-    overflow-x: auto;
+    overflow: hidden;
     margin: 0;
-    padding: 6px 8px 10px;
+    padding: 8px 8px 10px;
     background-color: #ffffff;
     border-top: 1px solid #e5e1e6;
   }
@@ -184,20 +191,33 @@
   .add-btn,
   .tool-btn {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 64px;
-    min-height: 52px;
-    padding: 6px 8px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 36px;
+    padding: 6px 4px;
     border: 0;
     background-color: transparent;
-    font-size: 11px;
+    font-size: 12px;
+    white-space: nowrap;
   }
 
   .add-btn {
+    flex: 0 0 auto;
+    padding: 6px 10px;
     background-color: #8060d6;
     color: #ffffff;
-    border-radius: 12px;
+    border-radius: 10px;
+  }
+
+  .add-full {
+    display: none;
+  }
+
+  .add-short {
+    display: inline;
   }
 
   .tool-bar .btn-text {
@@ -207,8 +227,12 @@
   }
 
   .tool-select {
-    max-width: 132px;
-    min-height: 40px;
+    box-sizing: border-box;
+    flex: 0 0 68px;
+    width: 68px;
+    max-width: 68px;
+    min-height: 36px;
+    padding: 4px 2px;
     font-size: 12px;
   }
 
@@ -277,23 +301,33 @@
   }
 
   .scroll-box {
-    padding: 0 0 8px;
+    padding: 8px 8px 20px;
   }
 
   .speech-top {
-    padding: 0;
+    gap: 12px;
+    padding: 0 0 8px;
+  }
+
+  .group-row {
+    gap: 12px;
+    padding-bottom: 24px;
   }
 
   .speech-title {
     margin: 0;
-    border-radius: 0;
+    border-radius: 12px;
   }
 
   .speech-column {
-    padding: 10px 12px 0;
+    padding: 8px 6px 0;
   }
 
   .tip {
+    flex-shrink: 0;
+    position: relative;
+    z-index: 6;
+    background-color: #fffcfb;
     white-space: normal;
     padding: 6px 12px 8px;
   }
@@ -327,6 +361,35 @@
 
   .workspace.proof-open .tool-bar {
     display: none;
+  }
+
+  .workspace.proof-open .proof-list {
+    flex: 1;
+  }
+
+  .proof-tools {
+    display: flex;
+    flex-shrink: 0;
+    margin-top: auto;
+    gap: 8px;
+    padding: 8px 12px 12px;
+    border-top: 1px solid #e5e1e6;
+    background-color: #ffffff;
+  }
+
+  .proof-tools .tool-btn {
+    flex: 1;
+    min-height: 40px;
+    border: 1px solid #e5e1e6;
+    border-radius: 10px;
+    background-color: #ffffff;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .proof-tools .mark-btn {
+    background-color: #fff3a0;
+    border-color: #e6d36a;
   }
 
   .workspace.proof-open .work-box {

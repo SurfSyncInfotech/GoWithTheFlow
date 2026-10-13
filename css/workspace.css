@@ -149,6 +149,15 @@
   font-size: 14px;
 }
 
+.bold-btn {
+  font-weight: 700;
+}
+
+.mark-btn {
+  background-color: #fff3a0;
+  border: 1px solid #e6d36a;
+}
+
 .tool-btn:hover {
   border-color: #dcd9e9;
   color: #121326;
@@ -220,7 +229,7 @@
   flex: 1;
   min-width: 0;
   overflow: auto;
-  padding: 12px 18px 24px;
+  padding: 16px 16px 80px;
 }
 
 .flow-paper {
@@ -229,13 +238,15 @@
   gap: 14px;
   width: max-content;
   min-width: 100%;
+  min-height: 100%;
 }
 
 .speech-top {
   display: flex;
   position: sticky;
   top: 0;
-  z-index: 6;
+  z-index: 8;
+  gap: 20px;
   width: max-content;
   min-width: 100%;
   padding: 4px 0 8px;
@@ -245,7 +256,7 @@
 .speech-title {
   box-sizing: border-box;
   flex-shrink: 0;
-  margin: 0 6px;
+  margin: 0;
   padding: 10px 14px 8px;
   border-radius: 12px;
 }
@@ -302,8 +313,9 @@
   background-color: #efebff;
   color: #654ab9;
   position: sticky;
+  top: var(--speech-head, 72px);
   left: 0;
-  z-index: 4;
+  z-index: 7;
 }
 
 .group-arrow {
@@ -395,15 +407,28 @@
 .group-row {
   display: flex;
   align-items: stretch;
+  gap: 20px;
   width: max-content;
   min-width: 100%;
-  padding: 10px 0;
+  padding: 12px 0 32px;
 }
 
 .speech-column {
   box-sizing: border-box;
+  position: relative;
   flex-shrink: 0;
-  padding: 0 4px;
+  padding: 0 12px 0 4px;
+  overflow: hidden;
+}
+
+.speech-column:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: #b7b2c2;
 }
 
 .column-area {
@@ -446,8 +471,19 @@
   font-family: Arial, Helvetica, sans-serif;
   font-size: 14px;
   line-height: 1.35;
-  resize: none;
   overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.point-input strong,
+.point-input b,
+.reply-box strong,
+.reply-box b,
+.new-box strong,
+.new-box b {
+  font-weight: 800;
+  color: #121326;
 }
 
 .point-input:focus {
@@ -548,8 +584,9 @@
   resize: none;
 }
 
-.reply-box::placeholder,
-.new-box::placeholder {
+.reply-box:empty:before,
+.new-box:empty:before {
+  content: attr(data-placeholder);
   color: #676c7f;
 }
 

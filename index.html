@@ -3,15 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1C3144">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="images/logo.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="images/icon-192.png">
   <title>Go With the Flow</title>
-  <link rel="stylesheet" href="css/page.css?v=31">
+  <link rel="stylesheet" href="css/page.css?v=32">
   <link rel="stylesheet" href="css/buttons.css?v=31">
   <link rel="stylesheet" href="css/home.css?v=31">
   <link rel="stylesheet" href="css/sidebar.css?v=31">
-  <link rel="stylesheet" href="css/workspace.css?v=31">
-  <link rel="stylesheet" href="css/evidence.css?v=31">
+  <link rel="stylesheet" href="css/workspace.css?v=38">
+  <link rel="stylesheet" href="css/evidence.css?v=32">
   <link rel="stylesheet" href="css/popups.css?v=31">
-  <link rel="stylesheet" href="css/phone.css?v=31">
+  <link rel="stylesheet" href="css/phone.css?v=39">
   <link rel="stylesheet" href="css/print.css?v=31">
 </head>
 <body class="page" data-page="home">
@@ -27,8 +33,6 @@
       <div class="top-menu">
         <a class="btn plain" href="preflows.html">Preflows</a>
         <button type="button" class="btn plain" data-action="tour">Feature tour</button>
-        <a class="btn plain" href="settings.html">Settings</a>
-        <a class="btn plain" href="help.html">Help</a>
       </div>
     </div>
 
@@ -67,10 +71,9 @@
     <div class="popup">
       <h2>New round</h2>
       <div class="popup-body">
-        <label class="form-line"><span>Title</span><input id="new-title" value="Untitled round"></label>
         <label class="form-line"><span>Topic</span><input id="new-topic"></label>
         <label class="form-line"><span>Tournament</span><input id="new-tournament"></label>
-        <label class="form-line"><span>Round label</span><input id="new-round-label"></label>
+        <label class="form-line"><span>Round Number</span><input id="new-round-label"></label>
         <label class="form-line"><span>Opponent</span><input id="new-opponent"></label>
         <label class="form-line"><span>Your side</span>
           <select id="new-side">
@@ -143,7 +146,7 @@
   </div>
   <div class="hide" id="opt-sample"><option></option></div>
 
-  <script src="js/common.js?v=33"></script>
-  <script src="js/index.js?v=33"></script>
+  <script src="js/common.js?v=53"></script>
+  <script src="js/index.js?v=37"></script>
 </body>
 </html>

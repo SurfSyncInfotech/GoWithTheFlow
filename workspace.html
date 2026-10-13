@@ -3,15 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1C3144">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="images/logo.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="images/icon-192.png">
   <title>Debate — Go With the Flow</title>
-  <link rel="stylesheet" href="css/page.css?v=31">
+  <link rel="stylesheet" href="css/page.css?v=32">
   <link rel="stylesheet" href="css/buttons.css?v=31">
   <link rel="stylesheet" href="css/home.css?v=31">
   <link rel="stylesheet" href="css/sidebar.css?v=31">
-  <link rel="stylesheet" href="css/workspace.css?v=31">
-  <link rel="stylesheet" href="css/evidence.css?v=31">
+  <link rel="stylesheet" href="css/workspace.css?v=39">
+  <link rel="stylesheet" href="css/evidence.css?v=32">
   <link rel="stylesheet" href="css/popups.css?v=31">
-  <link rel="stylesheet" href="css/phone.css?v=31">
+  <link rel="stylesheet" href="css/phone.css?v=39">
   <link rel="stylesheet" href="css/print.css?v=31">
 </head>
 <body class="page" data-page="workspace">
@@ -29,7 +35,6 @@
       <div id="case-links">
         <button type="button" class="menu-link" id="link-pro" data-action="case-pro" data-tour="cases">Pro Case</button>
         <button type="button" class="menu-link" id="link-con" data-action="case-con" data-tour="cases">Con Case</button>
-        <button type="button" class="menu-link" id="link-notes" data-action="show-notes" data-tour="notes">Notes</button>
       </div>
       <p class="gray-text hide" id="preflow-label"></p>
       <div class="link-list" data-tour="jumps">
@@ -37,8 +42,6 @@
         <button type="button" class="add-link" data-action="add-group">+ Add contention</button>
       </div>
       <div class="push-down"></div>
-      <button type="button" class="menu-link bottom-link" data-action="show-settings">Settings</button>
-      <button type="button" class="menu-link bottom-link" data-action="show-help">Help</button>
       <div class="side-picture">
         
       </div>
@@ -68,41 +71,20 @@
       <div class="side-bar" id="side-bar">
         <button type="button" class="side-btn" id="switch-pro" data-action="case-pro">Pro Case</button>
         <button type="button" class="side-btn" id="switch-con" data-action="case-con">Con Case</button>
-        <button type="button" class="side-btn" id="switch-notes" data-action="show-notes">Notes</button>
       </div>
 
       <div class="tool-bar">
-        <button type="button" class="btn main add-btn" data-action="add-group" data-tour="add">+ Add contention</button>
+        <button type="button" class="btn main add-btn" data-action="add-group" data-tour="add">+ <span class="add-full">Add contention</span><span class="add-short">Add</span></button>
         <button type="button" class="btn tool-btn" data-action="undo">Undo</button>
         <button type="button" class="btn tool-btn" data-action="redo">Redo</button>
-        <button type="button" class="btn tool-btn" data-action="find-toggle">Find</button>
-        <div id="column-tools">
-          <select class="tool-select" data-field="columns-count">
-            <option value="all">Columns: All</option>
-            <option value="2">Columns: 2</option>
-            <option value="3">Columns: 3</option>
-            <option value="4">Columns: 4</option>
-            <option value="5">Columns: 5</option>
-            <option value="6">Columns: 6</option>
-          </select>
-          <select class="tool-select" data-field="columns-start"></select>
-          <button type="button" class="btn arrow-btn" data-action="columns-left" title="Previous column">&lt;</button>
-          <button type="button" class="btn arrow-btn" data-action="columns-right" title="Next column">&gt;</button>
-        </div>
+        <button type="button" class="btn tool-btn bold-btn" data-action="make-bold">Bold</button>
+        <button type="button" class="btn tool-btn mark-btn" data-action="make-highlight">Highlight</button>
         <select class="tool-select size-select" data-field="font-size">
           <option value="12">12 px</option>
           <option value="14">14 px</option>
           <option value="16">16 px</option>
           <option value="18">18 px</option>
         </select>
-        <button type="button" class="btn tool-btn tool-right" id="toolbar-timer" data-action="timer-toggle" data-tour="timer">Timers</button>
-      </div>
-
-      <div class="column-bar hide" id="column-bar">
-        <span id="column-status-text"></span>
-        <button type="button" class="btn" data-action="columns-all">Show all</button>
-        <button type="button" class="btn" id="status-left" data-action="columns-left">Move left</button>
-        <button type="button" class="btn" id="status-right" data-action="columns-right">Move right</button>
       </div>
 
       <div class="editor-line">
@@ -122,6 +104,10 @@
             </div>
           </div>
           <div class="proof-list"></div>
+          <div class="proof-tools">
+            <button type="button" class="btn tool-btn bold-btn" data-action="make-bold">Bold</button>
+            <button type="button" class="btn tool-btn mark-btn" data-action="make-highlight">Highlight</button>
+          </div>
         </div>
       </div>
       <p class="tip">Enter: next point / Shift+Enter: line within point</p>
@@ -145,7 +131,6 @@
     <button type="button" data-action="export">Export</button>
     <button type="button" data-action="print">Print</button>
     <button type="button" data-action="save-opening">Save case as preflow</button>
-    <button type="button" data-action="show-help">Help</button>
     <button type="button" data-action="home">Back to rounds</button>
   </div>
   <div id="opening-menu" class="drop-menu hide">
@@ -153,37 +138,15 @@
     <button type="button" data-action="home">Back to rounds</button>
   </div>
   <div id="note-menu" class="drop-menu hide"></div>
-  <div id="link-menu" class="drop-menu hide">
-    <p class="gray-text">Link this point to an earlier note</p>
-    <div id="link-choices"></div>
-  </div>
 
   <div id="timer-popover" class="small-popup hide">
     <h2>Timer</h2>
-    <p id="timer-activity"></p>
-    <p id="popover-clock"></p>
-    <button type="button" class="btn main" id="timer-start-btn" data-action="timer-start">Start</button>
-    <button type="button" class="btn" data-action="timer-reset">Reset</button>
-    <button type="button" class="btn" data-action="timer-next">Next activity</button>
-    <h2>Prep</h2>
+    <p id="popover-clock">0:00</p>
+    <label class="form-line"><span>Minutes</span><input id="timer-minutes" type="number" min="0" value="4"></label>
+    <label class="form-line"><span>Seconds</span><input id="timer-seconds" type="number" min="0" max="59" value="0"></label>
     <div class="button-row">
-      <span id="prep-pro-label"></span>
-      <button type="button" class="btn" id="prep-pro-btn" data-action="prep-toggle" data-side="pro">Start</button>
-    </div>
-    <div class="button-row">
-      <span id="prep-con-label"></span>
-      <button type="button" class="btn" id="prep-con-btn" data-action="prep-toggle" data-side="con">Start</button>
-    </div>
-    <button type="button" class="btn" data-action="prep-reset">Reset prep</button>
-  </div>
-
-  <div id="find-popover" class="small-popup hide">
-    <h2>Find</h2>
-    <input class="search-box" id="find-input" placeholder="Search notes, evidence, and crossfire">
-    <div class="find-list" id="find-hits"></div>
-    <div class="button-row">
-      <button type="button" class="btn" data-action="find-prev">Previous</button>
-      <button type="button" class="btn" data-action="find-next">Next</button>
+      <button type="button" class="btn main" id="timer-start-btn" data-action="timer-start">Start</button>
+      <button type="button" class="btn" data-action="timer-reset">Reset</button>
     </div>
   </div>
 
@@ -194,7 +157,7 @@
         <label class="form-line"><span>Title</span><input id="edit-title"></label>
         <label class="form-line"><span>Topic</span><input id="edit-topic"></label>
         <label class="form-line"><span>Tournament</span><input id="edit-tournament"></label>
-        <label class="form-line"><span>Round label</span><input id="edit-round-label"></label>
+        <label class="form-line"><span>Round Number</span><input id="edit-round-label"></label>
         <label class="form-line"><span>Opponent</span><input id="edit-opponent"></label>
         <label class="form-line"><span>Your side</span>
           <select id="edit-side">
@@ -287,16 +250,16 @@
   <div class="hide" id="col-sample">
     <div class="speech-column">
       <div class="column-area"></div>
-      <textarea class="new-box" placeholder="New point"></textarea>
+      <div class="new-box" contenteditable="true" role="textbox" data-placeholder="New point"></div>
     </div>
   </div>
   <div class="hide" id="card-sample">
-    <div class="point" tabindex="0">
+    <div class="point" tabindex="-1">
       <span class="point-tag"></span>
-      <textarea class="point-input"></textarea>
+      <div class="point-input" contenteditable="true" role="textbox"></div>
       <div class="point-bottom">
         <button type="button" class="clip-btn" data-action="add-evidence">
-          clip
+          ev
           <span class="clip-number">1</span>
         </button>
         <button type="button" class="point-menu" data-action="note-menu">···</button>
@@ -304,7 +267,7 @@
     </div>
   </div>
   <div class="hide" id="ans-slot">
-    <textarea class="reply-box" placeholder="Response" data-slot="1"></textarea>
+    <div class="reply-box" contenteditable="true" role="textbox" data-slot="1" data-placeholder="Response"></div>
   </div>
   <div class="hide" id="ev-card">
     <div class="proof-card">
@@ -345,7 +308,7 @@
     </div>
   </div>
 
-  <script src="js/common.js?v=33"></script>
-  <script src="js/workspace.js?v=33"></script>
+  <script src="js/common.js?v=53"></script>
+  <script src="js/workspace.js?v=48"></script>
 </body>
 </html>
