@@ -1,4 +1,4 @@
-var CACHE_NAME = "go-with-the-flow-v1";
+var CACHE_NAME = "go-with-the-flow-v10";
 
 var APP_FILES = [
   "index.html",
@@ -8,7 +8,8 @@ var APP_FILES = [
   "manifest.json",
   "images/logo.svg",
   "images/icon-192.png",
-  "images/icon-512.png"
+  "images/icon-512.png",
+  "js/html2pdf.bundle.min.js"
 ];
 
 self.addEventListener("install", function (event) {

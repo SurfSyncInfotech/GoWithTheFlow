@@ -435,13 +435,29 @@
     font-size: 22px;
   }
 
-  .clip-btn,
-  .point-menu,
   .group-btn,
   .group-arrow,
   .close-btn {
     min-width: 36px;
     min-height: 36px;
+  }
+
+  .point-menu {
+    min-width: 20px !important;
+    min-height: 20px !important;
+    height: 20px !important;
+    padding: 0 4px !important;
+    font-size: 13px !important;
+    line-height: 1 !important;
+  }
+
+  .clip-btn {
+    min-width: auto !important;
+    min-height: 20px !important;
+    height: 20px !important;
+    padding: 2px 7px !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
   }
 
   .top-menu .btn {

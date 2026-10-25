@@ -3,11 +3,14 @@ Home page. This file draws the round list and handles New round, Rename, Duplica
 
 Read it from top to bottom. Each code line is followed by what that line does.
 
-function loadPreflowDropdown() {
-This is the loadPreflowDropdown function. It fills the Starting preflow list on the New round form.
+function loadPreflowDropdown(selectId) {
+This is the loadPreflowDropdown function. It fills the Starting preflow list on the New round or Edit round details form.
 
-  var select = document.getElementById("new-opening");
-Find the Starting preflow box (id new-opening) and save it as select.
+  var targetId = selectId || "new-opening";
+Use selectId if passed in, otherwise default to "new-opening".
+
+  var select = document.getElementById(targetId);
+Find the preflow dropdown select box by targetId and save it as select.
 
   if (!select) return;
 If select is missing, stop here.
@@ -197,19 +200,56 @@ Open the round round.id.
 }
 
 function openRenameModal(roundId) {
-This is the openRenameModal function. It opens the Rename box for one round.
+This is the openRenameModal function. It opens the Edit round details box for one round.
 
   var box = document.getElementById("rename-box");
-Find the Rename box (id rename-box) and save it as box.
+Find the Edit round details box (id rename-box) and save it as box.
+
+  var round = db.rounds[roundId];
+Look up this round in saved rounds by roundId.
+
+  if (!box || !round) return;
+If the popup box or the round data is missing, stop here.
 
   box.dataset.id = roundId;
-Set box.dataset.id to roundId.
+Set box.dataset.id to roundId so we know which round is being edited.
 
-  document.getElementById("rename-title").value = db.rounds[roundId].title;
-Find the Rename title box (id rename-title) and put db.rounds[roundId].title in it.
+  document.getElementById("rename-title").value = round.title || "";
+Find the Title input box (id rename-title) and set it to round.title or empty string.
 
+  document.getElementById("rename-tournament").value = round.tournament || "";
+Find the Tournament input box (id rename-tournament) and set it to round.tournament.
+
+  document.getElementById("rename-round-label").value = round.roundLabel || "";
+Find the Round Number input box (id rename-round-label) and set it to round.roundLabel.
+
+  document.getElementById("rename-opponent").value = round.opponent || "";
+Find the Opponent input box (id rename-opponent) and set it to round.opponent.
+
+  document.getElementById("rename-side").value = round.yourSide || "pro";
+Set the Your side dropdown (id rename-side) to round.yourSide or default to pro.
+
+  document.getElementById("rename-first").value = round.firstSide || "pro";
+Set the First speaking side dropdown (id rename-first) to round.firstSide or default to pro.
+
+  loadPreflowDropdown("rename-opening");
+Populate the Starting preflow dropdown in the edit modal with current preflows.
+
+  document.getElementById("rename-opening").value = "";
+Reset the Starting preflow selection to blank by default.
+
+  var errorElement = document.getElementById("rename-round-error");
+Find the error message placeholder element.
+
+  if (errorElement) {
+If the error element exists, do the next lines.
+
+    errorElement.textContent = "";
+Clear any previous error message text.
+
+  }
   showElement(box);
-Show box.
+Show the Edit round details popup box.
 
 }
 
@@ -378,8 +418,8 @@ Make sideName and set it to formatSideName(singleRound.yourSide).
     if (!sideName) {
 If sideName is empty or missing, do the next lines.
 
-      sideName = "Pro";
-Set sideName to "Pro".
+      sideName = "Aff";
+Set sideName to "Aff".
 
     }
     sideTag.textContent = sideName;
@@ -497,11 +537,11 @@ Otherwise, if the clicked action is "create-round", do the next lines.
     createRoundFromForm();
 Create the round from the form.
 
-  } else if (action === "rename-round") {
-Otherwise, if the clicked action is "rename-round", do the next lines.
+  } else if (action === "rename-round" || action === "edit-round") {
+Otherwise, if the clicked action is "rename-round" or "edit-round", do the next lines.
 
     openRenameModal(id);
-Open the Rename box for id.
+Open the Edit round details box for id.
 
   } else if (action === "save-rename") {
 Otherwise, if the clicked action is "save-rename", do the next lines.
@@ -516,24 +556,104 @@ Make existingRound and set it to db.rounds[renameId].
 If existingRound, do the next lines.
 
       var nextTitle = document.getElementById("rename-title").value.trim();
-Read the Rename title box (id rename-title), trim the spaces, and save it as nextTitle.
+Read the Title box (id rename-title), trim the spaces, and save it as nextTitle.
 
       if (!nextTitle) {
 If nextTitle is empty or missing, do the next lines.
 
-        nextTitle = "Untitled round";
-Set nextTitle to "Untitled round".
+        nextTitle = existingRound.topic || "Untitled round";
+Set nextTitle to existingRound.topic or default to Untitled round.
 
       }
       existingRound.title = nextTitle;
 Set existingRound.title to nextTitle.
 
+      existingRound.tournament = document.getElementById("rename-tournament").value.trim();
+Read and save the tournament name.
+
+      existingRound.roundLabel = document.getElementById("rename-round-label").value.trim();
+Read and save the round number/label.
+
+      existingRound.opponent = document.getElementById("rename-opponent").value.trim();
+Read and save the opponent team name.
+
+      var nextSide = document.getElementById("rename-side").value;
+Read the chosen side value from the dropdown.
+
+      if (nextSide !== "pro" && nextSide !== "con" && nextSide !== "observer") {
+If the side value is not a valid side, do the next lines.
+
+        nextSide = "pro";
+Default the side to pro (Aff).
+
+      }
+      existingRound.yourSide = nextSide;
+Set existingRound.yourSide to nextSide.
+
+      var nextFirst = document.getElementById("rename-first").value;
+Read the chosen first speaking side from the dropdown.
+
+      if (nextFirst !== "con") {
+If first speaking side is not con, do the next lines.
+
+        nextFirst = "pro";
+Default first speaking side to pro (Aff).
+
+      }
+      if (existingRound.firstSide !== nextFirst) {
+If the first speaking side changed, do the next lines.
+
+        existingRound.firstSide = nextFirst;
+Update existingRound.firstSide to nextFirst.
+
+        if (typeof createNewTimer === "function" && db.settings) {
+If the createNewTimer function exists and settings are loaded, do the next lines.
+
+          existingRound.timers = createNewTimer(existingRound.firstSide, db.settings.durations);
+Recreate timers for the new speech sequence.
+
+        }
+      }
+      var preflowId = document.getElementById("rename-opening").value;
+Read the selected starting preflow id from the dropdown.
+
+      if (preflowId && db.preflows[preflowId]) {
+If a valid preflow was selected, do the next lines.
+
+        var preflow = db.preflows[preflowId];
+Look up the preflow data.
+
+        if (preflow && (preflow.side === "pro" || preflow.side === "con")) {
+If the preflow has a valid debate side, do the next lines.
+
+          applyPreflowToRound(existingRound, preflow);
+Apply the preflow contentions and notes to this round.
+
+        }
+      }
       existingRound.updatedAt = new Date().toISOString();
 Set existingRound.updatedAt to new Date().toISOString().
 
-      saveToLocalStorage(db);
-Save the data in this browser.
+      var saveError = saveToLocalStorage(db);
+Save the updated round data to local storage.
 
+      if (saveError) {
+If saving returned an error message, do the next lines.
+
+        var errorElement = document.getElementById("rename-round-error");
+Find the error display element.
+
+        if (errorElement) {
+If errorElement exists, do the next lines.
+
+          errorElement.textContent = saveError;
+Display the save error to the user.
+
+        }
+        return;
+Stop here so the modal stays open for correction.
+
+      }
     }
     closePopups();
 Close the open dialogs.

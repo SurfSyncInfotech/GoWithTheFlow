@@ -1,0 +1,76 @@
+manifest.json
+Web app manifest. This file tells phones and browsers how to install this site as an app.
+
+Read it from top to bottom. Each code line is followed by what that line does.
+
+{
+This begins the app description settings.
+
+  "name": "Go With the Flow",
+This is the full name of the app shown on splash screens and app stores.
+
+  "short_name": "Flow",
+This is the shorter name shown under the app icon on the home screen.
+
+  "description": "A debate flow for students.",
+This is a short explanation of what the app does.
+
+  "start_url": "index.html",
+This is the page that opens first when launching the app from the home screen.
+
+  "scope": "./",
+This sets the folder path that belongs to this app.
+
+  "display": "standalone",
+This opens the app in its own window like a real app without browser search bars.
+
+  "background_color": "#fffcfb",
+This sets the background color while the app is loading up.
+
+  "theme_color": "#1C3144",
+This sets the color of the phone top status bar when this app is open.
+
+  "icons": [
+Start the list of icons the phone can use for the home screen.
+
+    {
+Start the description of the first icon.
+
+      "src": "images/icon-192.png",
+This is the file path to the 192 pixel icon.
+
+      "sizes": "192x192",
+This tells the device the icon dimensions are 192 by 192 pixels.
+
+      "type": "image/png",
+This tells the device this icon is a PNG image.
+
+      "purpose": "any"
+This allows the device to use this icon on any regular home screen.
+
+    },
+End the description of the first icon.
+
+    {
+Start the description of the second icon.
+
+      "src": "images/icon-512.png",
+This is the file path to the high-resolution 512 pixel icon.
+
+      "sizes": "512x512",
+This tells the device the icon dimensions are 512 by 512 pixels.
+
+      "type": "image/png",
+This tells the device this icon is a PNG image.
+
+      "purpose": "any"
+This allows the device to use this icon for splash screens and store displays.
+
+    }
+End the description of the second icon.
+
+  ]
+End the list of icons.
+
+}
+This closes the app description settings.

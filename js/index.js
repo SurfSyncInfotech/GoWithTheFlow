@@ -1,5 +1,6 @@
-function loadPreflowDropdown() {
-  var select = document.getElementById("new-opening");
+function loadPreflowDropdown(selectId) {
+  var targetId = selectId || "new-opening";
+  var select = document.getElementById(targetId);
   if (!select) return;
 
   var preflowIds = Object.keys(db.preflows);
@@ -96,10 +97,25 @@ function createRoundFromForm() {
 
 function openRenameModal(roundId) {
   var box = document.getElementById("rename-box");
+  var round = db.rounds[roundId];
+  if (!box || !round) return;
 
   box.dataset.id = roundId;
 
-  document.getElementById("rename-title").value = db.rounds[roundId].title;
+  document.getElementById("rename-title").value = round.title || "";
+  document.getElementById("rename-tournament").value = round.tournament || "";
+  document.getElementById("rename-round-label").value = round.roundLabel || "";
+  document.getElementById("rename-opponent").value = round.opponent || "";
+  document.getElementById("rename-side").value = round.yourSide || "pro";
+  document.getElementById("rename-first").value = round.firstSide || "pro";
+
+  loadPreflowDropdown("rename-opening");
+  document.getElementById("rename-opening").value = "";
+
+  var errorElement = document.getElementById("rename-round-error");
+  if (errorElement) {
+    errorElement.textContent = "";
+  }
 
   showElement(box);
 }
@@ -188,7 +204,7 @@ function displayRoundsList() {
     var sideName = formatSideName(singleRound.yourSide);
 
     if (!sideName) {
-      sideName = "Pro";
+      sideName = "Aff";
     }
 
     sideTag.textContent = sideName;
@@ -252,7 +268,7 @@ document.addEventListener("click", function (event) {
   } else if (action === "create-round") {
     createRoundFromForm();
 
-  } else if (action === "rename-round") {
+  } else if (action === "rename-round" || action === "edit-round") {
     openRenameModal(id);
 
   } else if (action === "save-rename") {
@@ -263,13 +279,49 @@ document.addEventListener("click", function (event) {
       var nextTitle = document.getElementById("rename-title").value.trim();
 
       if (!nextTitle) {
-        nextTitle = "Untitled round";
+        nextTitle = existingRound.topic || "Untitled round";
       }
 
       existingRound.title = nextTitle;
+      existingRound.tournament = document.getElementById("rename-tournament").value.trim();
+      existingRound.roundLabel = document.getElementById("rename-round-label").value.trim();
+      existingRound.opponent = document.getElementById("rename-opponent").value.trim();
+
+      var nextSide = document.getElementById("rename-side").value;
+      if (nextSide !== "pro" && nextSide !== "con" && nextSide !== "observer") {
+        nextSide = "pro";
+      }
+      existingRound.yourSide = nextSide;
+
+      var nextFirst = document.getElementById("rename-first").value;
+      if (nextFirst !== "con") {
+        nextFirst = "pro";
+      }
+      if (existingRound.firstSide !== nextFirst) {
+        existingRound.firstSide = nextFirst;
+        if (typeof createNewTimer === "function" && db.settings) {
+          existingRound.timers = createNewTimer(existingRound.firstSide, db.settings.durations);
+        }
+      }
+
+      var preflowId = document.getElementById("rename-opening").value;
+      if (preflowId && db.preflows[preflowId]) {
+        var preflow = db.preflows[preflowId];
+        if (preflow && (preflow.side === "pro" || preflow.side === "con")) {
+          applyPreflowToRound(existingRound, preflow);
+        }
+      }
+
       existingRound.updatedAt = new Date().toISOString();
 
-      saveToLocalStorage(db);
+      var saveError = saveToLocalStorage(db);
+      if (saveError) {
+        var errorElement = document.getElementById("rename-round-error");
+        if (errorElement) {
+          errorElement.textContent = saveError;
+        }
+        return;
+      }
     }
 
     closePopups();

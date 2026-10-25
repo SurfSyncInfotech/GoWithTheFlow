@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#1C3144">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="manifest" href="manifest.json">
@@ -20,10 +20,8 @@
   <link rel="stylesheet" href="css/phone.css?v=39">
   <link rel="stylesheet" href="css/print.css?v=31">
 </head>
-<body class="page" data-page="home">
-  <a class="skip-link" href="#app">Skip to content</a>
 
-  <!-- Home page. Round cards are copied from the sample box at the bottom. -->
+<body class="page" data-page="home">
   <div id="app" class="home">
     <div class="top-bar">
       <a class="logo" href="index.html">
@@ -32,12 +30,10 @@
       </a>
       <div class="top-menu">
         <a class="btn plain" href="preflows.html">Preflows</a>
-        <button type="button" class="btn plain" data-action="tour">Feature tour</button>
       </div>
     </div>
 
     <div class="page-body">
-      <p class="warning-box hide" id="recovered-banner">The last save could not be read. This copy was restored from the previous browser backup.</p>
 
       <div class="empty-box" id="empty-home">
         <div class="sample-flow">
@@ -47,7 +43,8 @@
         </div>
         <p class="small-label">My rounds</p>
         <h1>Your next round starts here.</h1>
-        <p class="gray-text">Rounds save in this browser. Export a copy to keep a record; editable rounds stay in this browser.</p>
+        <p class="gray-text">Rounds save in this browser. Export a copy to keep a record; editable rounds stay in this
+          browser.</p>
         <button type="button" class="btn main big" data-action="new-round">New round</button>
       </div>
 
@@ -66,7 +63,7 @@
     </div>
   </div>
 
-  <!-- New round form -->
+
   <div id="new-round-box" class="popup-cover hide">
     <div class="popup">
       <h2>New round</h2>
@@ -77,19 +74,21 @@
         <label class="form-line"><span>Opponent</span><input id="new-opponent"></label>
         <label class="form-line"><span>Your side</span>
           <select id="new-side">
-            <option value="pro">Pro</option>
-            <option value="con">Con</option>
+            <option value="pro">Aff</option>
+            <option value="con">Neg</option>
             <option value="observer">Observer</option>
           </select>
         </label>
         <label class="form-line"><span>First speaking side</span>
           <select id="new-first">
-            <option value="pro">Pro</option>
-            <option value="con">Con</option>
+            <option value="pro">Aff</option>
+            <option value="con">Neg</option>
           </select>
         </label>
         <label class="form-line"><span>Starting preflow</span>
-          <select id="new-opening"><option value="">Blank</option></select>
+          <select id="new-opening">
+            <option value="">Blank</option>
+          </select>
         </label>
         <p class="gray-text" id="new-round-error"></p>
       </div>
@@ -100,12 +99,33 @@
     </div>
   </div>
 
-  <!-- Rename form -->
   <div id="rename-box" class="popup-cover hide">
     <div class="popup">
-      <h2>Rename round</h2>
+      <h2>Edit round details</h2>
       <div class="popup-body">
         <label class="form-line"><span>Title</span><input id="rename-title"></label>
+        <label class="form-line"><span>Tournament</span><input id="rename-tournament"></label>
+        <label class="form-line"><span>Round Number</span><input id="rename-round-label"></label>
+        <label class="form-line"><span>Opponent</span><input id="rename-opponent"></label>
+        <label class="form-line"><span>Your side</span>
+          <select id="rename-side">
+            <option value="pro">Aff</option>
+            <option value="con">Neg</option>
+            <option value="observer">Observer</option>
+          </select>
+        </label>
+        <label class="form-line"><span>First speaking side</span>
+          <select id="rename-first">
+            <option value="pro">Aff</option>
+            <option value="con">Neg</option>
+          </select>
+        </label>
+        <label class="form-line"><span>Starting preflow</span>
+          <select id="rename-opening">
+            <option value="">Blank</option>
+          </select>
+        </label>
+        <p class="gray-text" id="rename-round-error"></p>
       </div>
       <div class="popup-buttons">
         <button type="button" class="btn" data-action="close-dialog">Cancel</button>
@@ -114,11 +134,12 @@
     </div>
   </div>
 
-  <!-- Yes / no question -->
   <div id="confirm-box" class="popup-cover hide">
     <div class="popup">
       <h2 id="confirm-title"></h2>
-      <div class="popup-body"><p id="confirm-text"></p></div>
+      <div class="popup-body">
+        <p id="confirm-text"></p>
+      </div>
       <div class="popup-buttons">
         <button type="button" class="btn" data-action="close-dialog">Cancel</button>
         <button type="button" class="btn main" id="confirm-ok">Delete</button>
@@ -137,16 +158,17 @@
       <p class="info-line card-time"></p>
       <div class="button-row">
         <button type="button" class="btn main" data-action="open-round">Open</button>
-        <button type="button" class="btn plain" data-action="rename-round">Rename</button>
-        <button type="button" class="btn plain" data-action="duplicate-round">Duplicate</button>
-        <button type="button" class="btn plain" data-action="export-round">Export</button>
+        <button type="button" class="btn plain" data-action="rename-round">Edit details</button>
         <button type="button" class="btn red" data-action="delete-round">Delete</button>
       </div>
     </div>
   </div>
-  <div class="hide" id="opt-sample"><option></option></div>
+  <div class="hide" id="opt-sample">
+    <option></option>
+  </div>
 
-  <script src="js/common.js?v=53"></script>
-  <script src="js/index.js?v=37"></script>
+  <script src="js/common.js?v=70"></script>
+  <script src="js/index.js?v=40"></script>
 </body>
+
 </html>

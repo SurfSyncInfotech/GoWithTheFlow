@@ -3,8 +3,8 @@ Service worker. This file saves the app files on the phone so the installed app 
 
 Read it from top to bottom. Each code line is followed by what that line does.
 
-var CACHE_NAME = "go-with-the-flow-v1";
-Name the saved file list go-with-the-flow-v1.
+var CACHE_NAME = "go-with-the-flow-v10";
+Name the saved file list go-with-the-flow-v10.
 
 var APP_FILES = [
 Start the list of files the installed app should keep.
@@ -30,8 +30,11 @@ Keep the logo.
   "images/icon-192.png",
 Keep the small home-screen icon.
 
-  "images/icon-512.png"
+  "images/icon-512.png",
 Keep the large home-screen icon.
+
+  "js/html2pdf.bundle.min.js"
+Keep the PDF generation library for offline PDF downloads.
 
 ];
 End the file list.

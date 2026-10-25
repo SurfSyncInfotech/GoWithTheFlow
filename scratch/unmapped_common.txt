@@ -1,0 +1,264 @@
+   2:   "pro-constructive": { team: "pro", type: "constructive", short: "Aff Constr.", full: "Aff Constructive" },
+   3:   "con-constructive": { team: "con", type: "constructive", short: "Neg Constr.", full: "Neg Constructive" },
+   4:   "pro-rebuttal": { team: "pro", type: "rebuttal", short: "Aff Reb.", full: "Aff Rebuttal" },
+   5:   "con-rebuttal": { team: "con", type: "rebuttal", short: "Neg Reb.", full: "Neg Rebuttal" },
+   6:   "pro-summary": { team: "pro", type: "summary", short: "Aff Sum.", full: "Aff Summary" },
+   7:   "con-summary": { team: "con", type: "summary", short: "Neg Sum.", full: "Neg Summary" },
+   8:   "pro-final": { team: "pro", type: "final", short: "Aff FF", full: "Aff Final Focus" },
+   9:   "con-final": { team: "con", type: "final", short: "Neg FF", full: "Neg Final Focus" }
+ 157:   if (side === "pro" || side === "aff") {
+ 158:     return "Aff";
+ 160:     return "Neg";
+ 262:     },
+ 355:     },
+ 364:     },
+ 434:     },
+ 840:   }, settings);
+1312:   if (value && value >= 56) return value;
+1324:     visual += Math.max(1, Math.ceil((lines[i].length || 1) / 28));
+1331:   return Math.max(58, visual * 20 + 38);
+1416: function calculateCaseFlowLayout(round, caseSide, heights) {
+1424:   var contentionIds = (round.cases[caseSide] && round.cases[caseSide].contentionIds) || [];
+1425:   for (var c = 0; c < contentionIds.length; c++) {
+1426:     var contention = round.contentions[contentionIds[c]];
+1439:       y += threadSpace + 12;
+1480:     height: bottom > 0 ? Math.max(bottom, 60) : 0
+1485:   if (contention) {
+1547:   return calculateCaseFlowLayout(round, caseSide, heights);
+1773:   if (side === "con" || side === "neg") return "Neg";
+1775:   if (side === "pro" || side === "aff") return "Aff";
+1840:   }, 1000);
+2351:   }, 900);
+2465:   }, db.settings);
+2529:     sessionStorage.removeItem("tourDemo");
+2530:     sessionStorage.removeItem("tourRound");
+2531:     sessionStorage.removeItem("tourStep");
+2532:     sessionStorage.removeItem("tourReturn");
+2534:   state.demo = false;
+2760:   if (!pop) return;
+2762:   if (state.popover === pop) {
+2771:     ms = Math.max(0, timers.deadline - Date.now());
+2785:     startBtn.textContent = timers.running ? "Pause" : "Start";
+2788:   pop.style.top = "14px";
+2789:   pop.style.right = "18px";
+2790:   pop.style.left = "auto";
+2791:   showElement(pop);
+2792:   state.popover = pop;
+2808:     if (amount <= 0) amount = 240000;
+2828:   if (amount <= 0) amount = 240000;
+2830:   fillTimerInputs(amount);
+2978:   var first = "Aff speaks first";
+2980:   if (state.round.firstSide === "con" || state.round.firstSide === "neg") {
+2981:     first = "Neg speaks first";
+2984:   var side = "You are Aff";
+2989:   } else if (your === "con" || your === "neg") {
+2990:     side = "You are Neg";
+3126:   if (!state.round || state.round.isPreflow || !state.round.timers || !state.round.timers.running) {
+3149: }, 200);
+3162: function preparePrintLayout(includeEvidence) {
+3163:   var round = state.round;
+3166:   var printTitle = round.title || "Debate Round";
+3167:   var titleEl = document.getElementById("print-title");
+3168:   if (titleEl) {
+3169:     titleEl.textContent = printTitle;
+3172:   var topicLine = round.topic ? "Topic / Resolution: " + round.topic : "";
+3173:   setElementText(document.getElementById("print-topic"), topicLine);
+3175:   var tournamentLine = round.tournament ? "Tournament: " + round.tournament : "";
+3176:   var roundNumberLine = round.roundLabel ? "Round Number: " + round.roundLabel : "";
+3177:   var opponentLine = round.opponent ? "vs " + round.opponent : "";
+3178:   var firstSideLine = round.firstSide ? formatSideName(round.firstSide) + " speaks first" : "";
+3180:   var metaLine = joinFilledText([
+3181:     tournamentLine,
+3182:     roundNumberLine,
+3183:     opponentLine,
+3184:     "Your Side: " + formatSideName(round.yourSide),
+3185:     firstSideLine
+3186:   ], "   |   ");
+3187:   setElementText(document.getElementById("print-meta"), metaLine);
+3189:   var body = document.getElementById("print-body");
+3190:   if (!body) return;
+3192:   clearElement(body);
+3196:   for (var sideIndex = 0; sideIndex < sides.length; sideIndex++) {
+3197:     var caseSide = sides[sideIndex];
+3198:     var section = cloneTemplate("print-case-sample");
+3200:     if (sideIndex === 1) {
+3201:       section.classList.add("new-page");
+3204:     var caseTitle = caseSide === "pro" ? "AFF CASE" : "NEG CASE";
+3205:     section.querySelector(".print-case-name").textContent = caseTitle + " FLOW";
+3207:     var speeches = getSpeechesForSide(round, caseSide);
+3210:     for (var g = 0; g < groupIds.length; g++) {
+3211:       var contention = round.contentions[groupIds[g]];
+3214:       var block = cloneTemplate("print-cont");
+3215:       if (!block) {
+3216:         block = document.createElement("div");
+3217:         block.className = "print-group";
+3218:         block.innerHTML = '<h3 class="print-group-name"></h3><table class="print-table"><thead><tr></tr></thead><tbody></tbody></table>';
+3221:       var groupHeader = block.querySelector(".print-group-name");
+3222:       if (groupHeader) {
+3223:         if (contention.name && contention.name !== "Contention 1" && contention.name !== "Opening Case") {
+3224:           groupHeader.textContent = contention.name;
+3226:           hideElement(groupHeader);
+3230:       var headRow = block.querySelector("thead tr");
+3231:       if (!headRow) {
+3232:         var thead = block.querySelector("thead") || block.querySelector("table").appendChild(document.createElement("thead"));
+3233:         headRow = thead.appendChild(document.createElement("tr"));
+3236:       for (var s = 0; s < speeches.length; s++) {
+3237:         var th = document.createElement("th");
+3238:         th.className = "print-head " + (SPEECHES[speeches[s]].team || "");
+3239:         th.textContent = SPEECHES[speeches[s]].short;
+3240:         headRow.appendChild(th);
+3243:       var tbody = block.querySelector("tbody");
+3244:       if (!tbody) {
+3245:         tbody = block.querySelector("table").appendChild(document.createElement("tbody"));
+3248:       // Robust starting point collection
+3249:       var startingPointIds = (contention.startingPointIds || []).slice();
+3250:       var allNotes = getListFromObject(round.notes);
+3251:       for (var an = 0; an < allNotes.length; an++) {
+3252:         var nt = allNotes[an];
+3253:         if (nt.contentionId === groupIds[g] && !nt.parentId && startingPointIds.indexOf(nt.id) === -1) {
+3254:           startingPointIds.push(nt.id);
+3258:       for (var p = 0; p < startingPointIds.length; p++) {
+3259:         var startId = startingPointIds[p];
+3260:         var family = getAllChildPoints(round, startId, []);
+3261:         var tr = document.createElement("tr");
+3262:         tr.className = "print-row";
+3263:         var rowHasContent = false;
+3265:         for (var sp = 0; sp < speeches.length; sp++) {
+3266:           var td = document.createElement("td");
+3267:           td.className = "print-cell";
+3268:           var noteList = getListFromObject(round.notes);
+3270:           for (var n = 0; n < noteList.length; n++) {
+3271:             var item = noteList[n];
+3272:             if (item.contentionId !== groupIds[g] || item.speechId !== speeches[sp]) continue;
+3274:             if (family.indexOf(item.id) === -1) continue;
+3276:             var hasText = Boolean(item.text && item.text.trim());
+3277:             var hasEvidence = Boolean(includeEvidence && item.evidenceId && round.evidence[item.evidenceId] && round.evidence[item.evidenceId].plain && round.evidence[item.evidenceId].plain.trim());
+3279:             if (!hasText && !hasEvidence) continue;
+3281:             rowHasContent = true;
+3283:             var card = cloneTemplate("print-card");
+3284:             if (!card) {
+3285:               card = document.createElement("div");
+3286:               card.className = "print-card";
+3287:               card.innerHTML = '<span class="print-tag hide"></span><div class="print-words"></div><div class="print-proof hide"></div>';
+3290:             var marker = card.querySelector(".print-tag");
+3291:             if (marker) {
+3292:               if (item.marker) {
+3293:                 marker.textContent = getMarkerLabel(item.marker);
+3294:                 showElement(marker);
+3296:                 hideElement(marker);
+3300:             var pointWords = item.text || "";
+3301:             var wordsBox = card.querySelector(".print-words");
+3302:             if (wordsBox) {
+3303:               if (item.html) {
+3304:                 wordsBox.innerHTML = cleanPastedHtml(item.html).html;
+3306:                 wordsBox.textContent = pointWords;
+3310:             var evBox = card.querySelector(".print-proof");
+3311:             if (evBox) {
+3312:               if (includeEvidence && item.evidenceId && round.evidence[item.evidenceId]) {
+3313:                 var proofText = round.evidence[item.evidenceId].plain || "";
+3314:                 evBox.textContent = "Proof: " + proofText;
+3315:                 showElement(evBox);
+3317:                 hideElement(evBox);
+3321:             td.appendChild(card);
+3324:           tr.appendChild(td);
+3327:         if (rowHasContent) {
+3328:           tbody.appendChild(tr);
+3332:       if (tbody.children.length === 0) {
+3333:         var emptyTr = document.createElement("tr");
+3334:         emptyTr.className = "print-row";
+3335:         for (var esp = 0; esp < speeches.length; esp++) {
+3336:           var emptyTd = document.createElement("td");
+3337:           emptyTd.className = "print-cell";
+3338:           emptyTr.appendChild(emptyTd);
+3340:         tbody.appendChild(emptyTr);
+3343:       section.appendChild(block);
+3346:     body.appendChild(section);
+3349:   var extra = cloneTemplate("print-cx");
+3350:   if (!extra) {
+3351:     extra = document.createElement("div");
+3352:     extra.className = "print-notes new-page";
+3353:     extra.innerHTML = '<h2 class="print-case-name">CROSSFIRE &amp; REFLECTION NOTES</h2>';
+3355:     extra.classList.add("new-page");
+3358:   var extraNotes = [
+3359:     ["First Crossfire", round.crossNotes.firstCrossfire],
+3360:     ["Second Crossfire", round.crossNotes.secondCrossfire],
+3361:     ["Grand Crossfire", round.crossNotes.grandCrossfire],
+3362:     ["Reflections & Decision", round.crossNotes.reflections]
+3365:   for (var e = 0; e < extraNotes.length; e++) {
+3366:     if (extraNotes[e][1] && extraNotes[e][1].trim()) {
+3367:       var cxCard = cloneTemplate("print-cx-card");
+3368:       if (!cxCard) {
+3369:         cxCard = document.createElement("div");
+3370:         cxCard.className = "print-note";
+3371:         cxCard.innerHTML = '<h3 class="print-note-name"></h3><div class="print-note-words"></div>';
+3374:       var nameEl = cxCard.querySelector(".print-note-name");
+3375:       if (nameEl) nameEl.textContent = extraNotes[e][0];
+3377:       var wordsEl = cxCard.querySelector(".print-note-words");
+3378:       if (wordsEl) wordsEl.textContent = extraNotes[e][1];
+3380:       extra.appendChild(cxCard);
+3384:   body.appendChild(extra);
+3387: function downloadPdfReport(includeEvidence) {
+3388:   var report = document.getElementById("full-print-report");
+3389:   if (!report) return;
+3391:   var downloadBtn = document.getElementById("btn-download-pdf");
+3392:   var originalBtnText = downloadBtn ? downloadBtn.textContent : "Download PDF";
+3393:   if (downloadBtn) {
+3394:     downloadBtn.textContent = "Generating PDF...";
+3395:     downloadBtn.disabled = true;
+3398:   preparePrintLayout(includeEvidence);
+3400:   // Directly display report in normal in-flow layout with explicit landscape dimensions
+3401:   report.style.display = "block";
+3402:   report.style.width = "1000px";
+3403:   report.style.background = "#ffffff";
+3404:   report.style.padding = "24px";
+3405:   report.style.margin = "0 auto";
+3406:   report.style.boxSizing = "border-box";
+3408:   var round = state.round;
+3409:   var rawTitle = round && round.title ? round.title : "Debate";
+3410:   var safeTitle = rawTitle.replace(/[^a-zA-Z0-9_\- ]/g, "").trim().replace(/\s+/g, "_");
+3411:   var filename = (safeTitle || "Debate_Flow") + ".pdf";
+3413:   var opt = {
+3414:     margin: [8, 8, 8, 8],
+3415:     filename: filename,
+3416:     image: { type: "jpeg", quality: 0.98 },
+3417:     html2canvas: {
+3418:       scale: 1.5,
+3419:       useCORS: true,
+3420:       backgroundColor: "#ffffff",
+3421:       windowWidth: 1060
+3422:     },
+3423:     jsPDF: {
+3424:       unit: "mm",
+3425:       format: "a4",
+3426:       orientation: "landscape"
+3427:     },
+3428:     pagebreak: { mode: ["css", "legacy"] }
+3431:   function finishExport() {
+3432:     report.style.display = "none";
+3433:     report.style.width = "";
+3434:     report.style.padding = "";
+3435:     report.style.margin = "";
+3436:     report.style.background = "";
+3437:     if (downloadBtn) {
+3438:       downloadBtn.textContent = originalBtnText;
+3439:       downloadBtn.disabled = false;
+3445:     if (typeof html2pdf !== "undefined") {
+3446:       html2pdf().set(opt).from(report).save().then(function () {
+3447:         finishExport();
+3448:       }).catch(function (err) {
+3449:         console.error("PDF export error:", err);
+3450:         finishExport();
+3451:         window.print();
+3454:       finishExport();
+3455:       window.print();
+3457:   }, 120);
+3517:   } else if (action === "print") {
+3519:     showElement(document.getElementById("print-box"));
+3521:   } else if (action === "do-print") {
+3522:     var checkEl = document.getElementById("print-evidence");
+3523:     downloadPdfReport(checkEl ? checkEl.checked : true);
+3525:   } else if (action === "print-browser") {
+3526:     var checkEl = document.getElementById("print-evidence");
+3528:     preparePrintLayout(checkEl ? checkEl.checked : true);
+3530:       window.print();
+3531:     }, 100);

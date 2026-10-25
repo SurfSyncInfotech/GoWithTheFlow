@@ -57,14 +57,7 @@ function buildFlowSheet() {
 
   var caseSide = getOpenCaseSide();
   var view = getVisibleSpeeches(state.round, caseSide);
-  var paneWidthNum = 800;
-
-  if (scroller) {
-    paneWidthNum = scroller.clientWidth;
-  }
-
   var colWidth = calculateColumnWidth(scroller, view.visible.length);
-  var paneWidthStr = paneWidthNum + "px";
 
   clearElement(sheet);
 
@@ -81,127 +74,58 @@ function buildFlowSheet() {
     speechChip.querySelector(".speech-name").textContent = speechInfo.full;
 
     var orderNumber = view.all.indexOf(speechId) + 1;
-    var kindName = speechInfo.short;
-
-    if (shortNames[speechInfo.type]) {
-      kindName = shortNames[speechInfo.type];
-    }
+    var kindName = shortNames[speechInfo.type] || speechInfo.short;
 
     speechChip.querySelector(".speech-number").textContent = orderNumber + ". " + kindName;
 
     var seconds = 240;
-
     if (db.settings.durations && db.settings.durations[speechInfo.type]) {
       seconds = db.settings.durations[speechInfo.type];
     }
 
     speechChip.querySelector(".speech-time").textContent = Math.round(seconds / 60) + " min";
-
     headerRow.appendChild(speechChip);
   }
 
   sheet.appendChild(headerRow);
   sheet.style.setProperty("--speech-head", headerRow.offsetHeight + "px");
 
-  var contentionIds = state.round.cases[caseSide].contentionIds;
+  var flowGrid = document.createElement("div");
+  flowGrid.className = "flow-grid";
 
-  for (var j = 0; j < contentionIds.length; j++) {
-    var contentionObj = state.round.contentions[contentionIds[j]];
-
-    if (contentionObj) {
-      sheet.appendChild(renderContentionSection(contentionObj, caseSide, view, colWidth));
-    }
+  var primaryContentionId = (state.round.cases[caseSide] && state.round.cases[caseSide].contentionIds[0]) || null;
+  if (!primaryContentionId) {
+    var added = addContention(state.round, caseSide, "Arguments");
+    primaryContentionId = added.id;
   }
 
-  var groupHeaders = sheet.querySelectorAll(".group-top");
-
-  for (var h = 0; h < groupHeaders.length; h++) {
-    groupHeaders[h].style.maxWidth = paneWidthStr;
+  var contention = state.round.contentions[primaryContentionId];
+  if (contention && contention.startingPointIds.length === 0 && view.visible.length > 0) {
+    var starter = addMainPoint(state.round, primaryContentionId, view.visible[0], "");
+    state.selectedId = starter.id;
+    saveRoundAfterAMoment(true);
   }
 
-  measurePointHeights();
-  applyPointPositions(colWidth);
-
-  if (state.selectedId) {
-    var selectedElement = document.querySelector('.point[data-id="' + state.selectedId + '"]');
-
-    if (selectedElement) {
-      selectedElement.classList.add("picked");
-    }
-  }
-}
-
-function renderContentionSection(contention, caseSide, view, width) {
-  var section = cloneTemplate("cont-block");
-
-  section.dataset.id = contention.id;
-
-  var index = state.round.cases[caseSide].contentionIds.indexOf(contention.id);
-  var safeIndex = index;
-
-  if (index < 0) {
-    safeIndex = 0;
-  }
-
-  var colorTone = CONTENTION_COLORS[safeIndex % CONTENTION_COLORS.length];
-
-  var header = section.querySelector(".group-top");
-
-  header.style.backgroundColor = colorTone.head;
-  header.style.color = colorTone.ink;
-  header.style.borderLeft = "4px solid " + colorTone.accent;
-  section.querySelector(".group-dot").style.backgroundColor = colorTone.accent;
-
-  var foldToggle = section.querySelector("[data-action='fold-group']");
-
-  if (contention.collapsed) {
-    foldToggle.textContent = "▸";
-    foldToggle.title = "Expand contention";
-  } else {
-    foldToggle.textContent = "▾";
-    foldToggle.title = "Collapse contention";
-  }
-
-  var titleInput = section.querySelector(".group-name");
-
-  titleInput.value = contention.name;
-  titleInput.style.color = colorTone.ink;
-  titleInput.dataset.id = contention.id;
-
-  var buttons = section.querySelectorAll("[data-action]");
-
-  for (var b = 0; b < buttons.length; b++) {
-    buttons[b].dataset.id = contention.id;
-  }
-
-  var rowGrid = section.querySelector(".group-row");
-
-  if (contention.collapsed) {
-    hideElement(rowGrid);
-    return section;
-  }
-
-  var layout = calculateContentionLayout(state.round, contention, caseSide, state.heights);
+  var layout = calculateCaseFlowLayout(state.round, caseSide, state.heights);
 
   for (var s = 0; s < view.visible.length; s++) {
     var speechId = view.visible[s];
     var colElement = cloneTemplate("col-sample");
 
-    colElement.style.width = width + "px";
+    colElement.style.width = colWidth + "px";
     colElement.dataset.speech = speechId;
+    if (s % 2 === 1) {
+      colElement.classList.add("alt-column");
+    }
 
     var canvas = colElement.querySelector(".column-area");
-
     canvas.style.height = layout.height + "px";
-    canvas.dataset.group = contention.id;
     canvas.dataset.speech = speechId;
 
     var noteIds = Object.keys(state.round.notes);
-
     for (var n = 0; n < noteIds.length; n++) {
       var note = state.round.notes[noteIds[n]];
-
-      if (note.contentionId === contention.id && note.speechId === speechId && layout.positions[noteIds[n]]) {
+      if (note.speechId === speechId && layout.positions[noteIds[n]]) {
         canvas.appendChild(renderPointCard(note));
       }
     }
@@ -211,51 +135,61 @@ function renderContentionSection(contention, caseSide, view, width) {
       if (slot.speechId !== speechId) continue;
 
       var parentNote = state.round.notes[slot.parentId];
-      if (!parentNote || parentNote.contentionId !== contention.id) continue;
+      if (!parentNote) continue;
 
       var slotBox = cloneTemplate("ans-slot");
-
-      slotBox.style.fontSize = getFontSize() + "px";
       slotBox.setAttribute("aria-label", "Response to " + (parentNote.text || "point"));
       slotBox.dataset.parent = slot.parentId;
       slotBox.dataset.speech = speechId;
+      slotBox.style.top = slot.top + "px";
       canvas.appendChild(slotBox);
     }
 
-    var starterBox = colElement.querySelector(".new-box");
+    var addBtn = colElement.querySelector(".col-add-btn");
+    if (s === 0 && addBtn) {
+      addBtn.classList.remove("hide");
+      addBtn.dataset.starter = primaryContentionId;
+      addBtn.dataset.speech = speechId;
+    }
 
-    starterBox.style.fontSize = getFontSize() + "px";
-    starterBox.dataset.starter = contention.id;
-    starterBox.dataset.speech = speechId;
-    starterBox.setAttribute("aria-label", "New point in " + getSpeechName(speechId, true));
-
-    rowGrid.appendChild(colElement);
+    flowGrid.appendChild(colElement);
   }
 
-  return section;
+  sheet.appendChild(flowGrid);
+
+  measurePointHeights();
+  applyPointPositions(colWidth);
+
+  if (state.selectedId) {
+    var selectedElement = document.querySelector('.point[data-id="' + state.selectedId + '"]');
+    if (selectedElement) {
+      selectedElement.classList.add("picked");
+    }
+  }
 }
 
 function renderPointCard(note) {
   var box = cloneTemplate("card-sample");
-
   box.dataset.id = note.id;
+  box.dataset.speech = note.speechId;
+  if (note.parentId) {
+    box.dataset.parent = note.parentId;
+  }
 
   if (note.id === state.selectedId) {
     box.classList.add("picked");
   }
 
   var marker = box.querySelector(".point-tag");
-
   if (note.marker) {
     marker.textContent = getMarkerLabel(note.marker);
-    marker.className = "point-tag tag-" + note.marker;
+    marker.className = "point-tag tag-" + note.marker + " " + note.marker;
     showElement(marker);
   } else {
     hideElement(marker);
   }
 
   var area = box.querySelector(".point-input");
-
   area.style.fontSize = getFontSize() + "px";
   if (note.html) {
     area.innerHTML = cleanPastedHtml(note.html).html;
@@ -267,25 +201,24 @@ function renderPointCard(note) {
   area.dataset.id = note.id;
   area.setAttribute("aria-label", getSpeechName(note.speechId, true) + " point");
 
-  if (!document.querySelector("[data-tour='point']")) {
-    area.dataset.tour = "point";
-  }
-
   var clipBtn = box.querySelector(".clip-btn");
-
   clipBtn.dataset.id = note.id;
 
-  if (note.evidenceId) {
-    clipBtn.classList.add("has-proof");
+  var num = clipBtn.querySelector(".clip-number");
+  if (note.evidenceId && state.round.evidence && state.round.evidence[note.evidenceId]) {
+    clipBtn.classList.add("has-proof", "has-ev");
     clipBtn.setAttribute("aria-label", "Open evidence");
-    showElement(clipBtn.querySelector(".clip-number"));
+    if (num) {
+      num.textContent = "1";
+      showElement(num);
+    }
   } else {
+    clipBtn.classList.remove("has-proof", "has-ev");
     clipBtn.setAttribute("aria-label", "Add evidence");
-    hideElement(clipBtn.querySelector(".clip-number"));
-  }
-
-  if (!document.querySelector("[data-tour='clip-btn']")) {
-    clipBtn.dataset.tour = "clip-btn";
+    if (num) {
+      num.textContent = "";
+      hideElement(num);
+    }
   }
 
   box.querySelector(".point-menu").dataset.id = note.id;
@@ -299,160 +232,64 @@ function measurePointHeights() {
     var area = areas[i];
 
     area.style.height = "auto";
-    var textHeight = Math.max(24, area.scrollHeight);
-
+    var textHeight = Math.max(20, area.scrollHeight);
     area.style.height = textHeight + "px";
 
-    var parentBox = area.parentElement;
-
-    parentBox.style.height = "auto";
-    var boxHeight = Math.max(44, parentBox.scrollHeight);
-
-    state.heights[area.dataset.id] = boxHeight;
-    parentBox.style.height = boxHeight + "px";
+    var parentBox = area.closest(".point");
+    if (parentBox) {
+      parentBox.style.height = "auto";
+      var boxHeight = Math.max(58, parentBox.offsetHeight || parentBox.scrollHeight);
+      state.heights[area.dataset.id] = boxHeight;
+    }
   }
 }
 
 function applyPointPositions(width) {
   var caseSide = getOpenCaseSide();
-  var view = getVisibleSpeeches(state.round, caseSide);
+  var layout = calculateCaseFlowLayout(state.round, caseSide, state.heights);
 
-  if (!width) {
-    var scroller = document.getElementById("scroll-box");
-
-    width = calculateColumnWidth(scroller, view.visible.length);
+  var canvases = document.querySelectorAll(".column-area");
+  for (var c = 0; c < canvases.length; c++) {
+    canvases[c].style.height = layout.height + "px";
   }
 
-  var contentionIds = state.round.cases[caseSide].contentionIds;
+  var posKeys = Object.keys(layout.positions);
+  for (var p = 0; p < posKeys.length; p++) {
+    if (posKeys[p] === "_threads") continue;
 
-  for (var i = 0; i < contentionIds.length; i++) {
-    var contention = state.round.contentions[contentionIds[i]];
-    if (!contention || contention.collapsed) continue;
-
-    var layout = calculateContentionLayout(state.round, contention, caseSide, state.heights);
-    var canvases = document.querySelectorAll('.column-area[data-group="' + contentionIds[i] + '"]');
-
-    for (var c = 0; c < canvases.length; c++) {
-      canvases[c].style.height = layout.height + "px";
+    var pointElement = document.querySelector('.point[data-id="' + posKeys[p] + '"]');
+    if (pointElement) {
+      pointElement.style.top = layout.positions[posKeys[p]].top + "px";
+      pointElement.style.minHeight = layout.positions[posKeys[p]].height + "px";
+      pointElement.style.height = "auto";
     }
+  }
 
-    var posKeys = Object.keys(layout.positions);
-
-    for (var p = 0; p < posKeys.length; p++) {
-      if (posKeys[p] === "_threads") continue;
-
-      var pointElement = document.querySelector('.point[data-id="' + posKeys[p] + '"]');
-
-      if (pointElement) {
-        pointElement.style.top = layout.positions[posKeys[p]].top + "px";
-        pointElement.style.height = layout.positions[posKeys[p]].height + "px";
-      }
-    }
-
-    for (var s = 0; s < layout.slots.length; s++) {
-      var slot = layout.slots[s];
-      var slotElement = document.querySelector('.reply-box[data-parent="' + slot.parentId + '"][data-speech="' + slot.speechId + '"]');
-
-      if (slotElement) {
-        slotElement.style.top = slot.top + "px";
-      }
+  for (var s = 0; s < layout.slots.length; s++) {
+    var slot = layout.slots[s];
+    var slotElement = document.querySelector('.reply-slot-btn[data-parent="' + slot.parentId + '"][data-speech="' + slot.speechId + '"]');
+    if (slotElement) {
+      slotElement.style.top = slot.top + "px";
     }
   }
 }
 
 function renderEvidencePanel() {
   var list = document.querySelector(".proof-list");
-  var crumb = document.querySelector(".proof-path");
   if (!list || !state.round) return;
 
   var selected = state.round.notes[state.selectedId];
-
   clearElement(list);
 
   if (!selected) {
-    hideElement(crumb);
     var emptyTemplate = document.getElementById("ev-empty");
-
     if (emptyTemplate) {
       list.appendChild(cloneTemplate("ev-empty"));
     }
-
     return;
   }
 
-  showElement(crumb);
-  var contention = state.round.contentions[selected.contentionId];
-  var summaryText = selected.text;
-
-  if (!summaryText) {
-    summaryText = "Point";
-  }
-
-  summaryText = summaryText.split("\n")[0];
-  if (summaryText.length > 25) {
-    summaryText = summaryText.slice(0, 25) + "...";
-  }
-
-  var contentionName = "Contention";
-
-  if (contention) {
-    contentionName = contention.name;
-  }
-
-  document.getElementById("crumb-contention").textContent = contentionName;
-  document.getElementById("crumb-point").textContent = summaryText;
-
-  var allNotes = getEvidencePointsList(selected.contentionId, getOpenCaseSide());
-  var found = false;
-
-  for (var i = 0; i < allNotes.length; i++) {
-    var hasProof = allNotes[i].evidenceId && state.round.evidence[allNotes[i].evidenceId] && state.round.evidence[allNotes[i].evidenceId].plain;
-
-    if (!hasProof && allNotes[i].id !== selected.id) {
-      continue;
-    }
-
-    found = true;
-    list.appendChild(renderEvidenceCard(allNotes[i], allNotes[i].id === selected.id));
-  }
-
-  if (!found) {
-    list.appendChild(renderEvidenceCard(selected, true));
-  }
-
-  var currentCard = list.querySelector(".current");
-
-  if (currentCard) {
-    list.scrollTop = Math.max(0, currentCard.offsetTop - 12);
-  }
-}
-
-function getEvidencePointsList(contentionId, caseSide) {
-  var contention = state.round.contentions[contentionId];
-  var ordered = [];
-
-  function walk(note) {
-    ordered.push(note);
-    var later = getSpeechesAfter(state.round, caseSide, note.speechId);
-
-    for (var i = 0; i < later.length; i++) {
-      var replies = getRepliesInColumn(state.round, note.id, later[i]);
-
-      for (var r = 0; r < replies.length; r++) {
-        walk(replies[r]);
-      }
-    }
-  }
-
-  for (var j = 0; j < contention.startingPointIds.length; j++) {
-    var startNote = state.round.notes[contention.startingPointIds[j]];
-
-    if (startNote) {
-      walk(startNote);
-    }
-  }
-
-  return ordered;
+  list.appendChild(renderEvidenceCard(selected, true));
 }
 
 function renderEvidenceCard(note, current) {
@@ -462,42 +299,17 @@ function renderEvidenceCard(note, current) {
     card.classList.add("current");
   }
 
-  var firstLine = note.text;
-
-  if (!firstLine) {
-    firstLine = "Empty point";
-  }
-
-  firstLine = firstLine.split("\n")[0];
-  card.querySelector(".proof-place").textContent = firstLine + " · " + getSpeechName(note.speechId, true);
-
   var body = card.querySelector(".proof-text");
-
   body.dataset.evidence = note.id;
 
   var stored = note.evidenceId && state.round.evidence[note.evidenceId];
-
   if (stored) {
     body.innerHTML = cleanPastedHtml(stored.html).html;
   }
 
-  if (!document.querySelector("[data-tour='proof-panel']")) {
-    body.dataset.tour = "proof-panel";
-  }
-
-  var notice = card.querySelector(".proof-note");
-
-  notice.dataset.notice = note.id;
-  var noticeText = "";
-
-  if (stored && stored.notice) {
-    noticeText = stored.notice;
-  }
-
-  notice.textContent = noticeText;
-
   return card;
 }
+
 
 function selectPointCard(id, openEvidence) {
   var points = document.querySelectorAll(".point");
@@ -784,180 +596,140 @@ function switchDebateSide(side) {
   render();
 }
 
-function renderTourStep() {
-  var highlightedElements = document.querySelectorAll(".highlight");
-
-  for (var h = 0; h < highlightedElements.length; h++) {
-    highlightedElements[h].classList.remove("highlight");
-  }
-
-  if (state.tourStep < 0 || state.tourStep >= TOUR.length) return;
-
-  var step = TOUR[state.tourStep];
-  var needsMenu = window.innerWidth <= 899 && (step.target.indexOf("cases") !== -1 || step.target.indexOf("notes") !== -1 || step.target.indexOf("jumps") !== -1);
-
-  state.navOpen = needsMenu;
-  updateSideMenu();
-
-  if (state.tourStep === 5) {
-    var notes = getListFromObject(state.round.notes);
-    var withEvidence = null;
-
-    for (var i = 0; i < notes.length; i++) {
-      if (notes[i].evidenceId) {
-        withEvidence = notes[i];
-        break;
-      }
-    }
-
-    if (withEvidence) {
-      state.selectedId = withEvidence.id;
-      state.evidenceOpen = true;
-      var shell = document.querySelector(".workspace");
-
-      if (shell) {
-        shell.classList.add("proof-open");
-      }
-
-      renderEvidencePanel();
-    }
-  }
-
-  var targetElement = document.querySelector(step.target);
-
-  if (targetElement) {
-    targetElement.classList.add("highlight");
-    if (targetElement.scrollIntoView) {
-      targetElement.scrollIntoView({ block: "nearest", inline: "nearest" });
-    }
-  }
-
-  document.getElementById("tour-step").textContent = "Step " + (state.tourStep + 1) + " of " + TOUR.length;
-  document.getElementById("tour-text").textContent = step.text;
-
-  if (state.tourStep > 0) {
-    showElement(document.getElementById("tour-back"));
-  } else {
-    hideElement(document.getElementById("tour-back"));
-  }
-
-  if (state.tourStep < TOUR.length - 1) {
-    showElement(document.getElementById("tour-next"));
-  } else {
-    hideElement(document.getElementById("tour-next"));
-  }
-
-  showElement(document.getElementById("tour"));
-  sessionStorage.setItem("tourStep", String(state.tourStep));
-}
-
-function closeFeatureTour() {
-  var back = sessionStorage.getItem("tourReturn");
-
-  sessionStorage.removeItem("tourDemo");
-  sessionStorage.removeItem("tourRound");
-  sessionStorage.removeItem("tourStep");
-  sessionStorage.removeItem("tourReturn");
-  state.tourStep = -1;
-  state.demo = false;
-
-  if (back && db.rounds[back]) {
-    sessionStorage.setItem("openRoundId", back);
-    window.location.href = "workspace.html";
-  } else {
-    sessionStorage.removeItem("openRoundId");
-    window.location.href = "index.html";
-  }
-}
 
 function openEditRoundDetails() {
   var round = state.round;
+  if (!round) return;
 
-  document.getElementById("edit-title").value = round.title;
-  var topicValue = round.topic;
-
-  if (!topicValue) {
-    topicValue = "";
+  var isPreflow = Boolean(round.isPreflow);
+  var editBox = document.getElementById("edit-box");
+  var editHeading = editBox ? editBox.querySelector("h2") : null;
+  if (editHeading) {
+    editHeading.textContent = isPreflow ? "Edit preflow details" : "Edit details";
   }
 
-  var tournamentValue = round.tournament;
+  document.getElementById("edit-title").value = round.title || "";
+  document.getElementById("edit-topic").value = round.topic || "";
 
-  if (!tournamentValue) {
-    tournamentValue = "";
-  }
-
-  var roundLabelValue = round.roundLabel;
-
-  if (!roundLabelValue) {
-    roundLabelValue = "";
-  }
-
-  var opponentValue = round.opponent;
-
-  if (!opponentValue) {
-    opponentValue = "";
-  }
-
-  document.getElementById("edit-topic").value = topicValue;
-  document.getElementById("edit-tournament").value = tournamentValue;
-  document.getElementById("edit-round-label").value = roundLabelValue;
-  document.getElementById("edit-opponent").value = opponentValue;
-  document.getElementById("edit-side").value = round.yourSide;
-
-  var locked = checkIfRoundHasContent(round);
-  var lockNote = "Who speaks first sets the speech order.";
-
-  if (locked) {
-    lockNote = "Who speaks first is locked because notes already follow this order. Start a new round for a different order.";
-  }
-
-  document.getElementById("edit-lock-note").textContent = lockNote;
-
+  var tournamentWrap = document.getElementById("edit-tournament") ? document.getElementById("edit-tournament").closest(".form-line") : null;
+  var roundLabelWrap = document.getElementById("edit-round-label") ? document.getElementById("edit-round-label").closest(".form-line") : null;
+  var opponentWrap = document.getElementById("edit-opponent") ? document.getElementById("edit-opponent").closest(".form-line") : null;
   var firstWrap = document.getElementById("edit-first-wrap");
+  var lockNote = document.getElementById("edit-lock-note");
+  var sideSelect = document.getElementById("edit-side");
+  var obsOption = sideSelect ? sideSelect.querySelector('option[value="observer"]') : null;
 
-  if (locked) {
-    hideElement(firstWrap);
+  if (isPreflow) {
+    if (tournamentWrap) hideElement(tournamentWrap);
+    if (roundLabelWrap) hideElement(roundLabelWrap);
+    if (opponentWrap) hideElement(opponentWrap);
+    if (firstWrap) hideElement(firstWrap);
+    if (lockNote) hideElement(lockNote);
+    if (obsOption) hideElement(obsOption);
+    if (sideSelect) sideSelect.value = round.preflowSide || round.yourSide || "pro";
   } else {
-    showElement(firstWrap);
-    document.getElementById("edit-first").value = round.firstSide;
+    if (tournamentWrap) showElement(tournamentWrap);
+    if (roundLabelWrap) showElement(roundLabelWrap);
+    if (opponentWrap) showElement(opponentWrap);
+    if (obsOption) showElement(obsOption);
+    if (lockNote) showElement(lockNote);
+
+    document.getElementById("edit-tournament").value = round.tournament || "";
+    document.getElementById("edit-round-label").value = round.roundLabel || "";
+    document.getElementById("edit-opponent").value = round.opponent || "";
+    if (sideSelect) sideSelect.value = round.yourSide || "pro";
+
+    var locked = checkIfRoundHasContent(round);
+    var noteMsg = "Who speaks first sets the speech order.";
+    if (locked) {
+      noteMsg = "Who speaks first is locked because notes already follow this order. Start a new round for a different order.";
+      if (firstWrap) hideElement(firstWrap);
+    } else {
+      if (firstWrap) {
+        showElement(firstWrap);
+        document.getElementById("edit-first").value = round.firstSide || "pro";
+      }
+    }
+    if (lockNote) lockNote.textContent = noteMsg;
   }
 
-  showElement(document.getElementById("edit-box"));
+  showElement(editBox);
 }
 
 function saveEditRoundDetails() {
   var round = state.round;
-  var locked = checkIfRoundHasContent(round);
+  if (!round) return;
 
+  var isPreflow = Boolean(round.isPreflow);
   var nextTitle = document.getElementById("edit-title").value.trim();
+  var nextTopic = document.getElementById("edit-topic").value.trim();
 
   if (!nextTitle) {
-    nextTitle = "Untitled round";
+    nextTitle = nextTopic || (isPreflow ? "Untitled preflow" : "Untitled round");
   }
 
   round.title = nextTitle;
-  round.topic = document.getElementById("edit-topic").value.trim();
-  round.tournament = document.getElementById("edit-tournament").value.trim();
-  round.roundLabel = document.getElementById("edit-round-label").value.trim();
-  round.opponent = document.getElementById("edit-opponent").value.trim();
+  round.topic = nextTopic;
 
-  var side = document.getElementById("edit-side").value;
+  if (isPreflow) {
+    var nextSide = document.getElementById("edit-side").value;
+    if (nextSide !== "con") nextSide = "pro";
 
-  if (side !== "pro" && side !== "con" && side !== "observer") {
-    side = "pro";
-  }
+    var oldSide = round.preflowSide || round.yourSide || "pro";
+    if (oldSide !== nextSide) {
+      round.preflowSide = nextSide;
+      round.yourSide = nextSide;
+      round.firstSide = nextSide;
 
-  round.yourSide = side;
+      if (round.notes) {
+        var noteKeys = Object.keys(round.notes);
+        for (var nk = 0; nk < noteKeys.length; nk++) {
+          var nItem = round.notes[noteKeys[nk]];
+          if (nItem.speechId === oldSide + "-constructive") {
+            nItem.speechId = nextSide + "-constructive";
+          }
+        }
+      }
 
-  if (!locked) {
-    var first = document.getElementById("edit-first").value;
+      if (round.cases && round.cases[oldSide] && round.cases[nextSide]) {
+        round.cases[nextSide].contentionIds = round.cases[oldSide].contentionIds.slice();
+        round.cases[oldSide].contentionIds = [];
+      }
 
-    if (first !== "con") {
-      first = "pro";
+      round.timers = createNewTimer(nextSide, getDefaultSpeechTimes());
     }
 
-    round.firstSide = first;
-    round.timers = createNewTimer(round.firstSide, db.settings.durations);
+    if (db.preflows[round.id]) {
+      var pre = db.preflows[round.id];
+      pre.title = round.title;
+      pre.topic = round.topic;
+      pre.side = round.preflowSide;
+      pre.contentions = round.contentions;
+      pre.contentionIds = round.cases[round.preflowSide].contentionIds;
+      pre.notes = round.notes;
+      pre.evidence = round.evidence;
+      pre.updatedAt = new Date().toISOString();
+    }
+  } else {
+    var locked = checkIfRoundHasContent(round);
+    round.tournament = document.getElementById("edit-tournament").value.trim();
+    round.roundLabel = document.getElementById("edit-round-label").value.trim();
+    round.opponent = document.getElementById("edit-opponent").value.trim();
+
+    var side = document.getElementById("edit-side").value;
+    if (side !== "pro" && side !== "con" && side !== "observer") {
+      side = "pro";
+    }
+    round.yourSide = side;
+
+    if (!locked) {
+      var first = document.getElementById("edit-first").value;
+      if (first !== "con") {
+        first = "pro";
+      }
+      round.firstSide = first;
+      round.timers = createNewTimer(round.firstSide, db.settings.durations);
+    }
   }
 
   closePopups();
@@ -965,209 +737,113 @@ function saveEditRoundDetails() {
   render();
 }
 
-function preparePrintLayout(includeEvidence) {
-  var round = state.round;
-  var printTitle = round.title;
-
-  if (!printTitle) {
-    printTitle = "Debate Round";
-  }
-
-  document.getElementById("print-title").textContent = printTitle;
-  var topicLine = "";
-
-  if (round.topic) {
-    topicLine = "Topic / Resolution: " + round.topic;
-  }
-
-  setElementText(document.getElementById("print-topic"), topicLine);
-
-  var tournamentLine = "";
-
-  if (round.tournament) {
-    tournamentLine = "Tournament: " + round.tournament;
-  }
-
-  var roundNumberLine = "";
-
-  if (round.roundLabel) {
-    roundNumberLine = "Round Number: " + round.roundLabel;
-  }
-
-  var opponentLine = "";
-
-  if (round.opponent) {
-    opponentLine = "vs " + round.opponent;
-  }
-
-  var firstSideLine = "";
-
-  if (round.firstSide) {
-    firstSideLine = formatSideName(round.firstSide) + " speaks first";
-  }
-
-  var metaLine = joinFilledText([
-    tournamentLine,
-    roundNumberLine,
-    opponentLine,
-    "Your Side: " + formatSideName(round.yourSide),
-    firstSideLine
-  ], "   |   ");
-  setElementText(document.getElementById("print-meta"), metaLine);
-
-  var body = document.getElementById("print-body");
-
-  clearElement(body);
-
-  var sides = ["pro", "con"];
-
-  for (var sideIndex = 0; sideIndex < sides.length; sideIndex++) {
-    var caseSide = sides[sideIndex];
-    var section = cloneTemplate("print-case-sample");
-
-    if (sideIndex === 1) {
-      section.classList.add("new-page");
-    }
-
-    var caseTitle = "CON CASE";
-
-    if (caseSide === "pro") {
-      caseTitle = "PRO CASE";
-    }
-
-    section.querySelector(".print-case-name").textContent = caseTitle + " FLOW";
-
-    var speeches = getSpeechesForSide(round, caseSide);
-    var groupIds = round.cases[caseSide].contentionIds;
-
-    for (var g = 0; g < groupIds.length; g++) {
-      var contention = round.contentions[groupIds[g]];
-      if (!contention) continue;
-
-      var block = cloneTemplate("print-cont");
-
-      block.querySelector(".print-group-name").textContent = contention.name;
-      var headRow = block.querySelector("thead tr");
-
-      for (var s = 0; s < speeches.length; s++) {
-        var th = cloneTemplate("print-th");
-
-        th.textContent = SPEECHES[speeches[s]].short;
-        th.classList.add(SPEECHES[speeches[s]].team);
-        headRow.appendChild(th);
-      }
-
-      var tbody = block.querySelector("tbody");
-
-      for (var p = 0; p < contention.startingPointIds.length; p++) {
-        var startId = contention.startingPointIds[p];
-        var family = getAllChildPoints(round, startId, []);
-        var tr = cloneTemplate("print-tr");
-
-        for (var sp = 0; sp < speeches.length; sp++) {
-          var td = cloneTemplate("print-td");
-          var noteList = getListFromObject(round.notes);
-
-          for (var n = 0; n < noteList.length; n++) {
-            var item = noteList[n];
-            if (item.contentionId !== groupIds[g] || item.speechId !== speeches[sp]) continue;
-
-            if (family.indexOf(item.id) === -1) continue;
-
-            var card = cloneTemplate("print-card");
-            var marker = card.querySelector(".print-tag");
-
-            if (item.marker) {
-              marker.textContent = getMarkerLabel(item.marker);
-            } else {
-              hideElement(marker);
-            }
-
-            var pointWords = item.text;
-
-            if (!pointWords) {
-              pointWords = "";
-            }
-
-            card.querySelector(".print-words").textContent = pointWords;
-
-            var evBox = card.querySelector(".print-proof");
-
-            if (includeEvidence && item.evidenceId && round.evidence[item.evidenceId]) {
-              var proofText = round.evidence[item.evidenceId].plain;
-
-              if (!proofText) {
-                proofText = "";
-              }
-
-              evBox.textContent = "Proof: " + proofText;
-            } else {
-              hideElement(evBox);
-            }
-
-            td.appendChild(card);
-          }
-
-          tr.appendChild(td);
-        }
-
-        tbody.appendChild(tr);
-      }
-
-      section.appendChild(block);
-    }
-
-    body.appendChild(section);
-  }
-
-  var extra = cloneTemplate("print-cx");
-
-  extra.classList.add("new-page");
-  var extraNotes = [
-    ["First Crossfire", round.crossNotes.firstCrossfire],
-    ["Second Crossfire", round.crossNotes.secondCrossfire],
-    ["Grand Crossfire", round.crossNotes.grandCrossfire],
-    ["Reflections & Decision", round.crossNotes.reflections]
-  ];
-
-  for (var e = 0; e < extraNotes.length; e++) {
-    if (extraNotes[e][1] && extraNotes[e][1].trim()) {
-      var cxCard = cloneTemplate("print-cx-card");
-
-      cxCard.querySelector(".print-note-name").textContent = extraNotes[e][0];
-      cxCard.querySelector(".print-note-words").textContent = extraNotes[e][1];
-      extra.appendChild(cxCard);
-    }
-  }
-
-  body.appendChild(extra);
+function isCaretAtBeginning(el) {
+  var sel = window.getSelection();
+  if (!sel || !sel.rangeCount) return true;
+  var range = sel.getRangeAt(0);
+  if (!range.collapsed) return false;
+  var preRange = document.createRange();
+  preRange.selectNodeContents(el);
+  preRange.setEnd(range.startContainer, range.startOffset);
+  return preRange.toString().length === 0;
 }
 
-function navigatePointsWithArrows(id, key) {
-  var current = document.querySelector('.point[data-id="' + id + '"]');
+function isCaretAtEnd(el) {
+  var sel = window.getSelection();
+  if (!sel || !sel.rangeCount) return true;
+  var range = sel.getRangeAt(0);
+  if (!range.collapsed) return false;
+  var postRange = document.createRange();
+  postRange.selectNodeContents(el);
+  postRange.setStart(range.endContainer, range.endOffset);
+  return postRange.toString().length === 0;
+}
+
+function navigatePointsWithArrows(from, key) {
+  var current = null;
+  if (typeof from === "string") {
+    current = document.querySelector('.point[data-id="' + from + '"]');
+  } else if (from && from.nodeType) {
+    current = from.closest(".point, .reply-box, .new-box");
+  }
   if (!current) return;
 
-  var rect = current.getBoundingClientRect();
-  var nodes = document.querySelectorAll(".point, .reply-box");
+  var currentPoint = current.classList.contains("point") ? current : null;
+  var currentPointId = currentPoint ? currentPoint.dataset.id : null;
+  var currentNote = currentPointId && state.round ? state.round.notes[currentPointId] : null;
+
+  var currentColumn = current.closest(".speech-column");
+  if (!currentColumn) return;
+
   var best = null;
-  var bestDist = -1;
 
-  for (var i = 0; i < nodes.length; i++) {
-    if (nodes[i] === current) continue;
+  if (key === "ArrowRight") {
+    if (currentPointId) {
+      var childPoint = document.querySelector('.point[data-parent="' + currentPointId + '"]');
+      if (childPoint) {
+        best = childPoint;
+      } else {
+        var directSlot = document.querySelector('.reply-slot-btn[data-parent="' + currentPointId + '"]');
+        if (directSlot) {
+          best = directSlot;
+        }
+      }
+    }
 
-    var box = nodes[i].getBoundingClientRect();
-    var dx = box.left - rect.left;
-    var dy = box.top - rect.top;
-    var ok = (key === "ArrowRight" && dx > 20) ||
-             (key === "ArrowLeft" && dx < -20) ||
-             (key === "ArrowDown" && dy > 8 && Math.abs(dx) < 40) ||
-             (key === "ArrowUp" && dy < -8 && Math.abs(dx) < 40);
+    if (!best) {
+      var nextCol = currentColumn.nextElementSibling;
+      if (nextCol && nextCol.classList.contains("speech-column")) {
+        var targets = nextCol.querySelectorAll(".point, .reply-slot-btn, .col-add-btn");
+        var currentRect = current.getBoundingClientRect();
+        var bestDist = -1;
+        for (var i = 0; i < targets.length; i++) {
+          var r = targets[i].getBoundingClientRect();
+          var dist = Math.abs(r.top - currentRect.top);
+          if (bestDist < 0 || dist < bestDist) {
+            best = targets[i];
+            bestDist = dist;
+          }
+        }
+      }
+    }
 
-    var dist = Math.abs(dx) + Math.abs(dy);
+  } else if (key === "ArrowLeft") {
+    if (currentNote && currentNote.parentId) {
+      var parentEl = document.querySelector('.point[data-id="' + currentNote.parentId + '"]');
+      if (parentEl) {
+        best = parentEl;
+      }
+    }
 
-    if (ok && (bestDist < 0 || dist < bestDist)) {
-      best = nodes[i];
-      bestDist = dist;
+    if (!best) {
+      var prevCol = currentColumn.previousElementSibling;
+      if (prevCol && prevCol.classList.contains("speech-column")) {
+        var prevTargets = prevCol.querySelectorAll(".point, .reply-slot-btn, .col-add-btn");
+        var pCurrentRect = current.getBoundingClientRect();
+        var pBestDist = -1;
+        for (var p = 0; p < prevTargets.length; p++) {
+          var pr = prevTargets[p].getBoundingClientRect();
+          var pDist = Math.abs(pr.top - pCurrentRect.top);
+          if (pBestDist < 0 || pDist < pBestDist) {
+            best = prevTargets[p];
+            pBestDist = pDist;
+          }
+        }
+      }
+    }
+
+  } else if (key === "ArrowDown") {
+    var downBoxes = Array.prototype.slice.call(currentColumn.querySelectorAll(".point, .reply-slot-btn, .col-add-btn"));
+    var downIdx = downBoxes.indexOf(current);
+    if (downIdx >= 0 && downIdx < downBoxes.length - 1) {
+      best = downBoxes[downIdx + 1];
+    }
+
+  } else if (key === "ArrowUp") {
+    var upBoxes = Array.prototype.slice.call(currentColumn.querySelectorAll(".point, .reply-slot-btn, .col-add-btn"));
+    var upIdx = upBoxes.indexOf(current);
+    if (upIdx > 0) {
+      best = upBoxes[upIdx - 1];
     }
   }
 
@@ -1175,7 +851,12 @@ function navigatePointsWithArrows(id, key) {
 
   if (best.classList.contains("point")) {
     selectPointCard(best.dataset.id, state.evidenceOpen);
-    best.focus();
+    var input = best.querySelector(".point-input");
+    if (input) {
+      input.focus();
+    } else {
+      best.focus();
+    }
   } else {
     best.focus();
   }
@@ -1183,9 +864,6 @@ function navigatePointsWithArrows(id, key) {
 
 window.renderCurrentPage = function () {
   renderWorkspace();
-  if (state.tourStep >= 0) {
-    renderTourStep();
-  }
 };
 
 document.addEventListener("click", function (event) {
@@ -1261,16 +939,6 @@ document.addEventListener("click", function (event) {
     closeDropdownMenu();
     downloadRoundAsJson(state.round || db.rounds[id]);
 
-  } else if (action === "print") {
-    closeDropdownMenu();
-    showElement(document.getElementById("print-box"));
-
-  } else if (action === "do-print") {
-    closePopups();
-    preparePrintLayout(document.getElementById("print-evidence").checked);
-    setTimeout(function () {
-      window.print();
-    }, 100);
 
   } else if (action === "save-opening") {
     closeDropdownMenu();
@@ -1363,95 +1031,159 @@ document.addEventListener("click", function (event) {
       openShell.classList.remove("proof-open");
     }
 
-  } else if (action === "tour-next") {
-    state.tourStep += 1;
-    if (state.tourStep === 3) {
-      state.caseSide = "pro";
-    }
+  } else if (action === "add-reply") {
+    var parentId = trigger.dataset.parent;
+    var speechId = trigger.dataset.speech;
+    saveUndoBeforeChange();
+    var newReply = addReplyPoint(state.round, parentId, speechId, "");
+    saveRoundAfterAMoment(true);
+    state.selectedId = newReply.id;
+    buildFlowSheet();
+    focusPointInput(newReply.id, 0);
 
-    render();
-
-  } else if (action === "tour-back") {
-    state.tourStep -= 1;
-    renderTourStep();
-
-  } else if (action === "tour-close") {
-    closeFeatureTour();
+  } else if (action === "add-main-point") {
+    var starterId = trigger.dataset.starter;
+    var spId = trigger.dataset.speech;
+    saveUndoBeforeChange();
+    var newPoint = addMainPoint(state.round, starterId, spId, "");
+    saveRoundAfterAMoment(true);
+    state.selectedId = newPoint.id;
+    buildFlowSheet();
+    focusPointInput(newPoint.id, 0);
   }
 });
 
 document.addEventListener("keydown", function (event) {
-  if (state.tourStep >= 0 && event.key === "Escape") {
-    closeFeatureTour();
-    return;
-  }
-
   var target = event.target;
 
-  if (target.classList && target.classList.contains("point-input")) {
-    if (event.key === "Enter" && !event.shiftKey && !state.composing && !event.isComposing) {
-      event.preventDefault();
-      splitPointOnEnter(target);
+  var isZ = event.key && event.key.toLowerCase() === "z";
+  var isY = event.key && event.key.toLowerCase() === "y";
+  var isModifier = event.ctrlKey || event.metaKey;
 
-    } else if (event.key === "Escape") {
-      target.blur();
-      var point = target.closest(".point");
-
-      if (point) {
-        point.focus();
-      }
-
-    } else if (event.key === "Tab") {
-      event.preventDefault();
-      var foundBoxes = document.querySelectorAll(".point, .reply-box, .new-box");
-      var boxes = [];
-
-      for (var b = 0; b < foundBoxes.length; b++) {
-        boxes.push(foundBoxes[b]);
-      }
-
-      var index = boxes.indexOf(target.closest(".point"));
-      var step = 1;
-
-      if (event.shiftKey) {
-        step = -1;
-      }
-
-      var next = boxes[index + step];
-
-      if (next) {
-        next.focus();
-      }
-    }
-
-    return;
-  }
-
-  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z" && target.tagName !== "TEXTAREA" && !target.isContentEditable) {
+  if (isModifier && isZ) {
     event.preventDefault();
     if (event.shiftKey) {
       redo();
     } else {
       undo();
     }
+    return;
+  }
 
-  } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "y" && target.tagName !== "TEXTAREA") {
+  if (isModifier && isY) {
     event.preventDefault();
     redo();
+    return;
+  }
 
-  } else if (target.classList && target.classList.contains("point") && !event.target.classList.contains("point-input")) {
-    var pointId = target.dataset.id;
+  if (target.classList && target.classList.contains("point-input")) {
+    if (event.key === "Enter" && !event.shiftKey && !state.composing && !event.isComposing) {
+      event.preventDefault();
+      splitPointOnEnter(target);
+      return;
+    }
 
+    if (event.key === "Enter" && event.shiftKey && !state.composing && !event.isComposing) {
+      event.preventDefault();
+      var pointId = target.dataset.id;
+      var replySlot = document.querySelector('.reply-slot-btn[data-parent="' + pointId + '"]');
+      if (replySlot) {
+        var pId = replySlot.dataset.parent;
+        var spId = replySlot.dataset.speech;
+        saveUndoBeforeChange();
+        var note = addReplyPoint(state.round, pId, spId, "");
+        saveRoundAfterAMoment(true);
+        state.selectedId = note.id;
+        buildFlowSheet();
+        focusPointInput(note.id, 0);
+      } else {
+        var currentCol = target.closest(".speech-column");
+        var nextCol = currentCol ? currentCol.nextElementSibling : null;
+        if (nextCol && nextCol.dataset.speech) {
+          saveUndoBeforeChange();
+          var note = addReplyPoint(state.round, pointId, nextCol.dataset.speech, "");
+          saveRoundAfterAMoment(true);
+          buildFlowSheet();
+          focusPointInput(note.id, 0);
+        }
+      }
+      return;
+    }
+
+    if (event.key === "Escape") {
+      target.blur();
+      var point = target.closest(".point");
+      if (point) {
+        point.focus();
+      }
+      return;
+    }
+
+    if (event.key === "Tab") {
+      event.preventDefault();
+      var foundBoxes = Array.prototype.slice.call(document.querySelectorAll(".point, .reply-slot-btn, .col-add-btn"));
+      var currentCard = target.closest(".point");
+      var index = foundBoxes.indexOf(currentCard);
+      var step = event.shiftKey ? -1 : 1;
+      var next = foundBoxes[index + step];
+      if (next) {
+        if (next.classList.contains("point")) {
+          selectPointCard(next.dataset.id, state.evidenceOpen);
+          var nextInput = next.querySelector(".point-input");
+          if (nextInput) {
+            nextInput.focus();
+          } else {
+            next.focus();
+          }
+        } else {
+          next.focus();
+        }
+      }
+      return;
+    }
+
+    if (event.key.indexOf("Arrow") === 0) {
+      var shouldNavigate = event.altKey;
+      if (!shouldNavigate) {
+        if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
+          shouldNavigate = isCaretAtBeginning(target);
+        } else if (event.key === "ArrowDown" || event.key === "ArrowRight") {
+          shouldNavigate = isCaretAtEnd(target);
+        }
+      }
+      if (shouldNavigate) {
+        event.preventDefault();
+        navigatePointsWithArrows(target, event.key);
+      }
+      return;
+    }
+
+    return;
+  }
+
+  if (target.classList && (target.classList.contains("reply-slot-btn") || target.classList.contains("col-add-btn"))) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      target.click();
+      return;
+    }
+    if (event.key.indexOf("Arrow") === 0) {
+      event.preventDefault();
+      navigatePointsWithArrows(target, event.key);
+      return;
+    }
+  }
+
+  if (target.classList && target.classList.contains("point") && !target.classList.contains("point-input")) {
+    var pId = target.dataset.id;
     if (event.key === "Enter") {
       var area = target.querySelector(".point-input");
-
       if (area) {
         area.focus();
       }
-
     } else if (event.key.indexOf("Arrow") === 0) {
       event.preventDefault();
-      navigatePointsWithArrows(pointId, event.key);
+      navigatePointsWithArrows(pId, event.key);
     }
   }
 });

@@ -14,11 +14,11 @@
   <link rel="stylesheet" href="css/buttons.css?v=31">
   <link rel="stylesheet" href="css/home.css?v=31">
   <link rel="stylesheet" href="css/sidebar.css?v=31">
-  <link rel="stylesheet" href="css/workspace.css?v=39">
+  <link rel="stylesheet" href="css/workspace.css?v=65">
   <link rel="stylesheet" href="css/evidence.css?v=32">
   <link rel="stylesheet" href="css/popups.css?v=31">
-  <link rel="stylesheet" href="css/phone.css?v=39">
-  <link rel="stylesheet" href="css/print.css?v=31">
+  <link rel="stylesheet" href="css/phone.css?v=65">
+  <link rel="stylesheet" href="css/print.css?v=70">
 </head>
 <body class="page" data-page="workspace">
   <a class="skip-link" href="#flow-scroll">Skip to content</a>
@@ -33,14 +33,10 @@
       </a>
       <button type="button" class="btn back-btn" data-action="home">Back to rounds</button>
       <div id="case-links">
-        <button type="button" class="menu-link" id="link-pro" data-action="case-pro" data-tour="cases">Pro Case</button>
-        <button type="button" class="menu-link" id="link-con" data-action="case-con" data-tour="cases">Con Case</button>
+        <button type="button" class="menu-link" id="link-pro" data-action="case-pro">Aff Flow</button>
+        <button type="button" class="menu-link" id="link-con" data-action="case-con">Neg Flow</button>
       </div>
       <p class="gray-text hide" id="preflow-label"></p>
-      <div class="link-list" data-tour="jumps">
-        <div id="jump-links"></div>
-        <button type="button" class="add-link" data-action="add-group">+ Add contention</button>
-      </div>
       <div class="push-down"></div>
       <div class="side-picture">
         
@@ -60,21 +56,20 @@
         <div class="title-side">
           <div class="save-line">
             <span class="save-dot"></span>
-            <span class="save-text" id="save-text" data-tour="save">Saved in this browser</span>
+            <span class="save-text" id="save-text">Saved in this browser</span>
           </div>
-          <button type="button" class="timer-btn" id="timer-btn" data-action="timer-toggle" data-tour="timer">Timer</button>
+          <button type="button" class="timer-btn" id="timer-btn" data-action="timer-toggle">Timer</button>
           <button type="button" class="btn dots-btn" id="dots-btn" data-action="round-menu">···</button>
           <button type="button" class="btn dots-btn hide" id="opening-menu-btn" data-action="opening-menu">···</button>
         </div>
       </div>
 
       <div class="side-bar" id="side-bar">
-        <button type="button" class="side-btn" id="switch-pro" data-action="case-pro">Pro Case</button>
-        <button type="button" class="side-btn" id="switch-con" data-action="case-con">Con Case</button>
+        <button type="button" class="side-btn" id="switch-pro" data-action="case-pro">Aff Flow</button>
+        <button type="button" class="side-btn" id="switch-con" data-action="case-con">Neg Flow</button>
       </div>
 
       <div class="tool-bar">
-        <button type="button" class="btn main add-btn" data-action="add-group" data-tour="add">+ <span class="add-full">Add contention</span><span class="add-short">Add</span></button>
         <button type="button" class="btn tool-btn" data-action="undo">Undo</button>
         <button type="button" class="btn tool-btn" data-action="redo">Redo</button>
         <button type="button" class="btn tool-btn bold-btn" data-action="make-bold">Bold</button>
@@ -96,13 +91,6 @@
             <h2 class="proof-title">Evidence</h2>
             <button type="button" class="close-btn" data-action="close-btn">×</button>
           </div>
-          <div id="evidence-title">
-            <div class="proof-path">
-              <span class="ev-crumb-c" id="crumb-contention"></span>
-              <span class="path-gap"> &gt; </span>
-              <span class="ev-crumb-p" id="crumb-point"></span>
-            </div>
-          </div>
           <div class="proof-list"></div>
           <div class="proof-tools">
             <button type="button" class="btn tool-btn bold-btn" data-action="make-bold">Bold</button>
@@ -110,37 +98,26 @@
           </div>
         </div>
       </div>
-      <p class="tip">Enter: next point / Shift+Enter: line within point</p>
-
-      <div id="tour" class="tour hide" tabindex="-1">
-        <div class="tour-words">
-          <p class="gray-text" id="tour-step"></p>
-          <p id="tour-text"></p>
-        </div>
-        <div class="tour-buttons">
-          <button type="button" class="btn" id="tour-back" data-action="tour-back">Back</button>
-          <button type="button" class="btn main" id="tour-next" data-action="tour-next">Next</button>
-          <button type="button" class="btn" data-action="tour-close">Close</button>
-        </div>
-      </div>
+      <p class="tip">Enter: next point / Shift+Enter: reply in next column / Arrow keys: navigate between boxes</p>
     </div>
   </div>
 
   <div id="round-menu" class="drop-menu hide">
     <button type="button" data-action="edit-details">Edit details</button>
-    <button type="button" data-action="export">Export</button>
-    <button type="button" data-action="print">Print</button>
-    <button type="button" data-action="save-opening">Save case as preflow</button>
     <button type="button" data-action="home">Back to rounds</button>
   </div>
   <div id="opening-menu" class="drop-menu hide">
+    <button type="button" data-action="edit-details">Edit details</button>
     <button type="button" data-action="show-openings">Back to preflows</button>
     <button type="button" data-action="home">Back to rounds</button>
   </div>
   <div id="note-menu" class="drop-menu hide"></div>
 
-  <div id="timer-popover" class="small-popup hide">
-    <h2>Timer</h2>
+  <div id="timer-popover" class="small-popup timer-top-right hide">
+    <div class="timer-pop-header">
+      <h2>Timer</h2>
+      <button type="button" class="close-btn" data-action="close-dialog">×</button>
+    </div>
     <p id="popover-clock">0:00</p>
     <label class="form-line"><span>Minutes</span><input id="timer-minutes" type="number" min="0" value="4"></label>
     <label class="form-line"><span>Seconds</span><input id="timer-seconds" type="number" min="0" max="59" value="0"></label>
@@ -161,16 +138,16 @@
         <label class="form-line"><span>Opponent</span><input id="edit-opponent"></label>
         <label class="form-line"><span>Your side</span>
           <select id="edit-side">
-            <option value="pro">Pro</option>
-            <option value="con">Con</option>
+            <option value="pro">Aff</option>
+            <option value="con">Neg</option>
             <option value="observer">Observer</option>
           </select>
         </label>
         <p class="gray-text" id="edit-lock-note"></p>
         <label class="form-line" id="edit-first-wrap"><span>First speaking side</span>
           <select id="edit-first">
-            <option value="pro">Pro</option>
-            <option value="con">Con</option>
+            <option value="pro">Aff</option>
+            <option value="con">Neg</option>
           </select>
         </label>
       </div>
@@ -186,11 +163,12 @@
       <h2>Print / Save PDF</h2>
       <div class="popup-body">
         <label class="form-line"><span><input type="checkbox" id="print-evidence" checked> Include research proof and evidence citations</span></label>
-        <p class="gray-text">Generates a complete debate brief with Pro Case, Con Case, all speech columns, evidence citations, and Crossfire notes formatted cleanly for PDF.</p>
+        <p class="gray-text">Generates a complete debate brief with Aff Case, Neg Case, all speech columns, evidence citations, and Crossfire notes formatted cleanly for PDF.</p>
       </div>
       <div class="popup-buttons">
         <button type="button" class="btn" data-action="close-dialog">Cancel</button>
-        <button type="button" class="btn main" data-action="do-print">Print / Save PDF</button>
+        <button type="button" class="btn" data-action="print-browser">Print (Browser)</button>
+        <button type="button" class="btn main" id="btn-download-pdf" data-action="do-print">Download PDF</button>
       </div>
     </div>
   </div>
@@ -250,13 +228,13 @@
   <div class="hide" id="col-sample">
     <div class="speech-column">
       <div class="column-area"></div>
-      <div class="new-box" contenteditable="true" role="textbox" data-placeholder="New point"></div>
+      <button type="button" class="col-add-btn hide" data-action="add-main-point" title="Add point">+</button>
     </div>
   </div>
   <div class="hide" id="card-sample">
     <div class="point" tabindex="-1">
       <span class="point-tag"></span>
-      <div class="point-input" contenteditable="true" role="textbox"></div>
+      <div class="point-input" contenteditable="true" role="textbox" data-placeholder="type here"></div>
       <div class="point-bottom">
         <button type="button" class="clip-btn" data-action="add-evidence">
           ev
@@ -267,13 +245,11 @@
     </div>
   </div>
   <div class="hide" id="ans-slot">
-    <div class="reply-box" contenteditable="true" role="textbox" data-slot="1" data-placeholder="Response"></div>
+    <button type="button" class="reply-slot-btn" data-action="add-reply" aria-label="Add response">+</button>
   </div>
   <div class="hide" id="ev-card">
     <div class="proof-card">
-      <p class="gray-text proof-place"></p>
-      <div class="proof-text" contenteditable="true" data-placeholder="Paste evidence for this point"></div>
-      <p class="gray-text proof-note"></p>
+      <div class="proof-text" contenteditable="true" data-placeholder="paste evidence"></div>
     </div>
   </div>
   <div class="hide" id="menu-btn-sample"><button type="button"></button></div>
@@ -308,7 +284,8 @@
     </div>
   </div>
 
-  <script src="js/common.js?v=53"></script>
-  <script src="js/workspace.js?v=48"></script>
+  <script src="js/html2pdf.bundle.min.js"></script>
+  <script src="js/common.js?v=70"></script>
+  <script src="js/workspace.js?v=71"></script>
 </body>
 </html>

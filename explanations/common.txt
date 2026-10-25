@@ -6,27 +6,34 @@ Read it from top to bottom. Each code line is followed by what that line does.
 var SPEECHES = {
 SPEECHES stores the eight debate speeches.
 
-  "pro-constructive": { team: "pro", type: "constructive", short: "Pro Constr.", full: "Pro Constructive" },
-Pro Constructive. The team is pro. The short label is Pro Constr.
+  "pro-constructive": { team: "pro", type: "constructive", short: "Aff Constr.", full: "Aff Constructive" },
+Configure Affirmative Constructive speech details.
 
-  "con-constructive": { team: "con", type: "constructive", short: "Con Constr.", full: "Con Constructive" },
-Con Constructive. The team is con. The short label is Con Constr.
+  "con-constructive": { team: "con", type: "constructive", short: "Neg Constr.", full: "Neg Constructive" },
+Configure Negative Constructive speech details.
 
-  "pro-rebuttal": { team: "pro", type: "rebuttal", short: "Pro Reb.", full: "Pro Rebuttal" },
-Pro Rebuttal. The team is pro. The short label is Pro Reb.
+  "pro-rebuttal": { team: "pro", type: "rebuttal", short: "Aff Reb.", full: "Aff Rebuttal" },
+Configure Affirmative Rebuttal speech details.
 
-  "con-rebuttal": { team: "con", type: "rebuttal", short: "Con Reb.", full: "Con Rebuttal" },
-Con Rebuttal. The team is con. The short label is Con Reb.
+  "con-rebuttal": { team: "con", type: "rebuttal", short: "Neg Reb.", full: "Neg Rebuttal" },
+Configure Negative Rebuttal speech details.
 
-  "pro-summary": { team: "pro", type: "summary", short: "Pro Sum.", full: "Pro Summary" },
-Pro Summary. The team is pro. The short label is Pro Sum.
+  "pro-summary": { team: "pro", type: "summary", short: "Aff Sum.", full: "Aff Summary" },
+Configure Affirmative Summary speech details.
 
-  "con-summary": { team: "con", type: "summary", short: "Con Sum.", full: "Con Summary" },
-Con Summary. The team is con. The short label is Con Sum.
+  "con-summary": { team: "con", type: "summary", short: "Neg Sum.", full: "Neg Summary" },
+Configure Negative Summary speech details.
 
-  "pro-final": { team: "pro", type: "final", short: "Pro FF", full: "Pro Final Focus" },
-  "con-final": { team: "con", type: "final", short: "Con FF", full: "Con Final Focus" }
+  "pro-final": { team: "pro", type: "final", short: "Aff FF", full: "Aff Final Focus" },
+Configure Affirmative Final Focus speech details.
+
+  "con-final": { team: "con", type: "final", short: "Neg FF", full: "Neg Final Focus" }
+Configure Negative Final Focus speech details.
+
 };
+var SAFE_STYLES = [
+
+
 var MARKERS = [
 MARKERS stores the point tags that can still appear on old notes.
 
@@ -46,7 +53,8 @@ Marker id dropped. The label shown on a point is Dropped.
 Marker id turn. The label shown on a point is Turn.
 
 ];
-This line continues the step above.
+Close notes array.
+
 
 var STORE_KEY = "goWithTheFlow";
 STORE_KEY is the browser save name goWithTheFlow. Do not rename it, or old rounds will not open.
@@ -54,8 +62,10 @@ STORE_KEY is the browser save name goWithTheFlow. Do not rename it, or old round
 var BACKUP_KEY = "goWithTheFlowBackup";
 BACKUP_KEY is the backup save name goWithTheFlowBackup.
 
+
 var JUMP_COLORS = ["#8e79ef", "#4ab88a", "#f8b432"];
 JUMP_COLORS are the three dot colors on the contention links.
+
 
 var CONTENTION_COLORS = [
 CONTENTION_COLORS are the header colors for Contention 1, 2, and 3. Later contentions repeat these colors.
@@ -70,7 +80,8 @@ One contention color. Header #eaf8f0, text #205d49, stripe #4ab88a.
 One contention color. Header #fff7e1, text #121326, stripe #f8b432.
 
 ];
-This line continues the step above.
+Close notes array.
+
 
 var TOUR = [
 TOUR is the feature tour. Each step points at a piece of the debate page.
@@ -100,7 +111,8 @@ Tour step. Point at [data-tour='timer']. Say: Type the minutes and seconds, then
 Tour step. Point at [data-tour='save']. Say: Notes save in this browser. Export downloads a record; version 1 does not import rounds.
 
 ];
-This line continues the step above.
+Close notes array.
+
 
 function createUniqueId(prefix) {
 This is the createUniqueId function. It builds a new id from the current time and a random piece, so two saved items do not share an id.
@@ -111,10 +123,13 @@ Make randomPart and set it to Math.floor(Math.random() * 100000).toString(36).
   var timePart = Date.now().toString(36);
 Make timePart and set it to Date.now().toString(36).
 
+
   return prefix + "-" + timePart + "-" + randomPart;
 Hand back prefix + "-" + timePart + "-" + randomPart.
 
 }
+This closes the block above.
+
 
 function getDefaultSpeechTimes() {
 This is the getDefaultSpeechTimes function. It returns the usual speech times, in seconds.
@@ -144,7 +159,11 @@ On this object, grand is 180.
 On this object, prep is 180.
 
   };
+var SAFE_STYLES = [
+
 }
+This closes the block above.
+
 
 function fixSpeechTimes(durations) {
 This is the fixSpeechTimes function. It repairs saved speech times that are missing, zero, or too long.
@@ -155,6 +174,7 @@ Make base and set it to getDefaultSpeechTimes().
   var keys = Object.keys(base);
 Get the saved ids from base and save them as keys.
 
+
   if (!durations || typeof durations !== "object") {
 If !durations || typeof durations !== "object", do the next lines.
 
@@ -162,6 +182,9 @@ If !durations || typeof durations !== "object", do the next lines.
 Hand back base.
 
   }
+This closes the block above.
+
+
   for (var i = 0; i < keys.length; i++) {
 Loop through keys. i is the position, starting at 0.
 
@@ -170,6 +193,7 @@ Make key and set it to keys[i].
 
     var n = Number(durations[key]);
 Make n and set it to Number(durations[key]).
+
 
     if (!isFinite(n) || n <= 0 || n > 20 * 60) {
 If !isFinite(n) || n <= 0 || n > 20 * 60, do the next lines.
@@ -184,11 +208,18 @@ Otherwise, do the next lines.
 Set durations[key] to Math.round(n).
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   return durations;
 Hand back durations.
 
 }
+This closes the block above.
+
 
 function getDefaultSettings() {
 This is the getDefaultSettings function. It returns the starting font size, sound choice, and speech times.
@@ -206,13 +237,18 @@ On this object, sound is false.
 On this object, durations is getDefaultSpeechTimes().
 
   };
+var SAFE_STYLES = [
+
 }
+This closes the block above.
+
 
 function sortPointsByOrder(list) {
 This is the sortPointsByOrder function. It sorts points by their order number.
 
   var temp;
 Make an empty variable named temp.
+
 
   for (var i = 0; i < list.length; i++) {
 Loop through list. i is the position, starting at 0.
@@ -233,12 +269,21 @@ Set list[i] to list[j].
 Set list[j] to temp.
 
       }
+This closes the block above.
+
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   return list;
 Hand back list.
 
 }
+This closes the block above.
+
 
 function getSpeechOrder(firstSide) {
 This is the getSpeechOrder function. It lists the speeches in the order they are given, based on who speaks first.
@@ -259,10 +304,11 @@ This line continues the step above.
 This line continues the step above.
 
   ];
-This line continues the step above.
+Close notes array.
 
   var list = [];
 Make list and set it to [].
+
 
   for (var i = 0; i < pairs.length; i++) {
 Loop through pairs. i is the position, starting at 0.
@@ -280,11 +326,18 @@ Otherwise, do the next lines.
 Add pairs[i][0], pairs[i][1] to the list.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   return list;
 Hand back list.
 
 }
+This closes the block above.
+
 
 function getSpeechesForSide(round, caseSide) {
 This is the getSpeechesForSide function. It returns the speeches that belong on the open case.
@@ -296,11 +349,15 @@ If round.isPreflow, do the next lines.
 Hand back [caseSide + "-constructive"].
 
   }
+This closes the block above.
+
+
   var all = getSpeechOrder(round.firstSide);
 Make all and set it to getSpeechOrder(round.firstSide).
 
   var start = all.indexOf(caseSide + "-constructive");
 Make start and set it to all.indexOf(caseSide + "-constructive").
+
 
   if (start < 0) {
 If start < 0, do the next lines.
@@ -309,16 +366,22 @@ If start < 0, do the next lines.
 Hand back all.slice().
 
   }
+This closes the block above.
+
+
   return all.slice(start);
 Hand back all.slice(start).
 
 }
+This closes the block above.
+
 
 function getSpeechName(id, full) {
 This is the getSpeechName function. It turns a speech id into the short name or the full name.
 
   var info = SPEECHES[id];
 Make info and set it to SPEECHES[id].
+
 
   if (!info) {
 If info is empty or missing, do the next lines.
@@ -327,6 +390,9 @@ If info is empty or missing, do the next lines.
 Hand back id.
 
   }
+This closes the block above.
+
+
   if (full) {
 If full, do the next lines.
 
@@ -340,31 +406,40 @@ Otherwise, do the next lines.
 Hand back info.short.
 
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 function getTeamName(side) {
 This is the getTeamName function. It turns pro or con into the word Pro or Con.
 
-  if (side === "pro") {
-If side === "pro", do the next lines.
+  if (side === "pro" || side === "aff") {
+If the side identifier is pro or aff, do the next lines.
 
-    return "Pro";
-Hand back "Pro".
+    return "Aff";
+Return "Aff" as the display team name.
 
   } else {
 Otherwise, do the next lines.
 
-    return "Con";
-Hand back "Con".
+    return "Neg";
+Return "Neg" as the display team name.
 
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 function getTimerSteps(firstSide, durations) {
 This is the getTimerSteps function. It builds the full timer order for a round.
 
   var first = "pro";
 Make first and set it to "pro".
+
 
   if (firstSide === "con") {
 If firstSide === "con", do the next lines.
@@ -373,8 +448,12 @@ If firstSide === "con", do the next lines.
 Set first to "con".
 
   }
+This closes the block above.
+
+
   var second = "pro";
 Make second and set it to "pro".
+
 
   if (first === "pro") {
 If first === "pro", do the next lines.
@@ -383,8 +462,12 @@ If first === "pro", do the next lines.
 Set second to "con".
 
   }
+This closes the block above.
+
+
   var times = durations;
 Copy durations into times.
+
 
   if (!times) {
 If times is empty or missing, do the next lines.
@@ -393,6 +476,9 @@ If times is empty or missing, do the next lines.
 Set times to getDefaultSpeechTimes().
 
   }
+This closes the block above.
+
+
   return [
 Hand back this list.
 
@@ -430,15 +516,18 @@ This line continues the step above.
 This line continues the step above.
 
   ];
-This line continues the step above.
+Close notes array.
 
 }
+This closes the block above.
+
 
 function createCrossNotesObject(notes) {
 This is the createCrossNotesObject function. It makes the four crossfire note fields, using saved text when it exists.
 
   var src = notes;
 Copy notes into src.
+
 
   if (!src) {
 If src is empty or missing, do the next lines.
@@ -447,8 +536,12 @@ If src is empty or missing, do the next lines.
 Set src to {}.
 
   }
+This closes the block above.
+
+
   var firstCrossfire = src.firstCrossfire;
 Copy src.firstCrossfire into firstCrossfire.
+
 
   if (!firstCrossfire) {
 If firstCrossfire is empty or missing, do the next lines.
@@ -457,8 +550,12 @@ If firstCrossfire is empty or missing, do the next lines.
 Set firstCrossfire to "".
 
   }
+This closes the block above.
+
+
   var secondCrossfire = src.secondCrossfire;
 Copy src.secondCrossfire into secondCrossfire.
+
 
   if (!secondCrossfire) {
 If secondCrossfire is empty or missing, do the next lines.
@@ -467,8 +564,12 @@ If secondCrossfire is empty or missing, do the next lines.
 Set secondCrossfire to "".
 
   }
+This closes the block above.
+
+
   var grandCrossfire = src.grandCrossfire;
 Copy src.grandCrossfire into grandCrossfire.
+
 
   if (!grandCrossfire) {
 If grandCrossfire is empty or missing, do the next lines.
@@ -477,8 +578,12 @@ If grandCrossfire is empty or missing, do the next lines.
 Set grandCrossfire to "".
 
   }
+This closes the block above.
+
+
   var reflections = src.reflections;
 Copy src.reflections into reflections.
+
 
   if (!reflections) {
 If reflections is empty or missing, do the next lines.
@@ -487,6 +592,9 @@ If reflections is empty or missing, do the next lines.
 Set reflections to "".
 
   }
+This closes the block above.
+
+
   return {
 Hand back this object.
 
@@ -503,13 +611,18 @@ On this object, grandCrossfire is grandCrossfire.
 On this object, reflections is reflections.
 
   };
+var SAFE_STYLES = [
+
 }
+This closes the block above.
+
 
 function createNewTimer(firstSide, durations) {
 This is the createNewTimer function. It makes a fresh timer for a new round.
 
   var times = durations;
 Copy durations into times.
+
 
   if (!times) {
 If times is empty or missing, do the next lines.
@@ -518,11 +631,15 @@ If times is empty or missing, do the next lines.
 Set times to getDefaultSpeechTimes().
 
   }
+This closes the block above.
+
+
   var plan = getTimerSteps(firstSide, times);
 Make plan and set it to getTimerSteps(firstSide, times).
 
   var allotted = {};
 Make allotted and set it to {}.
+
 
   for (var i = 0; i < plan.length; i++) {
 Loop through plan. i is the position, starting at 0.
@@ -531,6 +648,9 @@ Loop through plan. i is the position, starting at 0.
 Set allotted[plan[i].id] to plan[i].seconds.
 
   }
+This closes the block above.
+
+
   return {
 Hand back this object.
 
@@ -565,11 +685,17 @@ On this object, pro is times.prep * 1000.
 On this object, con is times.prep * 1000.
 
     },
+Execute the statement above.
+
     timeUp: false
 On this object, timeUp is false.
 
   };
+var SAFE_STYLES = [
+
 }
+This closes the block above.
+
 
 function createContentionGroup(name) {
 This is the createContentionGroup function. It makes one contention with a new id and no points yet.
@@ -590,13 +716,18 @@ On this object, collapsed is false.
 On this object, startingPointIds is [].
 
   };
+var SAFE_STYLES = [
+
 }
+This closes the block above.
+
 
 function createNewCase() {
 This is the createNewCase function. It makes one case that starts with Contention 1.
 
   var contention = createContentionGroup("Contention 1");
 Make contention and set it to createContentionGroup("Contention 1").
+
 
   return {
 Hand back this object.
@@ -608,7 +739,11 @@ On this object, contentionIds is [contention.id].
 On this object, contention is contention.
 
   };
+var SAFE_STYLES = [
+
 }
+This closes the block above.
+
 
 function createNewRound(fields, settings) {
 This is the createNewRound function. It builds a whole new round from the form fields.
@@ -622,6 +757,7 @@ Make con and set it to createNewCase().
   var times = getDefaultSpeechTimes();
 Make times and set it to getDefaultSpeechTimes().
 
+
   if (settings && settings.durations) {
 If settings && settings.durations, do the next lines.
 
@@ -629,8 +765,12 @@ If settings && settings.durations, do the next lines.
 Set times to settings.durations.
 
   }
+This closes the block above.
+
+
   var groups = {};
 Make groups and set it to {}.
+
 
   groups[pro.contention.id] = pro.contention;
 Set groups[pro.contention.id] to pro.contention.
@@ -638,8 +778,10 @@ Set groups[pro.contention.id] to pro.contention.
   groups[con.contention.id] = con.contention;
 Set groups[con.contention.id] to con.contention.
 
+
   var title = fields.title;
 Copy fields.title into title.
+
 
   if (!title) {
 If title is empty or missing, do the next lines.
@@ -648,8 +790,12 @@ If title is empty or missing, do the next lines.
 Set title to "Untitled round".
 
   }
+This closes the block above.
+
+
   var topic = fields.topic;
 Copy fields.topic into topic.
+
 
   if (!topic) {
 If topic is empty or missing, do the next lines.
@@ -658,8 +804,12 @@ If topic is empty or missing, do the next lines.
 Set topic to "".
 
   }
+This closes the block above.
+
+
   var tournament = fields.tournament;
 Copy fields.tournament into tournament.
+
 
   if (!tournament) {
 If tournament is empty or missing, do the next lines.
@@ -668,8 +818,12 @@ If tournament is empty or missing, do the next lines.
 Set tournament to "".
 
   }
+This closes the block above.
+
+
   var roundLabel = fields.roundLabel;
 Copy fields.roundLabel into roundLabel.
+
 
   if (!roundLabel) {
 If roundLabel is empty or missing, do the next lines.
@@ -678,8 +832,12 @@ If roundLabel is empty or missing, do the next lines.
 Set roundLabel to "".
 
   }
+This closes the block above.
+
+
   var opponent = fields.opponent;
 Copy fields.opponent into opponent.
+
 
   if (!opponent) {
 If opponent is empty or missing, do the next lines.
@@ -688,8 +846,12 @@ If opponent is empty or missing, do the next lines.
 Set opponent to "".
 
   }
+This closes the block above.
+
+
   var yourSide = fields.yourSide;
 Copy fields.yourSide into yourSide.
+
 
   if (!yourSide) {
 If yourSide is empty or missing, do the next lines.
@@ -698,8 +860,12 @@ If yourSide is empty or missing, do the next lines.
 Set yourSide to "pro".
 
   }
+This closes the block above.
+
+
   var firstSide = "pro";
 Make firstSide and set it to "pro".
+
 
   if (fields.firstSide === "con") {
 If fields.firstSide === "con", do the next lines.
@@ -708,6 +874,9 @@ If fields.firstSide === "con", do the next lines.
 Set firstSide to "con".
 
   }
+This closes the block above.
+
+
   return {
 Hand back this object.
 
@@ -751,6 +920,8 @@ On this object, pro is { contentionIds: pro.contentionIds }.
 On this object, con is { contentionIds: con.contentionIds }.
 
     },
+Execute the statement above.
+
     contentions: groups,
 On this object, contentions is groups.
 
@@ -776,17 +947,24 @@ On this object, pro is { count: null, start: 0 }.
 On this object, con is { count: null, start: 0 }.
 
     },
+Execute the statement above.
+
     scroll: { pro: 0, con: 0 }
 On this object, scroll is { pro: 0, con: 0 }.
 
   };
+var SAFE_STYLES = [
+
 }
+This closes the block above.
+
 
 function createNewPreflow(fields) {
 This is the createNewPreflow function. It builds a new preflow from a topic and a side.
 
   var side = "pro";
 Make side and set it to "pro".
+
 
   if (fields.side === "con") {
 If fields.side === "con", do the next lines.
@@ -795,17 +973,23 @@ If fields.side === "con", do the next lines.
 Set side to "con".
 
   }
+This closes the block above.
+
+
   var contention = createContentionGroup("Contention 1");
 Make contention and set it to createContentionGroup("Contention 1").
 
   var groups = {};
 Make groups and set it to {}.
 
+
   groups[contention.id] = contention;
 Set groups[contention.id] to contention.
 
+
   var title = fields.title;
 Copy fields.title into title.
+
 
   if (!title) {
 If title is empty or missing, do the next lines.
@@ -814,8 +998,12 @@ If title is empty or missing, do the next lines.
 Set title to "Untitled preflow".
 
   }
+This closes the block above.
+
+
   var topic = fields.topic;
 Copy fields.topic into topic.
+
 
   if (!topic) {
 If topic is empty or missing, do the next lines.
@@ -824,6 +1012,9 @@ If topic is empty or missing, do the next lines.
 Set topic to "".
 
   }
+This closes the block above.
+
+
   return {
 Hand back this object.
 
@@ -858,7 +1049,11 @@ On this object, notes is {}.
 On this object, evidence is {}.
 
   };
+var SAFE_STYLES = [
+
 }
+This closes the block above.
+
 
 function convertPreflowToRound(preflow) {
 This is the convertPreflowToRound function. It wraps a preflow so the debate page can open it.
@@ -873,8 +1068,11 @@ On this object, pro is { contentionIds: [] }.
 On this object, con is { contentionIds: [] }.
 
   };
+var SAFE_STYLES = [
+
   cases[preflow.side].contentionIds = preflow.contentionIds.slice();
 Set cases[preflow.side].contentionIds to preflow.contentionIds.slice().
+
 
   return {
 Hand back this object.
@@ -937,11 +1135,17 @@ On this object, pro is { count: null, start: 0 }.
 On this object, con is { count: null, start: 0 }.
 
     },
+Execute the statement above.
+
     scroll: { pro: 0, con: 0 }
 On this object, scroll is { pro: 0, con: 0 }.
 
   };
+var SAFE_STYLES = [
+
 }
+This closes the block above.
+
 
 function getContentionSide(round, contentionId) {
 This is the getContentionSide function. It checks whether a contention belongs to Pro or Con.
@@ -953,6 +1157,9 @@ If round.cases.pro.contentionIds.indexOf(contentionId) !== -1, do the next lines
 Hand back "pro".
 
   }
+This closes the block above.
+
+
   if (round.cases.con.contentionIds.indexOf(contentionId) !== -1) {
 If round.cases.con.contentionIds.indexOf(contentionId) !== -1, do the next lines.
 
@@ -960,10 +1167,15 @@ If round.cases.con.contentionIds.indexOf(contentionId) !== -1, do the next lines
 Hand back "con".
 
   }
+This closes the block above.
+
+
   return null;
 Hand back null.
 
 }
+This closes the block above.
+
 
 function getPointsInContention(round, contentionId) {
 This is the getPointsInContention function. It collects every point that belongs to one contention.
@@ -974,11 +1186,13 @@ Get the saved ids from round.notes and save them as names.
   var list = [];
 Make list and set it to [].
 
+
   for (var i = 0; i < names.length; i++) {
 Loop through names. i is the position, starting at 0.
 
     var card = round.notes[names[i]];
 Make card and set it to round.notes[names[i]].
+
 
     if (card.contentionId === contentionId) {
 If card.contentionId === contentionId, do the next lines.
@@ -987,11 +1201,18 @@ If card.contentionId === contentionId, do the next lines.
 Add card to the list.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   return list;
 Hand back list.
 
 }
+This closes the block above.
+
 
 function getReplyPoints(round, parentId, speechId) {
 This is the getReplyPoints function. It collects the replies to one point in one speech.
@@ -1002,11 +1223,13 @@ Make parent and set it to round.notes[parentId].
   if (!parent) return [];
 If parent is empty or missing, hand back [].
 
+
   var notes = getPointsInContention(round, parent.contentionId);
 Make notes and set it to getPointsInContention(round, parent.contentionId).
 
   var list = [];
 Make list and set it to [].
+
 
   for (var i = 0; i < notes.length; i++) {
 Loop through notes. i is the position, starting at 0.
@@ -1018,11 +1241,18 @@ If notes[i].parentId === parentId && notes[i].speechId === speechId, do the next
 Add notes[i] to the list.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   return sortPointsByOrder(list);
 Hand back sortPointsByOrder(list).
 
 }
+This closes the block above.
+
 
 function getSpeechesAfter(round, caseSide, speechId) {
 This is the getSpeechesAfter function. It lists the speeches that come after a given speech.
@@ -1033,6 +1263,7 @@ Make list and set it to getSpeechesForSide(round, caseSide).
   var index = list.indexOf(speechId);
 Make index and set it to list.indexOf(speechId).
 
+
   if (index < 0) {
 If index < 0, do the next lines.
 
@@ -1040,16 +1271,22 @@ If index < 0, do the next lines.
 Hand back [].
 
   }
+This closes the block above.
+
+
   return list.slice(index + 1);
 Hand back list.slice(index + 1).
 
 }
+This closes the block above.
+
 
 function getNextOrderNumber(list) {
 This is the getNextOrderNumber function. It finds the next order number so a new point goes at the end.
 
   var max = 0;
 Copy 0 into max.
+
 
   for (var i = 0; i < list.length; i++) {
 Loop through list. i is the position, starting at 0.
@@ -1061,11 +1298,18 @@ If list[i].order >= max, do the next lines.
 Set max to list[i].order + 1.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   return max;
 Hand back max.
 
 }
+This closes the block above.
+
 
 function createNewPoint(contentionId, speechId, parentId, order, text) {
 This is the createNewPoint function. It makes one point object. It does not place it on the page yet.
@@ -1101,7 +1345,11 @@ On this object, marker is "".
 On this object, evidenceId is null.
 
   };
+var SAFE_STYLES = [
+
 }
+This closes the block above.
+
 
 function addMainPoint(round, contentionId, speechId, text, afterId) {
 This is the addMainPoint function. It adds a main point in a speech column.
@@ -1114,6 +1362,7 @@ Make note and set it to createNewPoint(contentionId, speechId, null, contention.
 
   var index = contention.startingPointIds.length;
 Copy contention.startingPointIds.length into index.
+
 
   if (afterId) {
 If afterId, do the next lines.
@@ -1128,7 +1377,12 @@ If index <= 0, do the next lines.
 Set index to contention.startingPointIds.length.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   contention.startingPointIds.splice(index, 0, note.id);
 Run contention.startingPointIds.splice, passing index, 0, note.id.
 
@@ -1139,6 +1393,8 @@ Set round.notes[note.id] to note.
 Hand back note.
 
 }
+This closes the block above.
+
 
 function addReplyPoint(round, parentId, speechId, text, afterId) {
 This is the addReplyPoint function. It adds a reply under an earlier point.
@@ -1152,6 +1408,7 @@ Make siblings and set it to getReplyPoints(round, parentId, speechId).
   var note = createNewPoint(parent.contentionId, speechId, parentId, getNextOrderNumber(siblings), text);
 Make note and set it to createNewPoint(parent.contentionId, speechId, parentId, getNextOrderNumber(siblings), text).
 
+
   if (afterId && round.notes[afterId]) {
 If afterId && round.notes[afterId], do the next lines.
 
@@ -1159,6 +1416,9 @@ If afterId && round.notes[afterId], do the next lines.
 Set note.order to round.notes[afterId].order + 0.5.
 
   }
+This closes the block above.
+
+
   round.notes[note.id] = note;
 Set round.notes[note.id] to note.
 
@@ -1166,12 +1426,15 @@ Set round.notes[note.id] to note.
 Hand back note.
 
 }
+This closes the block above.
+
 
 function getAllChildPoints(round, noteId, list) {
 This is the getAllChildPoints function. It collects a point and every reply under it.
 
   var names = Object.keys(round.notes);
 Get the saved ids from round.notes and save them as names.
+
 
   list.push(noteId);
 Add noteId to the list.
@@ -1186,17 +1449,25 @@ If round.notes[names[i]].parentId === noteId, do the next lines.
 Run getAllChildPoints, passing round, names[i], list.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   return list;
 Hand back list.
 
 }
+This closes the block above.
+
 
 function removeIdFromList(list, id) {
 This is the removeIdFromList function. It returns a copy of a list with one id taken out.
 
   var kept = [];
 Make kept and set it to [].
+
 
   for (var i = 0; i < list.length; i++) {
 Loop through list. i is the position, starting at 0.
@@ -1208,11 +1479,18 @@ If list[i] !== id, do the next lines.
 Add list[i] to the list.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   return kept;
 Hand back kept.
 
 }
+This closes the block above.
+
 
 function deletePoint(round, noteId) {
 This is the deletePoint function. It deletes one point and keeps the replies that were under it.
@@ -1223,17 +1501,20 @@ Make note and set it to round.notes[noteId].
   if (!note) return;
 If note is missing, stop here.
 
+
   var names = Object.keys(round.notes);
 Get the saved ids from round.notes and save them as names.
 
   var children = [];
 Make children and set it to [].
 
+
   for (var i = 0; i < names.length; i++) {
 Loop through names. i is the position, starting at 0.
 
     var child = round.notes[names[i]];
 Make child and set it to round.notes[names[i]].
+
 
     if (child.parentId === noteId) {
 If child.parentId === noteId, do the next lines.
@@ -1242,7 +1523,12 @@ If child.parentId === noteId, do the next lines.
 Add child to the list.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   for (var c1 = 0; c1 < children.length; c1++) {
 Loop through children. c1 is the position, starting at 0.
 
@@ -1255,6 +1541,7 @@ If children[c2].order < children[c1].order, do the next lines.
         var tempChild = children[c1];
 Make tempChild and set it to children[c1].
 
+
         children[c1] = children[c2];
 Set children[c1] to children[c2].
 
@@ -1262,8 +1549,15 @@ Set children[c1] to children[c2].
 Set children[c2] to tempChild.
 
       }
+This closes the block above.
+
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   if (note.evidenceId && round.evidence[note.evidenceId]) {
 If note.evidenceId && round.evidence[note.evidenceId], do the next lines.
 
@@ -1271,6 +1565,9 @@ If note.evidenceId && round.evidence[note.evidenceId], do the next lines.
 This line continues the step above.
 
   }
+This closes the block above.
+
+
   if (note.parentId) {
 If note.parentId, do the next lines.
 
@@ -1284,6 +1581,8 @@ Set children[k].parentId to note.parentId.
 Set children[k].order to note.order + (k + 1) / (children.length + 2).
 
     }
+This closes the block above.
+
   } else {
 Otherwise, do the next lines.
 
@@ -1292,6 +1591,7 @@ Make contention and set it to round.contentions[note.contentionId].
 
     var index = contention.startingPointIds.indexOf(noteId);
 Make index and set it to contention.startingPointIds.indexOf(noteId).
+
 
     contention.startingPointIds = removeIdFromList(contention.startingPointIds, noteId);
 Set contention.startingPointIds to removeIdFromList(contention.startingPointIds, noteId).
@@ -1309,18 +1609,28 @@ If contention.startingPointIds.indexOf(children[m].id) === -1, do the next lines
 Run contention.startingPointIds.splice, passing index + m, 0, children[m].id.
 
       }
+This closes the block above.
+
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   delete round.notes[noteId];
 This line continues the step above.
 
 }
+This closes the block above.
+
 
 function checkIfRoundHasContent(round) {
 This is the checkIfRoundHasContent function. It checks whether the round already has typed points or evidence.
 
   var names = Object.keys(round.notes);
 Get the saved ids from round.notes and save them as names.
+
 
   for (var i = 0; i < names.length; i++) {
 Loop through names. i is the position, starting at 0.
@@ -1332,11 +1642,18 @@ If round.notes[names[i]].text || round.notes[names[i]].evidenceId, do the next l
 Hand back true.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   return Object.keys(round.evidence).length > 0;
 Hand back Object.keys(round.evidence).length > 0.
 
 }
+This closes the block above.
+
 
 function addContention(round, caseSide) {
 This is the addContention function. It adds the next contention, named Contention 2, Contention 3, and so on.
@@ -1347,11 +1664,13 @@ Make ids and set it to round.cases[caseSide].contentionIds.
   var n = 1;
 Copy 1 into n.
 
+
   for (var i = 0; i < ids.length; i++) {
 Loop through ids. i is the position, starting at 0.
 
     var name = "";
 Make name and set it to "".
+
 
     if (round.contentions[ids[i]]) {
 If round.contentions[ids[i]], do the next lines.
@@ -1360,8 +1679,12 @@ If round.contentions[ids[i]], do the next lines.
 Set name to round.contentions[ids[i]].name.
 
     }
+This closes the block above.
+
+
     var nameToCheck = name;
 Copy name into nameToCheck.
+
 
     if (!nameToCheck) {
 If nameToCheck is empty or missing, do the next lines.
@@ -1370,8 +1693,12 @@ If nameToCheck is empty or missing, do the next lines.
 Set nameToCheck to "".
 
     }
+This closes the block above.
+
+
     var num = /^Contention (\d+)$/.exec(nameToCheck);
 Make num and set it to /^Contention (\d+)$/.exec(nameToCheck).
+
 
     if (num && Number(num[1]) >= n) {
 If num && Number(num[1]) >= n, do the next lines.
@@ -1380,9 +1707,15 @@ If num && Number(num[1]) >= n, do the next lines.
 Set n to Number(num[1]) + 1.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   var contention = createContentionGroup("Contention " + n);
 Make contention and set it to createContentionGroup("Contention " + n).
+
 
   round.contentions[contention.id] = contention;
 Set round.contentions[contention.id] to contention.
@@ -1394,6 +1727,8 @@ This line continues the step above.
 Hand back contention.
 
 }
+This closes the block above.
+
 
 function deleteContention(round, contentionId) {
 This is the deleteContention function. It deletes one contention and the points and evidence inside it.
@@ -1404,8 +1739,10 @@ Make caseSide and set it to getContentionSide(round, contentionId).
   if (!caseSide) return false;
 If caseSide is empty or missing, hand back false.
 
+
   var notes = getPointsInContention(round, contentionId);
 Make notes and set it to getPointsInContention(round, contentionId).
+
 
   for (var i = 0; i < notes.length; i++) {
 Loop through notes. i is the position, starting at 0.
@@ -1417,10 +1754,16 @@ If notes[i].evidenceId, do the next lines.
 This line continues the step above.
 
     }
+This closes the block above.
+
+
     delete round.notes[notes[i].id];
 This line continues the step above.
 
   }
+This closes the block above.
+
+
   delete round.contentions[contentionId];
 This line continues the step above.
 
@@ -1429,6 +1772,7 @@ Make ids and set it to round.cases[caseSide].contentionIds.
 
   var kept = [];
 Make kept and set it to [].
+
 
   for (var j = 0; j < ids.length; j++) {
 Loop through ids. j is the position, starting at 0.
@@ -1440,7 +1784,12 @@ If ids[j] !== contentionId, do the next lines.
 Add ids[j] to the list.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   round.cases[caseSide].contentionIds = kept;
 Set round.cases[caseSide].contentionIds to kept.
 
@@ -1448,6 +1797,8 @@ Set round.cases[caseSide].contentionIds to kept.
 Hand back true.
 
 }
+This closes the block above.
+
 
 function moveContention(round, contentionId, direction) {
 This is the moveContention function. It moves a contention up or down.
@@ -1458,11 +1809,13 @@ Make caseSide and set it to getContentionSide(round, contentionId).
   if (!caseSide) return;
 If caseSide is missing, stop here.
 
+
   var ids = round.cases[caseSide].contentionIds;
 Make ids and set it to round.cases[caseSide].contentionIds.
 
   var index = ids.indexOf(contentionId);
 Make index and set it to ids.indexOf(contentionId).
+
 
   if (index < 0 || index + direction < 0 || index + direction >= ids.length) {
 If index < 0 || index + direction < 0 || index + direction >= ids.length, do the next lines.
@@ -1471,8 +1824,12 @@ If index < 0 || index + direction < 0 || index + direction >= ids.length, do the
 Stop this function here.
 
   }
+This closes the block above.
+
+
   var temp = ids[index];
 Make temp and set it to ids[index].
+
 
   ids[index] = ids[index + direction];
 Set ids[index] to ids[index + direction].
@@ -1481,12 +1838,15 @@ Set ids[index] to ids[index + direction].
 This line continues the step above.
 
 }
+This closes the block above.
+
 
 function checkIfContentionHasContent(round, contentionId) {
 This is the checkIfContentionHasContent function. It checks whether a contention has typed points or evidence.
 
   var notes = getPointsInContention(round, contentionId);
 Make notes and set it to getPointsInContention(round, contentionId).
+
 
   for (var i = 0; i < notes.length; i++) {
 Loop through notes. i is the position, starting at 0.
@@ -1498,11 +1858,18 @@ If notes[i].text || notes[i].evidenceId, do the next lines.
 Hand back true.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   return false;
 Hand back false.
 
 }
+This closes the block above.
+
 
 function getVisibleSpeeches(round, caseSide) {
 This is the getVisibleSpeeches function. It returns every speech for the open case.
@@ -1510,16 +1877,20 @@ This is the getVisibleSpeeches function. It returns every speech for the open ca
   var all = getSpeechesForSide(round, caseSide);
 Make all and set it to getSpeechesForSide(round, caseSide).
 
+
   return { all: all, visible: all.slice(), start: 0, count: all.length };
 Hand back { all: all, visible: all.slice(), start: 0, count: all.length }.
 
 }
+This closes the block above.
+
 
 function getNewIdForCopy(map, oldId) {
 This is the getNewIdForCopy function. It gives a copied item a new id, and remembers the old id.
 
   if (!oldId) return null;
 If oldId is empty or missing, hand back null.
+
 
   if (!map[oldId]) {
 If !map[oldId], do the next lines.
@@ -1528,10 +1899,15 @@ If !map[oldId], do the next lines.
 Set map[oldId] to createUniqueId("id").
 
   }
+This closes the block above.
+
+
   return map[oldId];
 Hand back map[oldId].
 
 }
+This closes the block above.
+
 
 function copyContentionsNotesAndEvidence(source) {
 This is the copyContentionsNotesAndEvidence function. It copies contentions, points, and evidence, each with a new id.
@@ -1551,6 +1927,7 @@ Make evidence and set it to {}.
   var names = Object.keys(source.contentions);
 Get the saved ids from source.contentions and save them as names.
 
+
   for (var i = 0; i < names.length; i++) {
 Loop through names. i is the position, starting at 0.
 
@@ -1569,6 +1946,7 @@ Copy group.startingPointIds into oldStarts.
     var newStarts = [];
 Make newStarts and set it to [].
 
+
     for (var n = 0; n < oldStarts.length; n++) {
 Loop through oldStarts. n is the position, starting at 0.
 
@@ -1576,6 +1954,9 @@ Loop through oldStarts. n is the position, starting at 0.
 Add getNewIdForCopy(map, oldStarts[n]) to the list.
 
     }
+This closes the block above.
+
+
     groups[next] = {
 This line continues the step above.
 
@@ -1592,7 +1973,12 @@ On this object, collapsed is false.
 On this object, startingPointIds is newStarts.
 
     };
+var SAFE_STYLES = [
+
   }
+This closes the block above.
+
+
   names = Object.keys(source.notes);
 Set names to Object.keys(source.notes).
 
@@ -1611,6 +1997,7 @@ Make nextNoteId and set it to getNewIdForCopy(map, noteId).
     var copiedParentId = null;
 Copy null into copiedParentId.
 
+
     if (note.parentId) {
 If note.parentId, do the next lines.
 
@@ -1618,8 +2005,12 @@ If note.parentId, do the next lines.
 Set copiedParentId to getNewIdForCopy(map, note.parentId).
 
     }
+This closes the block above.
+
+
     var copiedMarker = note.marker;
 Copy note.marker into copiedMarker.
+
 
     if (!copiedMarker) {
 If copiedMarker is empty or missing, do the next lines.
@@ -1628,8 +2019,12 @@ If copiedMarker is empty or missing, do the next lines.
 Set copiedMarker to "".
 
     }
+This closes the block above.
+
+
     var copiedEvidenceId = null;
 Copy null into copiedEvidenceId.
+
 
     if (note.evidenceId) {
 If note.evidenceId, do the next lines.
@@ -1638,6 +2033,9 @@ If note.evidenceId, do the next lines.
 Set copiedEvidenceId to getNewIdForCopy(map, note.evidenceId).
 
     }
+This closes the block above.
+
+
     notes[nextNoteId] = {
 This line continues the step above.
 
@@ -1669,7 +2067,12 @@ On this object, marker is copiedMarker.
 On this object, evidenceId is copiedEvidenceId.
 
     };
+var SAFE_STYLES = [
+
   }
+This closes the block above.
+
+
   names = Object.keys(source.evidence || {});
 Set names to Object.keys(source.evidence || {}).
 
@@ -1684,6 +2087,7 @@ Make item and set it to source.evidence[evId].
 
     var nextEvId = getNewIdForCopy(map, evId);
 Make nextEvId and set it to getNewIdForCopy(map, evId).
+
 
     evidence[nextEvId] = {
 This line continues the step above.
@@ -1701,17 +2105,25 @@ On this object, html is item.html.
 On this object, plain is item.plain.
 
     };
+var SAFE_STYLES = [
+
   }
+This closes the block above.
+
+
   return { map: map, contentions: groups, notes: notes, evidence: evidence };
 Hand back { map: map, contentions: groups, notes: notes, evidence: evidence }.
 
 }
+This closes the block above.
+
 
 function copyIdList(ids, map) {
 This is the copyIdList function. It rewrites a list of ids using the copy map.
 
   var list = [];
 Make list and set it to [].
+
 
   for (var i = 0; i < ids.length; i++) {
 Loop through ids. i is the position, starting at 0.
@@ -1720,10 +2132,15 @@ Loop through ids. i is the position, starting at 0.
 Add map[ids[i]] to the list.
 
   }
+This closes the block above.
+
+
   return list;
 Hand back list.
 
 }
+This closes the block above.
+
 
 function cloneRound(round, settings) {
 This is the cloneRound function. It makes a second round from an existing one.
@@ -1756,6 +2173,8 @@ On this object, yourSide is round.yourSide.
 On this object, firstSide is round.firstSide.
 
   }, settings);
+Execute the statement above.
+
   copy.cases = {
 This line continues the step above.
 
@@ -1766,6 +2185,8 @@ On this object, pro is { contentionIds: copyIdList(round.cases.pro.contentionIds
 On this object, con is { contentionIds: copyIdList(round.cases.con.contentionIds, cloned.map) }.
 
   };
+var SAFE_STYLES = [
+
   copy.contentions = cloned.contentions;
 Set copy.contentions to cloned.contentions.
 
@@ -1788,10 +2209,14 @@ On this object, pro is { count: round.columnFocus.pro.count, start: round.column
 On this object, con is { count: round.columnFocus.con.count, start: round.columnFocus.con.start }.
 
   };
+var SAFE_STYLES = [
+
   return copy;
 Hand back copy.
 
 }
+This closes the block above.
+
 
 function applyPreflowToRound(round, preflow) {
 This is the applyPreflowToRound function. It copies a preflow's constructive into a new round.
@@ -1809,6 +2234,8 @@ On this object, notes is preflow.notes.
 On this object, evidence is preflow.evidence.
 
   });
+This closes the listener.
+
   var side = preflow.side;
 Copy preflow.side into side.
 
@@ -1818,11 +2245,13 @@ Make kept and set it to [].
   var names = Object.keys(cloned.notes);
 Get the saved ids from cloned.notes and save them as names.
 
+
   for (var i = 0; i < names.length; i++) {
 Loop through names. i is the position, starting at 0.
 
     var note = cloned.notes[names[i]];
 Make note and set it to cloned.notes[names[i]].
+
 
     if (note.speechId !== side + "-constructive" || note.parentId) {
 If note.speechId !== side + "-constructive" || note.parentId, do the next lines.
@@ -1834,6 +2263,9 @@ If note.evidenceId, do the next lines.
 This line continues the step above.
 
       }
+This closes the block above.
+
+
       delete cloned.notes[names[i]];
 This line continues the step above.
 
@@ -1841,10 +2273,16 @@ This line continues the step above.
 This line continues the step above.
 
     }
+This closes the block above.
+
+
     kept.push(names[i]);
 Add names[i] to the list.
 
   }
+This closes the block above.
+
+
   names = Object.keys(cloned.contentions);
 Set names to Object.keys(cloned.contentions).
 
@@ -1857,6 +2295,7 @@ Make oldIds and set it to cloned.contentions[names[j]].startingPointIds.
     var newIds = [];
 Make newIds and set it to [].
 
+
     for (var n = 0; n < oldIds.length; n++) {
 Loop through oldIds. n is the position, starting at 0.
 
@@ -1867,13 +2306,22 @@ If kept.indexOf(oldIds[n]) !== -1, do the next lines.
 Add oldIds[n] to the list.
 
       }
+This closes the block above.
+
     }
+This closes the block above.
+
+
     cloned.contentions[names[j]].startingPointIds = newIds;
 Set cloned.contentions[names[j]].startingPointIds to newIds.
 
   }
+This closes the block above.
+
+
   var oldContIds = round.cases[side].contentionIds.slice();
 Make oldContIds and set it to round.cases[side].contentionIds.slice().
+
 
   for (var k = 0; k < oldContIds.length; k++) {
 Loop through oldContIds. k is the position, starting at 0.
@@ -1882,6 +2330,9 @@ Loop through oldContIds. k is the position, starting at 0.
 Run deleteContention, passing round, oldContIds[k].
 
   }
+This closes the block above.
+
+
   round.cases[side].contentionIds = copyIdList(preflow.contentionIds, cloned.map);
 Set round.cases[side].contentionIds to copyIdList(preflow.contentionIds, cloned.map).
 
@@ -1895,6 +2346,9 @@ Loop through names. m is the position, starting at 0.
 Set round.contentions[names[m]] to cloned.contentions[names[m]].
 
   }
+This closes the block above.
+
+
   names = Object.keys(cloned.notes);
 Set names to Object.keys(cloned.notes).
 
@@ -1905,6 +2359,9 @@ Loop through names. p is the position, starting at 0.
 Set round.notes[names[p]] to cloned.notes[names[p]].
 
   }
+This closes the block above.
+
+
   names = Object.keys(cloned.evidence);
 Set names to Object.keys(cloned.evidence).
 
@@ -1915,7 +2372,11 @@ Loop through names. q is the position, starting at 0.
 Set round.evidence[names[q]] to cloned.evidence[names[q]].
 
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 function convertCaseToPreflow(round, caseSide, title) {
 This is the convertCaseToPreflow function. It saves one case's constructive as a preflow.
@@ -1926,6 +2387,7 @@ Make preflow and set it to createNewPreflow({ title: title, topic: round.topic, 
   var speech = caseSide + "-constructive";
 Make speech and set it to caseSide + "-constructive".
 
+
   delete preflow.contentions[preflow.contentionIds[0]];
 This line continues the step above.
 
@@ -1934,6 +2396,7 @@ Set preflow.contentionIds to [].
 
   var groupIds = round.cases[caseSide].contentionIds;
 Make groupIds and set it to round.cases[caseSide].contentionIds.
+
 
   for (var i = 0; i < groupIds.length; i++) {
 Loop through groupIds. i is the position, starting at 0.
@@ -1944,6 +2407,7 @@ Make source and set it to round.contentions[groupIds[i]].
     var contention = createContentionGroup(source.name);
 Make contention and set it to createContentionGroup(source.name).
 
+
     preflow.contentions[contention.id] = contention;
 Set preflow.contentions[contention.id] to contention.
 
@@ -1952,6 +2416,7 @@ Add contention.id to the list.
 
     var starts = source.startingPointIds;
 Copy source.startingPointIds into starts.
+
 
     for (var n = 0; n < starts.length; n++) {
 Loop through starts. n is the position, starting at 0.
@@ -1962,8 +2427,10 @@ Make note and set it to round.notes[starts[n]].
       if (!note || note.speechId !== speech) continue;
 If !note || note.speechId !== speech, skip to the next loop turn.
 
+
       var copy = createNewPoint(contention.id, speech, null, contention.startingPointIds.length, note.text);
 Make copy and set it to createNewPoint(contention.id, speech, null, contention.startingPointIds.length, note.text).
+
 
       copy.marker = note.marker;
 Set copy.marker to note.marker.
@@ -1999,14 +2466,24 @@ On this object, html is round.evidence[note.evidenceId].html.
 On this object, plain is round.evidence[note.evidenceId].plain.
 
         };
+var SAFE_STYLES = [
+
       }
+This closes the block above.
+
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   if (!preflow.contentionIds.length) {
 If preflow.contentionIds.length is empty or missing, do the next lines.
 
     var blank = createContentionGroup("Contention 1");
 Make blank and set it to createContentionGroup("Contention 1").
+
 
     preflow.contentions[blank.id] = blank;
 Set preflow.contentions[blank.id] to blank.
@@ -2015,16 +2492,22 @@ Set preflow.contentions[blank.id] to blank.
 Add blank.id to the list.
 
   }
+This closes the block above.
+
+
   return preflow;
 Hand back preflow.
 
 }
+This closes the block above.
+
 
 function makePointAMainPoint(round, note) {
 This is the makePointAMainPoint function. It turns a reply into a main point.
 
   var cont = round.contentions[note.contentionId];
 Make cont and set it to round.contentions[note.contentionId].
+
 
   note.parentId = null;
 Set note.parentId to null.
@@ -2036,13 +2519,18 @@ If cont && cont.startingPointIds.indexOf(note.id) === -1, do the next lines.
 Add note.id to the list.
 
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 function repairRoundData(round) {
 This is the repairRoundData function. It fills missing pieces on a saved round so the page can open it.
 
   if (!round || typeof round !== "object") return;
 If !round || typeof round !== "object", stop here.
+
 
   if (round.yourSide !== "con" && round.yourSide !== "observer") {
 If round.yourSide !== "con" && round.yourSide !== "observer", do the next lines.
@@ -2051,6 +2539,9 @@ If round.yourSide !== "con" && round.yourSide !== "observer", do the next lines.
 Set round.yourSide to "pro".
 
   }
+This closes the block above.
+
+
   if (round.firstSide !== "con") {
 If round.firstSide !== "con", do the next lines.
 
@@ -2058,6 +2549,9 @@ If round.firstSide !== "con", do the next lines.
 Set round.firstSide to "pro".
 
   }
+This closes the block above.
+
+
   if (!round.cases) {
 If round.cases is empty or missing, do the next lines.
 
@@ -2065,6 +2559,9 @@ If round.cases is empty or missing, do the next lines.
 Set round.cases to {}.
 
   }
+This closes the block above.
+
+
   if (!round.cases.pro) {
 If round.cases.pro is empty or missing, do the next lines.
 
@@ -2072,6 +2569,9 @@ If round.cases.pro is empty or missing, do the next lines.
 Set round.cases.pro to { contentionIds: [] }.
 
   }
+This closes the block above.
+
+
   if (!round.cases.con) {
 If round.cases.con is empty or missing, do the next lines.
 
@@ -2079,6 +2579,9 @@ If round.cases.con is empty or missing, do the next lines.
 Set round.cases.con to { contentionIds: [] }.
 
   }
+This closes the block above.
+
+
   if (!round.cases.pro.contentionIds) {
 If round.cases.pro.contentionIds is empty or missing, do the next lines.
 
@@ -2086,6 +2589,9 @@ If round.cases.pro.contentionIds is empty or missing, do the next lines.
 Set round.cases.pro.contentionIds to [].
 
   }
+This closes the block above.
+
+
   if (!round.cases.con.contentionIds) {
 If round.cases.con.contentionIds is empty or missing, do the next lines.
 
@@ -2093,6 +2599,9 @@ If round.cases.con.contentionIds is empty or missing, do the next lines.
 Set round.cases.con.contentionIds to [].
 
   }
+This closes the block above.
+
+
   if (!round.contentions) {
 If round.contentions is empty or missing, do the next lines.
 
@@ -2100,6 +2609,9 @@ If round.contentions is empty or missing, do the next lines.
 Set round.contentions to {}.
 
   }
+This closes the block above.
+
+
   if (!round.notes) {
 If round.notes is empty or missing, do the next lines.
 
@@ -2107,6 +2619,9 @@ If round.notes is empty or missing, do the next lines.
 Set round.notes to {}.
 
   }
+This closes the block above.
+
+
   if (!round.evidence) {
 If round.evidence is empty or missing, do the next lines.
 
@@ -2114,6 +2629,9 @@ If round.evidence is empty or missing, do the next lines.
 Set round.evidence to {}.
 
   }
+This closes the block above.
+
+
   round.crossNotes = createCrossNotesObject(round.crossNotes);
 Set round.crossNotes to createCrossNotesObject(round.crossNotes).
 
@@ -2124,6 +2642,9 @@ If round.columnFocus is empty or missing, do the next lines.
 Set round.columnFocus to {}.
 
   }
+This closes the block above.
+
+
   if (!round.columnFocus.pro) {
 If round.columnFocus.pro is empty or missing, do the next lines.
 
@@ -2131,6 +2652,9 @@ If round.columnFocus.pro is empty or missing, do the next lines.
 Set round.columnFocus.pro to { count: null, start: 0 }.
 
   }
+This closes the block above.
+
+
   if (!round.columnFocus.con) {
 If round.columnFocus.con is empty or missing, do the next lines.
 
@@ -2138,6 +2662,9 @@ If round.columnFocus.con is empty or missing, do the next lines.
 Set round.columnFocus.con to { count: null, start: 0 }.
 
   }
+This closes the block above.
+
+
   if (!round.scroll) {
 If round.scroll is empty or missing, do the next lines.
 
@@ -2145,6 +2672,9 @@ If round.scroll is empty or missing, do the next lines.
 Set round.scroll to { pro: 0, con: 0 }.
 
   }
+This closes the block above.
+
+
   if (typeof round.scroll.pro !== "number") {
 If typeof round.scroll.pro !== "number", do the next lines.
 
@@ -2152,6 +2682,9 @@ If typeof round.scroll.pro !== "number", do the next lines.
 Set round.scroll.pro to 0.
 
   }
+This closes the block above.
+
+
   if (typeof round.scroll.con !== "number") {
 If typeof round.scroll.con !== "number", do the next lines.
 
@@ -2159,6 +2692,9 @@ If typeof round.scroll.con !== "number", do the next lines.
 Set round.scroll.con to 0.
 
   }
+This closes the block above.
+
+
   if (!round.timers || !round.timers.prepLeft) {
 If !round.timers || !round.timers.prepLeft, do the next lines.
 
@@ -2175,6 +2711,9 @@ If round.timers.prepLeft.pro == null || round.timers.prepLeft.pro < 0, do the ne
 Set round.timers.prepLeft.pro to 0.
 
     }
+This closes the block above.
+
+
     if (round.timers.prepLeft.con == null || round.timers.prepLeft.con < 0) {
 If round.timers.prepLeft.con == null || round.timers.prepLeft.con < 0, do the next lines.
 
@@ -2182,6 +2721,9 @@ If round.timers.prepLeft.con == null || round.timers.prepLeft.con < 0, do the ne
 Set round.timers.prepLeft.con to 0.
 
     }
+This closes the block above.
+
+
     if (!round.timers.allotted) {
 If round.timers.allotted is empty or missing, do the next lines.
 
@@ -2189,9 +2731,15 @@ If round.timers.allotted is empty or missing, do the next lines.
 Set round.timers.allotted to {}.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   var sides = ["pro", "con"];
 Make sides and set it to ["pro", "con"].
+
 
   for (var s = 0; s < sides.length; s++) {
 Loop through sides. s is the position, starting at 0.
@@ -2205,6 +2753,7 @@ Make kept and set it to [].
     var seen = {};
 Make seen and set it to {}.
 
+
     for (var i = 0; i < ids.length; i++) {
 Loop through ids. i is the position, starting at 0.
 
@@ -2214,11 +2763,13 @@ Make id and set it to ids[i].
       if (seen[id]) continue;
 If seen[id], skip to the next loop turn.
 
+
       var cont = round.contentions[id];
 Make cont and set it to round.contentions[id].
 
       if (!cont) continue;
 If cont is empty or missing, skip to the next loop turn.
+
 
       seen[id] = true;
 Set seen[id] to true.
@@ -2230,6 +2781,9 @@ If cont.name is empty or missing, do the next lines.
 Set cont.name to "Contention " + (kept.length + 1).
 
       }
+This closes the block above.
+
+
       if (!cont.startingPointIds) {
 If cont.startingPointIds is empty or missing, do the next lines.
 
@@ -2237,8 +2791,12 @@ If cont.startingPointIds is empty or missing, do the next lines.
 Set cont.startingPointIds to [].
 
       }
+This closes the block above.
+
+
       var starts = [];
 Make starts and set it to [].
+
 
       for (var n = 0; n < cont.startingPointIds.length; n++) {
 Loop through cont.startingPointIds. n is the position, starting at 0.
@@ -2249,10 +2807,14 @@ Make note and set it to round.notes[cont.startingPointIds[n]].
         if (!note || note.contentionId !== id || note.parentId) continue;
 If !note || note.contentionId !== id || note.parentId, skip to the next loop turn.
 
+
         starts.push(note.id);
 Add note.id to the list.
 
       }
+This closes the block above.
+
+
       cont.startingPointIds = starts;
 Set cont.startingPointIds to starts.
 
@@ -2260,11 +2822,15 @@ Set cont.startingPointIds to starts.
 Add id to the list.
 
     }
+This closes the block above.
+
+
     if (!kept.length) {
 If kept.length is empty or missing, do the next lines.
 
       var newCont = createContentionGroup("Contention 1");
 Make newCont and set it to createContentionGroup("Contention 1").
+
 
       round.contentions[newCont.id] = newCont;
 Set round.contentions[newCont.id] to newCont.
@@ -2273,18 +2839,26 @@ Set round.contentions[newCont.id] to newCont.
 Add newCont.id to the list.
 
     }
+This closes the block above.
+
+
     round.cases[sides[s]].contentionIds = kept;
 Set round.cases[sides[s]].contentionIds to kept.
 
   }
+This closes the block above.
+
+
   var names = Object.keys(round.notes);
 Get the saved ids from round.notes and save them as names.
+
 
   for (var j = 0; j < names.length; j++) {
 Loop through names. j is the position, starting at 0.
 
     var nItem = round.notes[names[j]];
 Make nItem and set it to round.notes[names[j]].
+
 
     if (!nItem || !round.contentions[nItem.contentionId]) {
 If !nItem || !round.contentions[nItem.contentionId], do the next lines.
@@ -2296,6 +2870,9 @@ If nItem && nItem.evidenceId && round.evidence[nItem.evidenceId], do the next li
 This line continues the step above.
 
       }
+This closes the block above.
+
+
       delete round.notes[names[j]];
 This line continues the step above.
 
@@ -2303,11 +2880,15 @@ This line continues the step above.
 This line continues the step above.
 
     }
+This closes the block above.
+
+
     if (!SPEECHES[nItem.speechId]) {
 If !SPEECHES[nItem.speechId], do the next lines.
 
       var side = getContentionSide(round, nItem.contentionId);
 Make side and set it to getContentionSide(round, nItem.contentionId).
+
 
       if (!side) {
 If side is empty or missing, do the next lines.
@@ -2316,10 +2897,16 @@ If side is empty or missing, do the next lines.
 Set side to "pro".
 
       }
+This closes the block above.
+
+
       nItem.speechId = side + "-constructive";
 Set nItem.speechId to side + "-constructive".
 
     }
+This closes the block above.
+
+
     if (!nItem.marker) {
 If nItem.marker is empty or missing, do the next lines.
 
@@ -2327,7 +2914,12 @@ If nItem.marker is empty or missing, do the next lines.
 Set nItem.marker to "".
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   names = Object.keys(round.notes);
 Set names to Object.keys(round.notes).
 
@@ -2340,6 +2932,7 @@ Make checkNote and set it to round.notes[names[k]].
     if (!checkNote) continue;
 If checkNote is empty or missing, skip to the next loop turn.
 
+
     var loopSeen = {};
 Make loopSeen and set it to {}.
 
@@ -2348,6 +2941,7 @@ Copy checkNote.id into currId.
 
     var stepCount = 0;
 Copy 0 into stepCount.
+
 
     while (currId && stepCount < 40) {
 Keep looping while currId && stepCount < 40.
@@ -2362,11 +2956,15 @@ Run makePointAMainPoint, passing round, checkNote.
 This line continues the step above.
 
       }
+This closes the block above.
+
+
       loopSeen[currId] = true;
 Set loopSeen[currId] to true.
 
       var parent = round.notes[currId];
 Make parent and set it to round.notes[currId].
+
 
       currId = parent && parent.parentId;
 Set currId to parent && parent.parentId.
@@ -2375,6 +2973,9 @@ Set currId to parent && parent.parentId.
 This line continues the step above.
 
     }
+This closes the block above.
+
+
     if (checkNote.parentId && !round.notes[checkNote.parentId]) {
 If checkNote.parentId && !round.notes[checkNote.parentId], do the next lines.
 
@@ -2385,11 +2986,16 @@ Run makePointAMainPoint, passing round, checkNote.
 This line continues the step above.
 
     }
+This closes the block above.
+
+
     if (!checkNote.parentId) continue;
 If checkNote.parentId is empty or missing, skip to the next loop turn.
 
+
     var parentObj = round.notes[checkNote.parentId];
 Make parentObj and set it to round.notes[checkNote.parentId].
+
 
     if (parentObj.contentionId !== checkNote.contentionId) {
 If parentObj.contentionId !== checkNote.contentionId, do the next lines.
@@ -2401,11 +3007,15 @@ Run makePointAMainPoint, passing round, checkNote.
 This line continues the step above.
 
     }
+This closes the block above.
+
+
     var cSide = getContentionSide(round, checkNote.contentionId);
 Make cSide and set it to getContentionSide(round, checkNote.contentionId).
 
     var sOrder = getSpeechesForSide(round, cSide);
 Make sOrder and set it to getSpeechesForSide(round, cSide).
+
 
     if (sOrder.indexOf(parentObj.speechId) < 0 || sOrder.indexOf(checkNote.speechId) < 0 || sOrder.indexOf(parentObj.speechId) >= sOrder.indexOf(checkNote.speechId)) {
 If sOrder.indexOf(parentObj.speechId) < 0 || sOrder.indexOf(checkNote.speechId) < 0 || sOrder.indexOf(parentObj.speechId) >= sOrder.indexOf(checkNote.speechId), do the next lines.
@@ -2414,7 +3024,12 @@ If sOrder.indexOf(parentObj.speechId) < 0 || sOrder.indexOf(checkNote.speechId) 
 Run makePointAMainPoint, passing round, checkNote.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   names = Object.keys(round.notes);
 Set names to Object.keys(round.notes).
 
@@ -2427,8 +3042,10 @@ Make startNote and set it to round.notes[names[m]].
     if (!startNote || startNote.parentId) continue;
 If !startNote || startNote.parentId, skip to the next loop turn.
 
+
     var cGroup = round.contentions[startNote.contentionId];
 Make cGroup and set it to round.contentions[startNote.contentionId].
+
 
     if (cGroup && cGroup.startingPointIds.indexOf(startNote.id) === -1) {
 If cGroup && cGroup.startingPointIds.indexOf(startNote.id) === -1, do the next lines.
@@ -2437,7 +3054,12 @@ If cGroup && cGroup.startingPointIds.indexOf(startNote.id) === -1, do the next l
 Add startNote.id to the list.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   names = Object.keys(round.evidence);
 Set names to Object.keys(round.evidence).
 
@@ -2446,6 +3068,7 @@ Loop through names. e is the position, starting at 0.
 
     var ev = round.evidence[names[e]];
 Make ev and set it to round.evidence[names[e]].
+
 
     if (!ev || !ev.noteId || !round.notes[ev.noteId]) {
 If !ev || !ev.noteId || !round.notes[ev.noteId], do the next lines.
@@ -2457,17 +3080,25 @@ This line continues the step above.
 This line continues the step above.
 
     }
+This closes the block above.
+
+
     round.notes[ev.noteId].evidenceId = names[e];
 Set round.notes[ev.noteId].evidenceId to names[e].
 
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 function repairPreflowData(pre) {
 This is the repairPreflowData function. It fills missing pieces on a saved preflow.
 
   if (!pre || typeof pre !== "object") return;
 If !pre || typeof pre !== "object", stop here.
+
 
   if (pre.side !== "con") {
 If pre.side !== "con", do the next lines.
@@ -2476,6 +3107,9 @@ If pre.side !== "con", do the next lines.
 Set pre.side to "pro".
 
   }
+This closes the block above.
+
+
   if (!pre.contentions) {
 If pre.contentions is empty or missing, do the next lines.
 
@@ -2483,6 +3117,9 @@ If pre.contentions is empty or missing, do the next lines.
 Set pre.contentions to {}.
 
   }
+This closes the block above.
+
+
   if (!pre.notes) {
 If pre.notes is empty or missing, do the next lines.
 
@@ -2490,6 +3127,9 @@ If pre.notes is empty or missing, do the next lines.
 Set pre.notes to {}.
 
   }
+This closes the block above.
+
+
   if (!pre.evidence) {
 If pre.evidence is empty or missing, do the next lines.
 
@@ -2497,6 +3137,9 @@ If pre.evidence is empty or missing, do the next lines.
 Set pre.evidence to {}.
 
   }
+This closes the block above.
+
+
   if (!pre.contentionIds) {
 If pre.contentionIds is empty or missing, do the next lines.
 
@@ -2504,11 +3147,15 @@ If pre.contentionIds is empty or missing, do the next lines.
 Set pre.contentionIds to [].
 
   }
+This closes the block above.
+
+
   var kept = [];
 Make kept and set it to [].
 
   var seen = {};
 Make seen and set it to {}.
+
 
   for (var i = 0; i < pre.contentionIds.length; i++) {
 Loop through pre.contentionIds. i is the position, starting at 0.
@@ -2519,11 +3166,13 @@ Make id and set it to pre.contentionIds[i].
     if (seen[id] || !pre.contentions[id]) continue;
 If seen[id] || !pre.contentions[id], skip to the next loop turn.
 
+
     seen[id] = true;
 Set seen[id] to true.
 
     var cont = pre.contentions[id];
 Make cont and set it to pre.contentions[id].
+
 
     if (!cont.name) {
 If cont.name is empty or missing, do the next lines.
@@ -2532,6 +3181,9 @@ If cont.name is empty or missing, do the next lines.
 Set cont.name to "Contention " + (kept.length + 1).
 
     }
+This closes the block above.
+
+
     if (!cont.startingPointIds) {
 If cont.startingPointIds is empty or missing, do the next lines.
 
@@ -2539,14 +3191,19 @@ If cont.startingPointIds is empty or missing, do the next lines.
 Set cont.startingPointIds to [].
 
     }
+This closes the block above.
+
+
     var starts = [];
 Make starts and set it to [].
+
 
     for (var n = 0; n < cont.startingPointIds.length; n++) {
 Loop through cont.startingPointIds. n is the position, starting at 0.
 
       var note = pre.notes[cont.startingPointIds[n]];
 Make note and set it to pre.notes[cont.startingPointIds[n]].
+
 
       if (note && note.contentionId === id && !note.parentId) {
 If note && note.contentionId === id && !note.parentId, do the next lines.
@@ -2555,7 +3212,12 @@ If note && note.contentionId === id && !note.parentId, do the next lines.
 Add note.id to the list.
 
       }
+This closes the block above.
+
     }
+This closes the block above.
+
+
     cont.startingPointIds = starts;
 Set cont.startingPointIds to starts.
 
@@ -2563,11 +3225,15 @@ Set cont.startingPointIds to starts.
 Add id to the list.
 
   }
+This closes the block above.
+
+
   if (!kept.length) {
 If kept.length is empty or missing, do the next lines.
 
     var newCont = createContentionGroup("Contention 1");
 Make newCont and set it to createContentionGroup("Contention 1").
+
 
     pre.contentions[newCont.id] = newCont;
 Set pre.contentions[newCont.id] to newCont.
@@ -2576,17 +3242,23 @@ Set pre.contentions[newCont.id] to newCont.
 Add newCont.id to the list.
 
   }
+This closes the block above.
+
+
   pre.contentionIds = kept;
 Set pre.contentionIds to kept.
 
+
   var names = Object.keys(pre.notes);
 Get the saved ids from pre.notes and save them as names.
+
 
   for (var j = 0; j < names.length; j++) {
 Loop through names. j is the position, starting at 0.
 
     var pNote = pre.notes[names[j]];
 Make pNote and set it to pre.notes[names[j]].
+
 
     if (!pNote || !pre.contentions[pNote.contentionId]) {
 If !pNote || !pre.contentions[pNote.contentionId], do the next lines.
@@ -2598,11 +3270,19 @@ If pNote && pNote.evidenceId, do the next lines.
 This line continues the step above.
 
       }
+This closes the block above.
+
+
       delete pre.notes[names[j]];
 This line continues the step above.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   names = Object.keys(pre.evidence);
 Set names to Object.keys(pre.evidence).
 
@@ -2616,8 +3296,14 @@ If !pre.evidence[names[k]] || !pre.notes[pre.evidence[names[k]].noteId], do the 
 This line continues the step above.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 function pauseTimerOnOpen(round) {
 This is the pauseTimerOnOpen function. It stops a running timer when the round is opened again.
@@ -2625,8 +3311,10 @@ This is the pauseTimerOnOpen function. It stops a running timer when the round i
   if (!round.timers || !round.timers.running || !round.timers.deadline) return;
 If !round.timers || !round.timers.running || !round.timers.deadline, stop here.
 
+
   var left = round.timers.deadline - Date.now();
 Make left and set it to round.timers.deadline - Date.now().
+
 
   if (left < 0) {
 If left < 0, do the next lines.
@@ -2635,6 +3323,9 @@ If left < 0, do the next lines.
 Set left to 0.
 
   }
+This closes the block above.
+
+
   if (round.timers.mode === "prep" && round.timers.prepSide) {
 If round.timers.mode === "prep" && round.timers.prepSide, do the next lines.
 
@@ -2648,6 +3339,9 @@ Otherwise, do the next lines.
 Set round.timers.remainingMs to left.
 
   }
+This closes the block above.
+
+
   round.timers.running = false;
 Set round.timers.running to false.
 
@@ -2661,6 +3355,8 @@ Set round.timers.deadline to null.
 This line continues the step above.
 
 }
+This closes the block above.
+
 
 function calculateCardHeight(note, heights) {
 This is the calculateCardHeight function. It estimates how tall a point card should be.
@@ -2668,11 +3364,13 @@ This is the calculateCardHeight function. It estimates how tall a point card sho
   var value = heights && heights[note.id];
 Make value and set it to heights && heights[note.id].
 
-  if (value && value >= 40) return value;
-If value && value >= 40, hand back value.
+  if (value && value >= 56) return value;
+If height value exists and is at least 56px, return it directly.
+
 
   var noteText = note.text;
 Copy note.text into noteText.
+
 
   if (!noteText) {
 If noteText is empty or missing, do the next lines.
@@ -2681,19 +3379,26 @@ If noteText is empty or missing, do the next lines.
 Set noteText to "".
 
   }
+This closes the block above.
+
+
   var lines = String(noteText).split("\n");
 Make lines and set it to String(noteText).split("\n").
 
   var visual = 0;
 Copy 0 into visual.
 
+
   for (var i = 0; i < lines.length; i++) {
 Loop through lines. i is the position, starting at 0.
 
-    visual += Math.max(1, Math.ceil((lines[i].length || 1) / 32));
-This line continues the step above.
+    visual += Math.max(1, Math.ceil((lines[i].length || 1) / 28));
+Calculate estimated line wraps based on character length.
 
   }
+This closes the block above.
+
+
   if (!visual) {
 If visual is empty or missing, do the next lines.
 
@@ -2701,10 +3406,15 @@ If visual is empty or missing, do the next lines.
 Set visual to 1.
 
   }
-  return Math.max(40, visual * 22 + 16);
-Hand back Math.max(40, visual * 22 + 16).
+This closes the block above.
+
+
+  return Math.max(58, visual * 20 + 38);
+Calculate card height with minimum 58px plus padding.
 
 }
+This closes the block above.
+
 
 function getRepliesInColumn(round, parentId, speechId) {
 This is the getRepliesInColumn function. It finds the replies to one point in one speech column.
@@ -2715,17 +3425,20 @@ Make parent and set it to round.notes[parentId].
   if (!parent) return [];
 If parent is empty or missing, hand back [].
 
+
   var names = Object.keys(round.notes);
 Get the saved ids from round.notes and save them as names.
 
   var list = [];
 Make list and set it to [].
 
+
   for (var i = 0; i < names.length; i++) {
 Loop through names. i is the position, starting at 0.
 
     var note = round.notes[names[i]];
 Make note and set it to round.notes[names[i]].
+
 
     if (note.parentId === parentId && note.speechId === speechId && note.contentionId === parent.contentionId) {
 If note.parentId === parentId && note.speechId === speechId && note.contentionId === parent.contentionId, do the next lines.
@@ -2734,17 +3447,25 @@ If note.parentId === parentId && note.speechId === speechId && note.contentionId
 Add note to the list.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   return sortPointsByOrder(list);
 Hand back sortPointsByOrder(list).
 
 }
+This closes the block above.
+
 
 function calculateSpaceForPoint(round, note, caseSide, heights, saved) {
 This is the calculateSpaceForPoint function. It measures how much vertical room a point and its later replies need.
 
   if (saved[note.id]) return saved[note.id];
 If saved[note.id], hand back saved[note.id].
+
 
   var own = calculateCardHeight(note, heights);
 Make own and set it to calculateCardHeight(note, heights).
@@ -2755,6 +3476,7 @@ Make later and set it to getSpeechesAfter(round, caseSide, note.speechId).
   var maxStack = 0;
 Copy 0 into maxStack.
 
+
   for (var s = 0; s < later.length; s++) {
 Loop through later. s is the position, starting at 0.
 
@@ -2764,8 +3486,10 @@ Make siblings and set it to getRepliesInColumn(round, note.id, later[s]).
     if (!siblings.length) continue;
 If siblings.length is empty or missing, skip to the next loop turn.
 
+
     var stack = 0;
 Copy 0 into stack.
+
 
     for (var i = 0; i < siblings.length; i++) {
 Loop through siblings. i is the position, starting at 0.
@@ -2780,7 +3504,12 @@ If i < siblings.length - 1, do the next lines.
 This line continues the step above.
 
       }
+This closes the block above.
+
     }
+This closes the block above.
+
+
     if (stack > maxStack) {
 If stack > maxStack, do the next lines.
 
@@ -2788,7 +3517,12 @@ If stack > maxStack, do the next lines.
 Set maxStack to stack.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   saved[note.id] = Math.max(own, maxStack);
 Set saved[note.id] to Math.max(own, maxStack).
 
@@ -2796,6 +3530,8 @@ Set saved[note.id] to Math.max(own, maxStack).
 Hand back saved[note.id].
 
 }
+This closes the block above.
+
 
 function calculatePointPosition(round, note, top, caseSide, heights, saved, positions) {
 This is the calculatePointPosition function. It sets the top position of a point and its replies.
@@ -2805,6 +3541,7 @@ Make own and set it to calculateCardHeight(note, heights).
 
   var later = getSpeechesAfter(round, caseSide, note.speechId);
 Make later and set it to getSpeechesAfter(round, caseSide, note.speechId).
+
 
   positions[note.id] = {
 This line continues the step above.
@@ -2822,6 +3559,8 @@ On this object, reserved is saved[note.id].
 On this object, speechId is note.speechId.
 
   };
+var SAFE_STYLES = [
+
   for (var s = 0; s < later.length; s++) {
 Loop through later. s is the position, starting at 0.
 
@@ -2830,6 +3569,7 @@ Make siblings and set it to getRepliesInColumn(round, note.id, later[s]).
 
     var y = top;
 Copy top into y.
+
 
     for (var i = 0; i < siblings.length; i++) {
 Loop through siblings. i is the position, starting at 0.
@@ -2841,8 +3581,14 @@ Run calculatePointPosition, passing round, siblings[i], y, caseSide, heights, sa
 This line continues the step above.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 function checkEarlierReplies(round, noteId, speechId, caseSide) {
 This is the checkEarlierReplies function. It checks whether a point already has a reply in an earlier speech.
@@ -2856,6 +3602,7 @@ Make limit and set it to list.indexOf(speechId).
   if (limit < 0) return false;
 If limit < 0, hand back false.
 
+
   for (var s = 0; s < limit; s++) {
 Loop through limit. s is the position, starting at 0.
 
@@ -2866,14 +3613,21 @@ If getRepliesInColumn(round, noteId, list[s]).length, do the next lines.
 Hand back true.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   return false;
 Hand back false.
 
 }
+This closes the block above.
 
-function calculateContentionLayout(round, contention, caseSide, heights) {
-This is the calculateContentionLayout function. It places every point in a contention and leaves reply boxes where a reply can go.
+
+function calculateCaseFlowLayout(round, caseSide, heights) {
+This is the calculateCaseFlowLayout function. It calculates card positions and reply slot coordinates.
 
   var saved = {};
 Make saved and set it to {}.
@@ -2887,39 +3641,63 @@ Make slots and set it to [].
   var y = 0;
 Copy 0 into y.
 
+
   positions._threads = [];
 Set positions._threads to [].
 
-  for (var i = 0; i < contention.startingPointIds.length; i++) {
+
+  var contentionIds = (round.cases[caseSide] && round.cases[caseSide].contentionIds) || [];
+Retrieve the contention ID array for this case side.
+
+  for (var c = 0; c < contentionIds.length; c++) {
+Loop through all contentions for this side.
+
+    var contention = round.contentions[contentionIds[c]];
+Retrieve the contention object from round data.
+
+    if (!contention) continue;
+If contention is empty or missing, skip to the next loop turn.
+
+
+    for (var i = 0; i < contention.startingPointIds.length; i++) {
 Loop through contention.startingPointIds. i is the position, starting at 0.
 
-    var id = contention.startingPointIds[i];
+      var id = contention.startingPointIds[i];
 Make id and set it to contention.startingPointIds[i].
 
-    var note = round.notes[id];
+      var note = round.notes[id];
 Make note and set it to round.notes[id].
 
-    if (!note) continue;
+      if (!note) continue;
 If note is empty or missing, skip to the next loop turn.
 
-    calculateSpaceForPoint(round, note, caseSide, heights, saved);
+
+      calculateSpaceForPoint(round, note, caseSide, heights, saved);
 Run calculateSpaceForPoint, passing round, note, caseSide, heights, saved.
 
-    calculatePointPosition(round, note, y, caseSide, heights, saved, positions);
+      calculatePointPosition(round, note, y, caseSide, heights, saved, positions);
 Run calculatePointPosition, passing round, note, y, caseSide, heights, saved, positions.
 
-    var threadSpace = saved[note.id];
+      var threadSpace = saved[note.id];
 Make threadSpace and set it to saved[note.id].
 
-    positions._threads.push({ id: note.id, top: y, reserved: threadSpace });
+
+      positions._threads.push({ id: note.id, top: y, reserved: threadSpace });
 Add { id: note.id, top: y, reserved: threadSpace } to the list.
 
-    y += threadSpace + 8;
-This line continues the step above.
+      y += threadSpace + 12;
+Advance the vertical spacing position for the next argument chain.
+
+    }
+This closes the block above.
 
   }
+This closes the block above.
+
+
   var names = Object.keys(positions);
 Get the saved ids from positions and save them as names.
+
 
   for (var j = 0; j < names.length; j++) {
 Loop through names. j is the position, starting at 0.
@@ -2927,11 +3705,13 @@ Loop through names. j is the position, starting at 0.
     if (names[j] === "_threads") continue;
 If names[j] === "_threads", skip to the next loop turn.
 
+
     var item = positions[names[j]];
 Make item and set it to positions[names[j]].
 
     var later = getSpeechesAfter(round, caseSide, item.speechId);
 Make later and set it to getSpeechesAfter(round, caseSide, item.speechId).
+
 
     for (var s = 0; s < later.length; s++) {
 Loop through later. s is the position, starting at 0.
@@ -2942,6 +3722,7 @@ Make speechId and set it to later[s].
       var siblings = getRepliesInColumn(round, names[j], speechId);
 Make siblings and set it to getRepliesInColumn(round, names[j], speechId).
 
+
       if (siblings.length || checkEarlierReplies(round, names[j], speechId, caseSide)) {
 If siblings.length || checkEarlierReplies(round, names[j], speechId, caseSide), do the next lines.
 
@@ -2949,6 +3730,9 @@ If siblings.length || checkEarlierReplies(round, names[j], speechId, caseSide), 
 This line continues the step above.
 
       }
+This closes the block above.
+
+
       slots.push({
 This line continues the step above.
 
@@ -2962,16 +3746,25 @@ On this object, speechId is speechId.
 On this object, top is item.top.
 
       });
+This closes the listener.
+
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   var bottom = y;
 Copy y into bottom.
+
 
   for (var k = 0; k < slots.length; k++) {
 Loop through slots. k is the position, starting at 0.
 
     var slot = slots[k];
 Make slot and set it to slots[k].
+
 
     if (slot.top + 48 > bottom) {
 If slot.top + 48 > bottom, do the next lines.
@@ -2980,7 +3773,12 @@ If slot.top + 48 > bottom, do the next lines.
 Set bottom to slot.top + 48.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   return {
 Hand back this object.
 
@@ -2990,11 +3788,181 @@ On this object, positions is positions.
     slots: slots,
 On this object, slots is slots.
 
-    height: Math.max(bottom, 48)
-On this object, height is Math.max(bottom, 48).
+    height: bottom > 0 ? Math.max(bottom, 60) : 0
+Set the total canvas height based on the lowest card or slot.
 
   };
+var SAFE_STYLES = [
+
 }
+This closes the block above.
+
+
+function calculateContentionLayout(round, contention, caseSide, heights) {
+This is the calculateContentionLayout function. It places every point in a contention and leaves reply boxes where a reply can go.
+
+  if (contention) {
+If the contention object exists, do the next lines.
+
+    var saved = {};
+Make saved and set it to {}.
+
+    var positions = {};
+Make positions and set it to {}.
+
+    var slots = [];
+Make slots and set it to [].
+
+    var y = 0;
+Copy 0 into y.
+
+
+    positions._threads = [];
+Set positions._threads to [].
+
+
+    for (var i = 0; i < contention.startingPointIds.length; i++) {
+Loop through contention.startingPointIds. i is the position, starting at 0.
+
+      var id = contention.startingPointIds[i];
+Make id and set it to contention.startingPointIds[i].
+
+      var note = round.notes[id];
+Make note and set it to round.notes[id].
+
+      if (!note) continue;
+If note is empty or missing, skip to the next loop turn.
+
+
+      calculateSpaceForPoint(round, note, caseSide, heights, saved);
+Run calculateSpaceForPoint, passing round, note, caseSide, heights, saved.
+
+      calculatePointPosition(round, note, y, caseSide, heights, saved, positions);
+Run calculatePointPosition, passing round, note, y, caseSide, heights, saved, positions.
+
+      var threadSpace = saved[note.id];
+Make threadSpace and set it to saved[note.id].
+
+
+      positions._threads.push({ id: note.id, top: y, reserved: threadSpace });
+Add { id: note.id, top: y, reserved: threadSpace } to the list.
+
+      y += threadSpace + 8;
+This line continues the step above.
+
+    }
+This closes the block above.
+
+
+    var names = Object.keys(positions);
+Get the saved ids from positions and save them as names.
+
+
+    for (var j = 0; j < names.length; j++) {
+Loop through names. j is the position, starting at 0.
+
+      if (names[j] === "_threads") continue;
+If names[j] === "_threads", skip to the next loop turn.
+
+
+      var item = positions[names[j]];
+Make item and set it to positions[names[j]].
+
+      var later = getSpeechesAfter(round, caseSide, item.speechId);
+Make later and set it to getSpeechesAfter(round, caseSide, item.speechId).
+
+
+      for (var s = 0; s < later.length; s++) {
+Loop through later. s is the position, starting at 0.
+
+        var speechId = later[s];
+Make speechId and set it to later[s].
+
+        var siblings = getRepliesInColumn(round, names[j], speechId);
+Make siblings and set it to getRepliesInColumn(round, names[j], speechId).
+
+
+        if (siblings.length || checkEarlierReplies(round, names[j], speechId, caseSide)) {
+If siblings.length || checkEarlierReplies(round, names[j], speechId, caseSide), do the next lines.
+
+          continue;
+This line continues the step above.
+
+        }
+This closes the block above.
+
+
+        slots.push({
+This line continues the step above.
+
+          parentId: names[j],
+On this object, parentId is names[j].
+
+          speechId: speechId,
+On this object, speechId is speechId.
+
+          top: item.top
+On this object, top is item.top.
+
+        });
+This closes the listener.
+
+      }
+This closes the block above.
+
+    }
+This closes the block above.
+
+
+    var bottom = y;
+Copy y into bottom.
+
+
+    for (var k = 0; k < slots.length; k++) {
+Loop through slots. k is the position, starting at 0.
+
+      var slot = slots[k];
+Make slot and set it to slots[k].
+
+
+      if (slot.top + 48 > bottom) {
+If slot.top + 48 > bottom, do the next lines.
+
+        bottom = slot.top + 48;
+Set bottom to slot.top + 48.
+
+      }
+This closes the block above.
+
+    }
+This closes the block above.
+
+
+    return {
+Hand back this object.
+
+      positions: positions,
+On this object, positions is positions.
+
+      slots: slots,
+On this object, slots is slots.
+
+      height: Math.max(bottom, 48)
+On this object, height is Math.max(bottom, 48).
+
+    };
+var SAFE_STYLES = [
+
+  }
+This closes the block above.
+
+
+  return calculateCaseFlowLayout(round, caseSide, heights);
+Calculate and return the case flow layout.
+
+}
+This closes the block above.
+
 
 function createBlankSaveData() {
 This is the createBlankSaveData function. It makes an empty save file for a first visit.
@@ -3015,7 +3983,11 @@ On this object, settings is getDefaultSettings().
 On this object, lastRoundId is null.
 
   };
+var SAFE_STYLES = [
+
 }
+This closes the block above.
+
 
 function readFromLocalStorage(key) {
 This is the readFromLocalStorage function. It reads one saved JSON value from this browser.
@@ -3029,11 +4001,13 @@ Make rawText and set it to localStorage.getItem(key).
     if (!rawText) return null;
 If rawText is empty or missing, hand back null.
 
+
     var data = JSON.parse(rawText);
 Make data and set it to JSON.parse(rawText).
 
     if (!data || typeof data !== "object") return null;
 If !data || typeof data !== "object", hand back null.
+
 
     return data;
 Hand back data.
@@ -3045,7 +4019,11 @@ If the try block fails, do the next lines.
 Hand back null.
 
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 function loadSavedData() {
 This is the loadSavedData function. It loads the saved rounds and preflows, and repairs them.
@@ -3055,6 +4033,7 @@ Make data and set it to readFromLocalStorage(STORE_KEY).
 
   var backup = readFromLocalStorage(BACKUP_KEY);
 Make backup and set it to readFromLocalStorage(BACKUP_KEY).
+
 
   if (!data) {
 If data is empty or missing, do the next lines.
@@ -3075,7 +4054,12 @@ Otherwise, do the next lines.
 Set data to createBlankSaveData().
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   if (!data.rounds) {
 If data.rounds is empty or missing, do the next lines.
 
@@ -3083,6 +4067,9 @@ If data.rounds is empty or missing, do the next lines.
 Set data.rounds to {}.
 
   }
+This closes the block above.
+
+
   if (!data.preflows) {
 If data.preflows is empty or missing, do the next lines.
 
@@ -3090,6 +4077,9 @@ If data.preflows is empty or missing, do the next lines.
 Set data.preflows to {}.
 
   }
+This closes the block above.
+
+
   if (!data.settings) {
 If data.settings is empty or missing, do the next lines.
 
@@ -3097,17 +4087,23 @@ If data.settings is empty or missing, do the next lines.
 Set data.settings to getDefaultSettings().
 
   }
+This closes the block above.
+
+
   data.settings.durations = fixSpeechTimes(data.settings.durations);
 Set data.settings.durations to fixSpeechTimes(data.settings.durations).
 
+
   var roundIds = Object.keys(data.rounds);
 Get the saved ids from data.rounds and save them as roundIds.
+
 
   for (var i = 0; i < roundIds.length; i++) {
 Loop through roundIds. i is the position, starting at 0.
 
     var currentRound = data.rounds[roundIds[i]];
 Make currentRound and set it to data.rounds[roundIds[i]].
+
 
     repairRoundData(currentRound);
 Run repairRoundData, passing currentRound.
@@ -3116,8 +4112,12 @@ Run repairRoundData, passing currentRound.
 Run pauseTimerOnOpen, passing currentRound.
 
   }
+This closes the block above.
+
+
   var preflowIds = Object.keys(data.preflows);
 Get the saved ids from data.preflows and save them as preflowIds.
+
 
   for (var j = 0; j < preflowIds.length; j++) {
 Loop through preflowIds. j is the position, starting at 0.
@@ -3125,14 +4125,20 @@ Loop through preflowIds. j is the position, starting at 0.
     var currentPreflow = data.preflows[preflowIds[j]];
 Make currentPreflow and set it to data.preflows[preflowIds[j]].
 
+
     repairPreflowData(currentPreflow);
 Run repairPreflowData, passing currentPreflow.
 
   }
+This closes the block above.
+
+
   return data;
 Hand back data.
 
 }
+This closes the block above.
+
 
 function isStorageFull(error) {
 This is the isStorageFull function. It checks whether the browser refused to save because storage is full.
@@ -3140,16 +4146,21 @@ This is the isStorageFull function. It checks whether the browser refused to sav
   if (!error) return false;
 If error is empty or missing, hand back false.
 
+
   if (error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED") return true;
 If error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED", hand back true.
 
+
   if (error.code === 22 || error.code === 1014) return true;
 If error.code === 22 || error.code === 1014, hand back true.
+
 
   return false;
 Hand back false.
 
 }
+This closes the block above.
+
 
 function saveToLocalStorage(store) {
 This is the saveToLocalStorage function. It writes the rounds and preflows into this browser, and keeps a backup copy.
@@ -3170,8 +4181,11 @@ On this object, settings is store.settings.
 On this object, lastRoundId is store.lastRoundId || null.
 
   };
+var SAFE_STYLES = [
+
   var jsonText;
 Make an empty variable named jsonText.
+
 
   try {
 Try the next lines. If they fail, the catch block handles it.
@@ -3186,6 +4200,9 @@ If the try block fails, do the next lines.
 Hand back "This round couldn't be written. Copy the cards out before you close the tab.".
 
   }
+This closes the block above.
+
+
   try {
 Try the next lines. If they fail, the catch block handles it.
 
@@ -3202,10 +4219,16 @@ If isStorageFull(error), do the next lines.
 Hand back "Browser storage is full. Export this round, then delete an old one.".
 
     }
+This closes the block above.
+
+
     return "Could not save — export a copy";
 Hand back "Could not save — export a copy".
 
   }
+This closes the block above.
+
+
   try {
 Try the next lines. If they fail, the catch block handles it.
 
@@ -3219,10 +4242,15 @@ If the try block fails, do the next lines.
 Hand back "".
 
   }
+This closes the block above.
+
+
   return "";
 Hand back "".
 
 }
+This closes the block above.
+
 
 function cloneTemplate(id) {
 This is the cloneTemplate function. It copies a hidden sample from the page so a new card can be shown.
@@ -3233,10 +4261,13 @@ Make templateElement and set it to document.getElementById(id).
   if (!templateElement || !templateElement.firstElementChild) return null;
 If !templateElement || !templateElement.firstElementChild, hand back null.
 
+
   return templateElement.firstElementChild.cloneNode(true);
 Hand back templateElement.firstElementChild.cloneNode(true).
 
 }
+This closes the block above.
+
 
 function showElement(node) {
 This is the showElement function. It shows a hidden piece of the page.
@@ -3248,7 +4279,11 @@ If node, do the next lines.
 Remove option number "hide", so old choices do not pile up. Option 0 stays.
 
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 function hideElement(node) {
 This is the hideElement function. It hides a piece of the page.
@@ -3260,13 +4295,18 @@ If node, do the next lines.
 Run node.classList.add, passing "hide".
 
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 function clearElement(node) {
 This is the clearElement function. It removes the children inside a box.
 
   if (!node) return;
 If node is missing, stop here.
+
 
   while (node.firstChild) {
 Keep looping while node.firstChild.
@@ -3275,7 +4315,11 @@ Keep looping while node.firstChild.
 Run node.removeChild, passing node.firstChild.
 
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 function setElementText(node, text) {
 This is the setElementText function. It writes text into a box, and hides the box when the text is empty.
@@ -3283,8 +4327,10 @@ This is the setElementText function. It writes text into a box, and hides the bo
   if (!node) return;
 If node is missing, stop here.
 
+
   var shownText = text;
 Copy text into shownText.
+
 
   if (!shownText) {
 If shownText is empty or missing, do the next lines.
@@ -3293,6 +4339,9 @@ If shownText is empty or missing, do the next lines.
 Set shownText to "".
 
   }
+This closes the block above.
+
+
   node.textContent = shownText;
 Set node.textContent to shownText.
 
@@ -3309,7 +4358,11 @@ Otherwise, do the next lines.
 Hide node.
 
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 function getListFromObject(box) {
 This is the getListFromObject function. It turns an object of saved items into a list.
@@ -3319,6 +4372,7 @@ Make list and set it to [].
 
   if (!box) return list;
 If box is empty or missing, hand back list.
+
 
   for (var key in box) {
 Loop with var key in box.
@@ -3330,11 +4384,18 @@ If Object.prototype.hasOwnProperty.call(box, key), do the next lines.
 Add box[key] to the list.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   return list;
 Hand back list.
 
 }
+This closes the block above.
+
 
 function joinFilledText(parts, gap) {
 This is the joinFilledText function. It joins text pieces and skips the empty ones.
@@ -3342,11 +4403,13 @@ This is the joinFilledText function. It joins text pieces and skips the empty on
   var out = "";
 Make out and set it to "".
 
+
   for (var i = 0; i < parts.length; i++) {
 Loop through parts. i is the position, starting at 0.
 
     if (!parts[i]) continue;
 If !parts[i], skip to the next loop turn.
+
 
     if (out) {
 If out, do the next lines.
@@ -3361,11 +4424,18 @@ Otherwise, do the next lines.
 Set out to String(parts[i]).
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   return out;
 Hand back out.
 
 }
+This closes the block above.
+
 
 function sortByRecentDate(list) {
 This is the sortByRecentDate function. It sorts items so the most recently edited one comes first.
@@ -3376,6 +4446,7 @@ This line continues the step above.
     var dateA = a.updatedAt;
 Copy a.updatedAt into dateA.
 
+
     if (!dateA) {
 If dateA is empty or missing, do the next lines.
 
@@ -3383,8 +4454,12 @@ If dateA is empty or missing, do the next lines.
 Set dateA to "".
 
     }
+This closes the block above.
+
+
     var dateB = b.updatedAt;
 Copy b.updatedAt into dateB.
+
 
     if (!dateB) {
 If dateB is empty or missing, do the next lines.
@@ -3393,17 +4468,26 @@ If dateB is empty or missing, do the next lines.
 Set dateB to "".
 
     }
+This closes the block above.
+
+
     if (dateB > dateA) return 1;
 If dateB > dateA, hand back 1.
 
+
     if (dateB < dateA) return -1;
 If dateB < dateA, hand back -1.
+
 
     return 0;
 Hand back 0.
 
   });
+This closes the listener.
+
 }
+This closes the block above.
+
 
 function formatSecondsToClock(ms) {
 This is the formatSecondsToClock function. It turns milliseconds into a minutes:seconds clock.
@@ -3420,6 +4504,7 @@ Make seconds and set it to totalSeconds % 60.
   var formattedSeconds = "" + seconds;
 Make formattedSeconds and set it to "" + seconds.
 
+
   if (seconds < 10) {
 If seconds < 10, do the next lines.
 
@@ -3427,27 +4512,37 @@ If seconds < 10, do the next lines.
 Set formattedSeconds to "0" + seconds.
 
   }
+This closes the block above.
+
+
   return minutes + ":" + formattedSeconds;
 Hand back minutes + ":" + formattedSeconds.
 
 }
+This closes the block above.
+
 
 function formatSideName(side) {
 This is the formatSideName function. It turns pro, con, or observer into Pro, Con, or Observer.
 
-  if (side === "con") return "Con";
-If side === "con", hand back "Con".
+  if (side === "con" || side === "neg") return "Neg";
+Format con or neg sides as "Neg".
 
-  if (side === "pro") return "Pro";
-If side === "pro", hand back "Pro".
+
+  if (side === "pro" || side === "aff") return "Aff";
+Format pro or aff sides as "Aff".
+
 
   if (side === "observer") return "Observer";
 If side === "observer", hand back "Observer".
+
 
   return "";
 Hand back "".
 
 }
+This closes the block above.
+
 
 function getMarkerLabel(id) {
 This is the getMarkerLabel function. It turns a saved marker id into its label.
@@ -3462,17 +4557,25 @@ If MARKERS[i].id === id, do the next lines.
 Hand back MARKERS[i].label.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   return "";
 Hand back "".
 
 }
+This closes the block above.
+
 
 function createSafeFileName(title) {
 This is the createSafeFileName function. It turns a title into a file name made of letters, numbers, and dashes.
 
   var rawTitle = title;
 Copy title into rawTitle.
+
 
   if (!rawTitle) {
 If rawTitle is empty or missing, do the next lines.
@@ -3481,11 +4584,15 @@ If rawTitle is empty or missing, do the next lines.
 Set rawTitle to "round".
 
   }
+This closes the block above.
+
+
   var text = String(rawTitle).toLowerCase();
 Make text and set it to String(rawTitle).toLowerCase().
 
   var out = "";
 Make out and set it to "".
+
 
   for (var i = 0; i < text.length; i++) {
 Loop through text. i is the position, starting at 0.
@@ -3493,11 +4600,13 @@ Loop through text. i is the position, starting at 0.
     var letter = text.charAt(i);
 Make letter and set it to text.charAt(i).
 
+
     if ((letter >= "a" && letter <= "z") || (letter >= "0" && letter <= "9")) {
 If (letter >= "a" && letter <= "z") || (letter >= "0" && letter <= "9"), do the next lines.
 
       out += letter;
 This line continues the step above.
+
 
     } else if (out && out.charAt(out.length - 1) !== "-") {
 Otherwise, if out && out.charAt(out.length - 1) !== "-", do the next lines.
@@ -3506,7 +4615,12 @@ Otherwise, if out && out.charAt(out.length - 1) !== "-", do the next lines.
 This line continues the step above.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   if (out.charAt(out.length - 1) === "-") {
 If out.charAt(out.length - 1) === "-", do the next lines.
 
@@ -3514,19 +4628,26 @@ If out.charAt(out.length - 1) === "-", do the next lines.
 Set out to out.slice(0, out.length - 1).
 
   }
+This closes the block above.
+
+
   if (!out) return "round";
 If out is empty or missing, hand back "round".
+
 
   return out;
 Hand back out.
 
 }
+This closes the block above.
+
 
 function downloadRoundAsJson(round) {
 This is the downloadRoundAsJson function. It downloads the round as a JSON file.
 
   if (!round) return;
 If round is missing, stop here.
+
 
   var payload = {
 This line continues the step above.
@@ -3544,6 +4665,8 @@ On this object, note is "Version 1 does not import this file. It is a record of 
 On this object, round is round.
 
   };
+var SAFE_STYLES = [
+
   var file = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
 Make file and set it to new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }).
 
@@ -3552,6 +4675,7 @@ Make link and set it to document.createElement("a").
 
   var name = createSafeFileName(round.title);
 Make name and set it to createSafeFileName(round.title).
+
 
   link.href = URL.createObjectURL(file);
 Set link.href to URL.createObjectURL(file).
@@ -3569,7 +4693,11 @@ This line continues the step above.
 Run URL.revokeObjectURL, passing link.href.
 
   }, 1000);
+Execute the statement above.
+
 }
+This closes the block above.
+
 
 var SAFE_TAGS = {
 SAFE_TAGS lists the pasted tags the evidence box is allowed to keep.
@@ -3585,6 +4713,9 @@ On this object, MARK is true, SUB: true, SUP: true, BLOCKQUOTE: true, H1: true, 
 
 };
 var SAFE_STYLES = [
+
+
+var SAFE_STYLES = [
 SAFE_STYLES lists the pasted styles the evidence box is allowed to keep, including bold and highlight.
 
   "color", "background-color", "font-size", "font-family", 
@@ -3594,7 +4725,8 @@ This line continues the step above.
 This line continues the step above.
 
 ];
-This line continues the step above.
+Close notes array.
+
 
 function pastedStyleIsAllowed(value) {
 This is the pastedStyleIsAllowed function. It rejects pasted styles that could run code or load an outside file.
@@ -3605,19 +4737,25 @@ Make lower and set it to String(value || "").toLowerCase().
   if (lower.indexOf("url(") !== -1) return false;
 If lower.indexOf("url(") !== -1, hand back false.
 
+
   if (lower.indexOf("expression") !== -1) return false;
 If lower.indexOf("expression") !== -1, hand back false.
+
 
   if (lower.indexOf("javascript") !== -1) return false;
 If lower.indexOf("javascript") !== -1, hand back false.
 
+
   if (lower.indexOf("@import") !== -1) return false;
 If lower.indexOf("@import") !== -1, hand back false.
+
 
   return true;
 Hand back true.
 
 }
+This closes the block above.
+
 
 function copyAllowedStyles(style, raw) {
 This is the copyAllowedStyles function. It keeps only the safe styles from pasted text, including bold and highlight.
@@ -3628,6 +4766,7 @@ Make out and set it to [].
   if (!style) return "";
 If style is empty or missing, hand back "".
 
+
   for (var i = 0; i < SAFE_STYLES.length; i++) {
 Loop through SAFE_STYLES. i is the position, starting at 0.
 
@@ -3637,15 +4776,21 @@ Make val and set it to style.getPropertyValue(SAFE_STYLES[i]).
     if (!val) continue;
 If val is empty or missing, skip to the next loop turn.
 
+
     if (!pastedStyleIsAllowed(val)) continue;
 If !pastedStyleIsAllowed(val), skip to the next loop turn.
+
 
     out.push(SAFE_STYLES[i] + ":" + val);
 Add SAFE_STYLES[i] + ":" + val to the list.
 
   }
+This closes the block above.
+
+
   var joined = out.join(";");
 Make joined and set it to out.join(";").
+
 
   if (joined.indexOf("background-color") === -1) {
 If joined.indexOf("background-color") === -1, do the next lines.
@@ -3653,11 +4798,13 @@ If joined.indexOf("background-color") === -1, do the next lines.
     var bg = style.getPropertyValue("background");
 Make bg and set it to style.getPropertyValue("background").
 
+
     if (bg && bg.indexOf("url(") === -1 && bg.indexOf("gradient") === -1 && pastedStyleIsAllowed(bg)) {
 If bg && bg.indexOf("url(") === -1 && bg.indexOf("gradient") === -1 && pastedStyleIsAllowed(bg), do the next lines.
 
       var first = bg.split(" ")[0];
 Make first and set it to bg.split(" ")[0].
+
 
       if (first) {
 If first, do the next lines.
@@ -3666,8 +4813,15 @@ If first, do the next lines.
 Add "background-color:" + first to the list.
 
       }
+This closes the block above.
+
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   joined = out.join(";");
 Set joined to out.join(";").
 
@@ -3677,11 +4831,13 @@ Make rawText and set it to String(raw || "").toLowerCase().
   var markAt = rawText.indexOf("mso-highlight:");
 Make markAt and set it to rawText.indexOf("mso-highlight:").
 
+
   if (markAt !== -1 && joined.indexOf("background-color") === -1) {
 If markAt !== -1 && joined.indexOf("background-color") === -1, do the next lines.
 
     var color = rawText.slice(markAt + "mso-highlight:".length).split(";")[0];
 Make color and set it to rawText.slice(markAt + "mso-highlight:".length).split(";")[0].
+
 
     color = color.replace(/^\s+|\s+$/g, "");
 Set color to color.replace(/^\s+|\s+$/g, "").
@@ -3693,7 +4849,12 @@ If color && color !== "none" && color !== "auto" && pastedStyleIsAllowed(color),
 Add "background-color:" + color to the list.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   copyBoldAndItalic(out, rawText);
 Run copyBoldAndItalic, passing out, rawText.
 
@@ -3701,6 +4862,8 @@ Run copyBoldAndItalic, passing out, rawText.
 Hand back out.join(";").
 
 }
+This closes the block above.
+
 
 function readRawStyleValue(rawText, name) {
 This is the readRawStyleValue function. It reads one style value out of raw pasted style text.
@@ -3714,16 +4877,20 @@ Make at and set it to rawText.indexOf(key).
   if (at === -1) return "";
 If at === -1, hand back "".
 
+
   return rawText.slice(at + key.length).split(";")[0].replace(/^\s+|\s+$/g, "");
 Hand back rawText.slice(at + key.length).split(";")[0].replace(/^\s+|\s+$/g, "").
 
 }
+This closes the block above.
+
 
 function findStyleInList(out, name) {
 This is the findStyleInList function. It finds a style that was already kept.
 
   var i;
 Make an empty variable named i.
+
 
   for (i = 0; i < out.length; i++) {
 Loop with i = 0; i < out.length; i++.
@@ -3732,16 +4899,22 @@ Loop with i = 0; i < out.length; i++.
 If out[i].indexOf(name + ":") === 0, hand back out[i].
 
   }
+This closes the block above.
+
+
   return "";
 Hand back "".
 
 }
+This closes the block above.
+
 
 function putStyleInList(out, name, value) {
 This is the putStyleInList function. It saves or replaces one style in the kept list.
 
   var i;
 Make an empty variable named i.
+
 
   for (i = 0; i < out.length; i++) {
 Loop with i = 0; i < out.length; i++.
@@ -3756,17 +4929,25 @@ Set out[i] to name + ":" + value.
 Stop this function here.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   out.push(name + ":" + value);
 Add name + ":" + value to the list.
 
 }
+This closes the block above.
+
 
 function copyBoldAndItalic(out, rawText) {
 This is the copyBoldAndItalic function. It keeps bold and italic that Word stored under its own style names.
 
   var weightMark = readRawStyleValue(rawText, "mso-ansi-font-weight");
 Make weightMark and set it to readRawStyleValue(rawText, "mso-ansi-font-weight").
+
 
   if (!weightMark) {
 If weightMark is empty or missing, do the next lines.
@@ -3775,11 +4956,15 @@ If weightMark is empty or missing, do the next lines.
 Set weightMark to readRawStyleValue(rawText, "mso-bidi-font-weight").
 
   }
+This closes the block above.
+
+
   var currentWeight = findStyleInList(out, "font-weight");
 Make currentWeight and set it to findStyleInList(out, "font-weight").
 
   var weightIsPlain = !currentWeight || currentWeight.indexOf("normal") !== -1 || currentWeight.indexOf("400") !== -1;
 Make weightIsPlain and set it to !currentWeight || currentWeight.indexOf("normal") !== -1 || currentWeight.indexOf("400") !== -1.
+
 
   if ((weightMark === "bold" || weightMark === "700") && weightIsPlain) {
 If (weightMark === "bold" || weightMark === "700") && weightIsPlain, do the next lines.
@@ -3788,8 +4973,12 @@ If (weightMark === "bold" || weightMark === "700") && weightIsPlain, do the next
 Run putStyleInList, passing out, "font-weight", "bold".
 
   }
+This closes the block above.
+
+
   var styleMark = readRawStyleValue(rawText, "mso-ansi-font-style");
 Make styleMark and set it to readRawStyleValue(rawText, "mso-ansi-font-style").
+
 
   if (!styleMark) {
 If styleMark is empty or missing, do the next lines.
@@ -3798,8 +4987,12 @@ If styleMark is empty or missing, do the next lines.
 Set styleMark to readRawStyleValue(rawText, "mso-bidi-font-style").
 
   }
+This closes the block above.
+
+
   var currentStyle = findStyleInList(out, "font-style");
 Make currentStyle and set it to findStyleInList(out, "font-style").
+
 
   if (styleMark === "italic" && (!currentStyle || currentStyle.indexOf("normal") !== -1)) {
 If styleMark === "italic" && (!currentStyle || currentStyle.indexOf("normal") !== -1), do the next lines.
@@ -3808,7 +5001,11 @@ If styleMark === "italic" && (!currentStyle || currentStyle.indexOf("normal") !=
 Run putStyleInList, passing out, "font-style", "italic".
 
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 function keepSafeLink(href) {
 This is the keepSafeLink function. It keeps a pasted link only when it is http, https, or mailto.
@@ -3822,22 +5019,28 @@ Make lower and set it to value.toLowerCase().
   if (lower.indexOf("https:") === 0) return value;
 If lower.indexOf("https:") === 0, hand back value.
 
+
   if (lower.indexOf("http:") === 0) return value;
 If lower.indexOf("http:") === 0, hand back value.
 
+
   if (lower.indexOf("mailto:") === 0) return value;
 If lower.indexOf("mailto:") === 0, hand back value.
+
 
   return "";
 Hand back "".
 
 }
+This closes the block above.
+
 
 function cleanChildTags(node, notice, fragment) {
 This is the cleanChildTags function. It cleans every child inside a pasted tag.
 
   var child = node.firstChild;
 Copy node.firstChild into child.
+
 
   while (child) {
 Keep looping while child.
@@ -3848,6 +5051,7 @@ Copy child.nextSibling into next.
     var cleaned = cleanOneTag(child, notice);
 Make cleaned and set it to cleanOneTag(child, notice).
 
+
     if (cleaned) {
 If cleaned, do the next lines.
 
@@ -3855,11 +5059,18 @@ If cleaned, do the next lines.
 Put cleaned inside this box.
 
     }
+This closes the block above.
+
+
     child = next;
 Set child to next.
 
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 function cleanOneTag(node, notice) {
 This is the cleanOneTag function. It cleans one pasted tag and drops tags the evidence box should not keep.
@@ -3867,8 +5078,10 @@ This is the cleanOneTag function. It cleans one pasted tag and drops tags the ev
   if (node.nodeType === 3) return document.createTextNode(node.textContent);
 If node.nodeType === 3, hand back document.createTextNode(node.textContent).
 
+
   if (node.nodeType !== 1) return null;
 If node.nodeType !== 1, hand back null.
+
 
   if (node.tagName === "TABLE" || node.tagName === "IMG" || node.tagName === "IMAGE") {
 If node.tagName === "TABLE" || node.tagName === "IMG" || node.tagName === "IMAGE", do the next lines.
@@ -3880,8 +5093,12 @@ If notice.indexOf("simplified") === -1, do the next lines.
 Add "simplified" to the list.
 
     }
+This closes the block above.
+
+
     var text = "";
 Make text and set it to "".
+
 
     if (node.tagName !== "IMG") {
 If node.tagName !== "IMG", do the next lines.
@@ -3896,14 +5113,23 @@ If text is empty or missing, do the next lines.
 Set text to "".
 
       }
+This closes the block above.
+
     }
+This closes the block above.
+
+
     if (!text) return null;
 If text is empty or missing, hand back null.
+
 
     return document.createTextNode(text);
 Hand back document.createTextNode(text).
 
   }
+This closes the block above.
+
+
   if (node.tagName === "SCRIPT" || node.tagName === "STYLE" || node.tagName === "IFRAME" || node.tagName === "OBJECT") {
 If node.tagName === "SCRIPT" || node.tagName === "STYLE" || node.tagName === "IFRAME" || node.tagName === "OBJECT", do the next lines.
 
@@ -3911,11 +5137,15 @@ If node.tagName === "SCRIPT" || node.tagName === "STYLE" || node.tagName === "IF
 Hand back null.
 
   }
+This closes the block above.
+
+
   if (!SAFE_TAGS[node.tagName]) {
 If !SAFE_TAGS[node.tagName], do the next lines.
 
     var copyFragment = document.createDocumentFragment();
 Make copyFragment and set it to document.createDocumentFragment().
+
 
     cleanChildTags(node, notice, copyFragment);
 Run cleanChildTags, passing node, notice, copyFragment.
@@ -3924,14 +5154,19 @@ Run cleanChildTags, passing node, notice, copyFragment.
 Hand back copyFragment.
 
   }
+This closes the block above.
+
+
   var copy;
 Make an empty variable named copy.
+
 
   if (node.tagName === "FONT") {
 If node.tagName === "FONT", do the next lines.
 
     copy = document.createElement("span");
 Set copy to document.createElement("span").
+
 
   } else if (node.tagName === "H1" || node.tagName === "H2" || node.tagName === "H3") {
 Otherwise, if node.tagName === "H1" || node.tagName === "H2" || node.tagName === "H3", do the next lines.
@@ -3946,8 +5181,12 @@ Otherwise, do the next lines.
 Set copy to document.createElement(node.tagName.toLowerCase()).
 
   }
+This closes the block above.
+
+
   var style = copyAllowedStyles(node.style, node.getAttribute("style"));
 Make style and set it to copyAllowedStyles(node.style, node.getAttribute("style")).
+
 
   if (node.tagName === "FONT") {
 If node.tagName === "FONT", do the next lines.
@@ -3968,12 +5207,18 @@ Otherwise, do the next lines.
 Set style to "color:" + node.color.
 
       }
+This closes the block above.
+
     }
+This closes the block above.
+
+
     if (node.size) {
 If node.size, do the next lines.
 
       var fontPx = Number(node.size) * 4 + 8;
 Make fontPx and set it to Number(node.size) * 4 + 8.
+
 
       if (style) {
 If style, do the next lines.
@@ -3988,8 +5233,15 @@ Otherwise, do the next lines.
 Set style to "font-size:" + fontPx + "px".
 
       }
+This closes the block above.
+
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   if (style) {
 If style, do the next lines.
 
@@ -3997,17 +5249,22 @@ If style, do the next lines.
 Run copy.setAttribute, passing "style", style.
 
   }
+This closes the block above.
+
+
   if (copy.tagName === "A") {
 If copy.tagName === "A", do the next lines.
 
     var href = keepSafeLink(node.getAttribute("href"));
 Make href and set it to keepSafeLink(node.getAttribute("href")).
 
+
     if (!href) {
 If href is empty or missing, do the next lines.
 
       var plainFragment = document.createDocumentFragment();
 Make plainFragment and set it to document.createDocumentFragment().
+
 
       cleanChildTags(node, notice, plainFragment);
 Run cleanChildTags, passing node, notice, plainFragment.
@@ -4016,10 +5273,16 @@ Run cleanChildTags, passing node, notice, plainFragment.
 Hand back plainFragment.
 
     }
+This closes the block above.
+
+
     copy.setAttribute("href", href);
 Run copy.setAttribute, passing "href", href.
 
   }
+This closes the block above.
+
+
   if (copy.tagName !== "BR") {
 If copy.tagName !== "BR", do the next lines.
 
@@ -4027,10 +5290,15 @@ If copy.tagName !== "BR", do the next lines.
 Run cleanChildTags, passing node, notice, copy.
 
   }
+This closes the block above.
+
+
   return copy;
 Hand back copy.
 
 }
+This closes the block above.
+
 
 function classNameFromCssRule(selector) {
 This is the classNameFromCssRule function. It reads a class name from a simple CSS rule.
@@ -4041,17 +5309,22 @@ Make name and set it to String(selector || "").replace(/^\s+|\s+$/g, "").
   if (!name) return "";
 If name is empty or missing, hand back "".
 
+
   if (name.indexOf(" ") !== -1) return "";
 If name.indexOf(" ") !== -1, hand back "".
+
 
   if (name.indexOf(",") !== -1) return "";
 If name.indexOf(",") !== -1, hand back "".
 
+
   if (name.indexOf(":") !== -1) return "";
 If name.indexOf(":") !== -1, hand back "".
 
+
   if (name.indexOf("#") !== -1) return "";
 If name.indexOf("#") !== -1, hand back "".
+
 
   var dot = name.indexOf(".");
 Make dot and set it to name.indexOf(".").
@@ -4059,8 +5332,10 @@ Make dot and set it to name.indexOf(".").
   if (dot === -1) return "";
 If dot === -1, hand back "".
 
+
   if (name.indexOf(".", dot + 1) !== -1) return "";
 If name.indexOf(".", dot + 1) !== -1, hand back "".
+
 
   var className = name.slice(dot + 1);
 Make className and set it to name.slice(dot + 1).
@@ -4068,11 +5343,13 @@ Make className and set it to name.slice(dot + 1).
   if (!className) return "";
 If className is empty or missing, hand back "".
 
+
   var tag = name.slice(0, dot);
 Make tag and set it to name.slice(0, dot).
 
   var t;
 Make an empty variable named t.
+
 
   for (t = 0; t < tag.length; t++) {
 Loop with t = 0; t < tag.length; t++.
@@ -4084,10 +5361,15 @@ Make ch and set it to tag.charAt(t).toLowerCase().
 If ch < "a" || ch > "z", hand back "".
 
   }
+This closes the block above.
+
+
   return className;
 Hand back className.
 
 }
+This closes the block above.
+
 
 function copyClassStylesOntoPaste(parsed) {
 This is the copyClassStylesOntoPaste function. It copies class styles from a pasted style tag onto the matching tags.
@@ -4101,6 +5383,7 @@ Make classStyles and set it to {}.
   var s;
 Make an empty variable named s.
 
+
   for (s = 0; s < styleTags.length; s++) {
 Loop with s = 0; s < styleTags.length; s++.
 
@@ -4112,6 +5395,7 @@ Make chunks and set it to text.split("}").
 
     var c;
 Make an empty variable named c.
+
 
     for (c = 0; c < chunks.length; c++) {
 Loop with c = 0; c < chunks.length; c++.
@@ -4125,22 +5409,30 @@ Make open and set it to chunk.indexOf("{").
       if (open === -1) continue;
 If open === -1, skip to the next loop turn.
 
+
       var className = classNameFromCssRule(chunk.slice(0, open));
 Make className and set it to classNameFromCssRule(chunk.slice(0, open)).
 
       if (!className) continue;
 If className is empty or missing, skip to the next loop turn.
 
+
       classStyles[className] = chunk.slice(open + 1);
 Set classStyles[className] to chunk.slice(open + 1).
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   var nodes = parsed.body.querySelectorAll("[class]");
 Make nodes and set it to parsed.body.querySelectorAll("[class]").
 
   var n;
 Make an empty variable named n.
+
 
   for (n = 0; n < nodes.length; n++) {
 Loop with n = 0; n < nodes.length; n++.
@@ -4154,6 +5446,7 @@ Make extra and set it to "".
     var i;
 Make an empty variable named i.
 
+
     for (i = 0; i < names.length; i++) {
 Loop with i = 0; i < names.length; i++.
 
@@ -4164,21 +5457,33 @@ If classStyles[names[i]], do the next lines.
 This line continues the step above.
 
       }
+This closes the block above.
+
     }
+This closes the block above.
+
+
     if (!extra) continue;
 If extra is empty or missing, skip to the next loop turn.
 
+
     var current = nodes[n].getAttribute("style") || "";
 Make current and set it to nodes[n].getAttribute("style") || "".
+
 
     nodes[n].setAttribute("style", extra + current);
 This line continues the step above.
 
   }
+This closes the block above.
+
+
   return parsed.body;
 Hand back parsed.body.
 
 }
+This closes the block above.
+
 
 function cleanPastedHtml(html) {
 This is the cleanPastedHtml function. It cleans pasted HTML so bold text and highlights can stay in the evidence box.
@@ -4189,6 +5494,7 @@ Make notice and set it to [].
   var htmlText = html;
 Copy html into htmlText.
 
+
   if (!htmlText) {
 If htmlText is empty or missing, do the next lines.
 
@@ -4196,6 +5502,9 @@ If htmlText is empty or missing, do the next lines.
 Set htmlText to "".
 
   }
+This closes the block above.
+
+
   var parsed = new DOMParser().parseFromString(String(htmlText), "text/html");
 Make parsed and set it to new DOMParser().parseFromString(String(htmlText), "text/html").
 
@@ -4205,6 +5514,7 @@ Make source and set it to copyClassStylesOntoPaste(parsed).
   var wrap = document.createElement("div");
 Make wrap and set it to document.createElement("div").
 
+
   if (source) {
 If source, do the next lines.
 
@@ -4212,8 +5522,12 @@ If source, do the next lines.
 Run cleanChildTags, passing source, notice, wrap.
 
   }
+This closes the block above.
+
+
   var plain = wrap.textContent;
 Copy wrap.textContent into plain.
+
 
   if (!plain) {
 If plain is empty or missing, do the next lines.
@@ -4222,8 +5536,12 @@ If plain is empty or missing, do the next lines.
 Set plain to "".
 
   }
+This closes the block above.
+
+
   var noticeText = "";
 Make noticeText and set it to "".
+
 
   if (notice.length > 0) {
 If notice.length > 0, do the next lines.
@@ -4232,6 +5550,9 @@ If notice.length > 0, do the next lines.
 Set noticeText to "Some pasted content was simplified so it stays readable.".
 
   }
+This closes the block above.
+
+
   return {
 Hand back this object.
 
@@ -4245,7 +5566,11 @@ On this object, plain is plain.
 On this object, notice is noticeText.
 
   };
+var SAFE_STYLES = [
+
 }
+This closes the block above.
+
 
 function convertLinesToHtml(text) {
 This is the convertLinesToHtml function. It turns plain pasted lines into HTML paragraphs.
@@ -4256,11 +5581,13 @@ Make lines and set it to String(text || "").split("\n").
   var parts = [];
 Make parts and set it to [].
 
+
   for (var i = 0; i < lines.length; i++) {
 Loop through lines. i is the position, starting at 0.
 
     var lineBox = document.createElement("div");
 Make lineBox and set it to document.createElement("div").
+
 
     lineBox.textContent = lines[i];
 Set lineBox.textContent to lines[i].
@@ -4269,10 +5596,15 @@ Set lineBox.textContent to lines[i].
 Add lineBox.innerHTML to the list.
 
   }
+This closes the block above.
+
+
   return parts.join("<br>");
 Hand back parts.join("<br>").
 
 }
+This closes the block above.
+
 
 function insertHtmlAtCursor(html) {
 This is the insertHtmlAtCursor function. It inserts cleaned HTML where the cursor is in the evidence box.
@@ -4280,14 +5612,17 @@ This is the insertHtmlAtCursor function. It inserts cleaned HTML where the curso
   if (!html) return;
 If html is missing, stop here.
 
+
   var selection = window.getSelection();
 Make selection and set it to window.getSelection().
 
   if (!selection || !selection.rangeCount) return;
 If !selection || !selection.rangeCount, stop here.
 
+
   var range = selection.getRangeAt(0);
 Make range and set it to selection.getRangeAt(0).
+
 
   range.deleteContents();
 Run range.deleteContents.
@@ -4301,6 +5636,7 @@ Make fragment and set it to document.createDocumentFragment().
   var holder = parsed.body.firstChild;
 Copy parsed.body.firstChild into holder.
 
+
   while (holder && holder.firstChild) {
 Keep looping while holder && holder.firstChild.
 
@@ -4308,8 +5644,12 @@ Keep looping while holder && holder.firstChild.
 Put holder.firstChild inside this box.
 
   }
+This closes the block above.
+
+
   var node = fragment.lastChild;
 Copy fragment.lastChild into node.
+
 
   range.insertNode(fragment);
 Run range.insertNode, passing fragment.
@@ -4333,10 +5673,15 @@ Run selection.removeAllRanges.
 Run selection.addRange, passing range.
 
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 var db = loadSavedData();
 db is the saved data for this browser. Load it as soon as the shared script starts.
+
 
 var state = {
 state holds what the page is doing right now: the open round, the open side, and the selected point.
@@ -4390,8 +5735,12 @@ On this object, query is "".
 On this object, composing is false.
 
 };
+var SAFE_STYLES = [
+
+
 var confirmRun = null;
 confirmRun remembers what to do if the person presses the confirm button.
+
 
 function getOpenCaseSide() {
 This is the getOpenCaseSide function. It returns the side that is open: a preflow side, or Pro or Con.
@@ -4403,16 +5752,22 @@ If state.round && state.round.isPreflow, do the next lines.
 Hand back state.round.preflowSide.
 
   }
+This closes the block above.
+
+
   return state.caseSide;
 Hand back state.caseSide.
 
 }
+This closes the block above.
+
 
 function getFontSize() {
 This is the getFontSize function. It returns the saved font size, or 14.
 
   var size = 14;
 Copy 14 into size.
+
 
   if (db && db.settings && db.settings.fontSize) {
 If db && db.settings && db.settings.fontSize, do the next lines.
@@ -4421,10 +5776,15 @@ If db && db.settings && db.settings.fontSize, do the next lines.
 Set size to db.settings.fontSize.
 
   }
+This closes the block above.
+
+
   return size;
 Hand back size.
 
 }
+This closes the block above.
+
 
 function clearUndoHistory() {
 This is the clearUndoHistory function. It forgets the undo and redo steps.
@@ -4442,12 +5802,15 @@ Set state.history.typing to false.
 Run showUndoButtons.
 
 }
+This closes the block above.
+
 
 function copyRoundForUndo() {
 This is the copyRoundForUndo function. It copies the flow so Undo can put it back.
 
   if (!state.round) return null;
 If state.round is empty or missing, hand back null.
+
 
   return JSON.stringify({
 This line continues the step above.
@@ -4465,7 +5828,11 @@ On this object, notes is state.round.notes.
 On this object, evidence is state.round.evidence.
 
   });
+This closes the listener.
+
 }
+This closes the block above.
+
 
 function restoreRoundFromUndo(json) {
 This is the restoreRoundFromUndo function. It puts a saved undo copy back onto the open round.
@@ -4473,8 +5840,10 @@ This is the restoreRoundFromUndo function. It puts a saved undo copy back onto t
   if (!state.round || !json) return;
 If !state.round || !json, stop here.
 
+
   var data = JSON.parse(json);
 Make data and set it to JSON.parse(json).
+
 
   state.round.cases = data.cases;
 Set state.round.cases to data.cases.
@@ -4495,9 +5864,11 @@ Run repairRoundData, passing state.round.
 Save after a short wait, or save now if the flag says so.
 
   render();
-Draw the page again.
+Run render.
 
 }
+This closes the block above.
+
 
 function saveUndoStep() {
 This is the saveUndoStep function. It stores one undo step.
@@ -4507,6 +5878,7 @@ Make snap and set it to copyRoundForUndo().
 
   if (!snap) return;
 If snap is missing, stop here.
+
 
   state.history.past.push(snap);
 Add snap to the list.
@@ -4518,6 +5890,9 @@ If state.history.past.length > 30, do the next lines.
 Run state.history.past.shift.
 
   }
+This closes the block above.
+
+
   state.history.future = [];
 Set state.history.future to [].
 
@@ -4525,6 +5900,8 @@ Set state.history.future to [].
 Run showUndoButtons.
 
 }
+This closes the block above.
+
 
 function showUndoButtons() {
 This is the showUndoButtons function. It enables Undo and Redo only when there is a step to use.
@@ -4535,6 +5912,7 @@ Find the first page piece matching "[data-action='undo']" and save it as undoBtn
   var redoBtn = document.querySelector("[data-action='redo']");
 Find the first page piece matching "[data-action='redo']" and save it as redoBtn.
 
+
   if (undoBtn) {
 If undoBtn, do the next lines.
 
@@ -4542,6 +5920,9 @@ If undoBtn, do the next lines.
 This line continues the step above.
 
   }
+This closes the block above.
+
+
   if (redoBtn) {
 If redoBtn, do the next lines.
 
@@ -4549,7 +5930,11 @@ If redoBtn, do the next lines.
 This line continues the step above.
 
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 function startTypingUndo() {
 This is the startTypingUndo function. It stores one undo step for a burst of typing.
@@ -4564,6 +5949,9 @@ Run saveUndoStep.
 Set state.history.typing to true.
 
   }
+This closes the block above.
+
+
   clearTimeout(state.typingTimer);
 Run clearTimeout, passing state.typingTimer.
 
@@ -4574,7 +5962,11 @@ This line continues the step above.
 Set state.history.typing to false.
 
   }, 900);
+Execute the statement above.
+
 }
+This closes the block above.
+
 
 function saveUndoBeforeChange() {
 This is the saveUndoBeforeChange function. It finishes the typing burst, then stores an undo step.
@@ -4586,6 +5978,8 @@ Run finishTypingUndo.
 Run saveUndoStep.
 
 }
+This closes the block above.
+
 
 function undo() {
 This is the undo function. It puts the flow back to the previous step.
@@ -4596,11 +5990,13 @@ Run finishTypingUndo.
   if (!state.history.past.length) return;
 If state.history.past.length is missing, stop here.
 
+
   var current = copyRoundForUndo();
 Make current and set it to copyRoundForUndo().
 
   var previous = state.history.past.pop();
 Make previous and set it to state.history.past.pop().
+
 
   state.history.future.push(current);
 Add current to the list.
@@ -4615,6 +6011,8 @@ Run restoreRoundFromUndo, passing previous.
 Run showUndoButtons.
 
 }
+This closes the block above.
+
 
 function redo() {
 This is the redo function. It puts the flow forward to the step that was undone.
@@ -4625,11 +6023,13 @@ Run finishTypingUndo.
   if (!state.history.future.length) return;
 If state.history.future.length is missing, stop here.
 
+
   var current = copyRoundForUndo();
 Make current and set it to copyRoundForUndo().
 
   var next = state.history.future.pop();
 Make next and set it to state.history.future.pop().
+
 
   state.history.past.push(current);
 Add current to the list.
@@ -4644,12 +6044,15 @@ Run restoreRoundFromUndo, passing next.
 Run showUndoButtons.
 
 }
+This closes the block above.
+
 
 function updateSaveLabel() {
 This is the updateSaveLabel function. It writes the save message into the page.
 
   var label = document.getElementById("save-label");
 Find the save label box (id save-label) and save it as label.
+
 
   if (label) {
 If label, do the next lines.
@@ -4658,13 +6061,18 @@ If label, do the next lines.
 Set label.textContent to state.saveState.
 
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 function saveThisRound() {
 This is the saveThisRound function. It writes the open round or preflow into browser storage.
 
   if (!state.round || state.demo) return;
 If !state.round || state.demo, stop here.
+
 
   state.round.updatedAt = new Date().toISOString();
 Set state.round.updatedAt to new Date().toISOString().
@@ -4674,6 +6082,7 @@ If state.round.isPreflow, do the next lines.
 
     var pre = db.preflows[state.round.id];
 Make pre and set it to db.preflows[state.round.id].
+
 
     if (pre) {
 If pre, do the next lines.
@@ -4700,6 +6109,8 @@ Set pre.evidence to state.round.evidence.
 Set pre.updatedAt to state.round.updatedAt.
 
     }
+This closes the block above.
+
   } else {
 Otherwise, do the next lines.
 
@@ -4707,8 +6118,12 @@ Otherwise, do the next lines.
 Set db.rounds[state.round.id] to state.round.
 
   }
+This closes the block above.
+
+
   var msg = saveToLocalStorage(db);
 Make msg and set it to saveToLocalStorage(db).
+
 
   if (msg) {
 If msg, do the next lines.
@@ -4723,10 +6138,15 @@ Otherwise, do the next lines.
 Set state.saveState to "Saved in this browser".
 
   }
+This closes the block above.
+
+
   updateSaveLabel();
 Run updateSaveLabel.
 
 }
+This closes the block above.
+
 
 function saveRoundAfterAMoment(now) {
 This is the saveRoundAfterAMoment function. It marks the page as saving, then saves now or after a short wait.
@@ -4753,7 +6173,11 @@ Otherwise, do the next lines.
 Set state.saveTimer to setTimeout(saveThisRound, 450).
 
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 function finishTypingUndo() {
 This is the finishTypingUndo function. It ends the typing burst so the next change can store a new undo step.
@@ -4765,12 +6189,15 @@ Run clearTimeout, passing state.typingTimer.
 Set state.history.typing to false.
 
 }
+This closes the block above.
+
 
 function rememberOpenRound() {
 This is the rememberOpenRound function. It remembers which round or preflow is open.
 
   if (!state.round) return;
 If state.round is missing, stop here.
+
 
   try {
 Try the next lines. If they fail, the catch block handles it.
@@ -4797,10 +6224,14 @@ Set db.lastRoundId to state.round.id.
 Save the data in this browser.
 
     }
+This closes the block above.
+
   } catch (error) {}
 If the try block fails, do the next lines.
 
 }
+This closes the block above.
+
 
 function openPage(url) {
 This is the openPage function. It opens another page in this app.
@@ -4809,6 +6240,8 @@ This is the openPage function. It opens another page in this app.
 Set window.location.href to url.
 
 }
+This closes the block above.
+
 
 function createDemoRound() {
 This is the createDemoRound function. It builds the sample round used by the feature tour.
@@ -4829,26 +6262,35 @@ On this object, yourSide is "pro".
 On this object, firstSide is "pro".
 
   }, db.settings);
+Execute the statement above.
+
+
   var proId = round.cases.pro.contentionIds[0];
 Make proId and set it to round.cases.pro.contentionIds[0].
+
 
   round.contentions[proId].name = "Student need";
 Set round.contentions[proId].name to "Student need".
 
+
   var attendance = addMainPoint(round, proId, "pro-constructive", "Attendance improves");
 Make attendance and set it to addMainPoint(round, proId, "pro-constructive", "Attendance improves").
+
 
   addMainPoint(round, proId, "pro-constructive", "Nutrition supports learning");
 Add a main point.
 
+
   var transport = addReplyPoint(round, attendance.id, "con-rebuttal", "Transport matters more");
 Make transport and set it to addReplyPoint(round, attendance.id, "con-rebuttal", "Transport matters more").
+
 
   addReplyPoint(round, attendance.id, "con-rebuttal", "Study is small");
 Add a reply.
 
   addReplyPoint(round, transport.id, "pro-summary", "Lunch removes another barrier");
 Add a reply.
+
 
   transport.evidenceId = createUniqueId("ev");
 Set transport.evidenceId to createUniqueId("ev").
@@ -4869,8 +6311,12 @@ On this object, html is "Example paste: students missed fewer days when lunch wa
 On this object, plain is "Example paste: students missed fewer days when lunch was available at school.".
 
   };
+var SAFE_STYLES = [
+
+
   var conId = round.cases.con.contentionIds[0];
 Make conId and set it to round.cases.con.contentionIds[0].
+
 
   round.contentions[conId].name = "Cost";
 Set round.contentions[conId].name to "Cost".
@@ -4882,12 +6328,15 @@ Add a main point.
 Hand back round.
 
 }
+This closes the block above.
+
 
 function beginFeatureTour() {
 This is the beginFeatureTour function. It starts the feature tour on a sample round.
 
   var backId = "";
 Make backId and set it to "".
+
 
   if (state.round && !state.demo && !state.round.isPreflow) {
 If state.round && !state.demo && !state.round.isPreflow, do the next lines.
@@ -4896,11 +6345,16 @@ If state.round && !state.demo && !state.round.isPreflow, do the next lines.
 Set backId to state.round.id.
 
   }
+This closes the block above.
+
+
   sessionStorage.setItem("tourReturn", backId);
 Run sessionStorage.setItem, passing "tourReturn", backId.
 
+
   var demo = createDemoRound();
 Make demo and set it to createDemoRound().
+
 
   sessionStorage.setItem("tourDemo", "1");
 Run sessionStorage.setItem, passing "tourDemo", "1".
@@ -4916,6 +6370,7 @@ Run sessionStorage.setItem, passing "caseSide", "pro".
 
   sessionStorage.removeItem("isOpenPreflow");
 Run sessionStorage.removeItem, passing "isOpenPreflow".
+
 
   if (document.body.dataset.page === "workspace") {
 If document.body.dataset.page === "workspace", do the next lines.
@@ -4942,16 +6397,21 @@ Set state.tourStep to 0.
 Run clearUndoHistory.
 
     render();
-Draw the page again.
+Run render.
 
     return;
 Stop this function here.
 
   }
+This closes the block above.
+
+
   openPage("workspace.html");
 Run openPage, passing "workspace.html".
 
 }
+This closes the block above.
+
 
 function loadOpenRound() {
 This is the loadOpenRound function. It opens the tour round, the remembered round, or the latest round.
@@ -4959,60 +6419,31 @@ This is the loadOpenRound function. It opens the tour round, the remembered roun
   try {
 Try the next lines. If they fail, the catch block handles it.
 
-    if (sessionStorage.getItem("tourDemo") === "1") {
-If sessionStorage.getItem("tourDemo") === "1", do the next lines.
+    sessionStorage.removeItem("tourDemo");
+Clear stored tour demo state.
 
-      var savedTour = sessionStorage.getItem("tourRound");
-Make savedTour and set it to sessionStorage.getItem("tourRound").
+    sessionStorage.removeItem("tourRound");
+Clear stored tour round ID.
 
-      if (savedTour) {
-If savedTour, do the next lines.
+    sessionStorage.removeItem("tourStep");
+Clear stored tour step index.
 
-        state.round = JSON.parse(savedTour);
-Set state.round to JSON.parse(savedTour).
+    sessionStorage.removeItem("tourReturn");
+Clear stored tour return page.
 
-        state.demo = true;
-Set state.demo to true.
-
-        var savedSide = sessionStorage.getItem("caseSide");
-Make savedSide and set it to sessionStorage.getItem("caseSide").
-
-        if (!savedSide) {
-If savedSide is empty or missing, do the next lines.
-
-          savedSide = "pro";
-Set savedSide to "pro".
-
-        }
-        state.caseSide = savedSide;
-Set state.caseSide to savedSide.
-
-        var savedStep = sessionStorage.getItem("tourStep");
-Make savedStep and set it to sessionStorage.getItem("tourStep").
-
-        if (!savedStep) {
-If savedStep is empty or missing, do the next lines.
-
-          savedStep = 0;
-Set savedStep to 0.
-
-        }
-        state.tourStep = Number(savedStep);
-Set state.tourStep to Number(savedStep).
-
-        return true;
-Hand back true.
-
-      }
-    }
   } catch (error) {}
 If the try block fails, do the next lines.
+
+  state.demo = false;
+Disable demo state flag.
+
 
   var id = null;
 Copy null into id.
 
   var isPre = false;
 Copy false into isPre.
+
 
   try {
 Try the next lines. If they fail, the catch block handles it.
@@ -5026,6 +6457,7 @@ This line continues the step above.
   } catch (error) {}
 If the try block fails, do the next lines.
 
+
   if (!id && !isPre) {
 If !id && !isPre, do the next lines.
 
@@ -5033,6 +6465,9 @@ If !id && !isPre, do the next lines.
 Set id to db.lastRoundId.
 
   }
+This closes the block above.
+
+
   if (isPre && id && db.preflows[id]) {
 If isPre && id && db.preflows[id], do the next lines.
 
@@ -5046,6 +6481,9 @@ Run rememberOpenRound.
 Hand back true.
 
   }
+This closes the block above.
+
+
   if (id && db.rounds[id]) {
 If id && db.rounds[id], do the next lines.
 
@@ -5059,8 +6497,12 @@ Run rememberOpenRound.
 Hand back true.
 
   }
+This closes the block above.
+
+
   var all = getListFromObject(db.rounds);
 Make all and set it to getListFromObject(db.rounds).
+
 
   if (all.length > 0) {
 If all.length > 0, do the next lines.
@@ -5075,6 +6517,9 @@ Run rememberOpenRound.
 Hand back true.
 
   }
+This closes the block above.
+
+
   openPage("index.html");
 Run openPage, passing "index.html".
 
@@ -5082,6 +6527,8 @@ Run openPage, passing "index.html".
 Hand back false.
 
 }
+This closes the block above.
+
 
 function openRound(id) {
 This is the openRound function. It remembers a round id and opens the debate page.
@@ -5102,6 +6549,8 @@ If the try block fails, do the next lines.
 Run openPage, passing "workspace.html".
 
 }
+This closes the block above.
+
 
 function openOpening(id) {
 This is the openOpening function. It remembers a preflow id and opens it on the debate page.
@@ -5122,6 +6571,8 @@ If the try block fails, do the next lines.
 Run openPage, passing "workspace.html".
 
 }
+This closes the block above.
+
 
 function updateSideMenu() {
 This is the updateSideMenu function. It opens or closes the phone side menu.
@@ -5131,6 +6582,7 @@ Find the first page piece matching ".workspace" and save it as shell.
 
   var side = document.querySelector(".sidebar");
 Find the first page piece matching ".sidebar" and save it as side.
+
 
   if (state.navOpen) {
 If state.navOpen, do the next lines.
@@ -5142,6 +6594,9 @@ If shell, do the next lines.
 Run shell.classList.add, passing "menu-open".
 
     }
+This closes the block above.
+
+
     if (side) {
 If side, do the next lines.
 
@@ -5149,6 +6604,8 @@ If side, do the next lines.
 Run side.classList.add, passing "open".
 
     }
+This closes the block above.
+
   } else {
 Otherwise, do the next lines.
 
@@ -5159,6 +6616,9 @@ If shell, do the next lines.
 Remove option number "menu-open", so old choices do not pile up. Option 0 stays.
 
     }
+This closes the block above.
+
+
     if (side) {
 If side, do the next lines.
 
@@ -5166,14 +6626,21 @@ If side, do the next lines.
 Remove option number "open", so old choices do not pile up. Option 0 stays.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 function closePopups() {
 This is the closePopups function. It hides the open dialogs and menus.
 
   var boxes = document.querySelectorAll(".popup-cover");
 Find every page piece matching ".popup-cover" and save the list as boxes.
+
 
   for (var i = 0; i < boxes.length; i++) {
 Loop through boxes. i is the position, starting at 0.
@@ -5182,10 +6649,15 @@ Loop through boxes. i is the position, starting at 0.
 Hide boxes[i].
 
   }
+This closes the block above.
+
+
   closeDropdownMenu();
 Run closeDropdownMenu.
 
 }
+This closes the block above.
+
 
 function askConfirm(title, text, okLabel, run) {
 This is the askConfirm function. It shows a confirm box, and runs a function if the person presses the button.
@@ -5202,6 +6674,7 @@ Find the confirm message box (id confirm-text) and set its text to text.
   var buttonLabel = okLabel;
 Copy okLabel into buttonLabel.
 
+
   if (!buttonLabel) {
 If buttonLabel is empty or missing, do the next lines.
 
@@ -5209,6 +6682,9 @@ If buttonLabel is empty or missing, do the next lines.
 Set buttonLabel to "OK".
 
   }
+This closes the block above.
+
+
   document.getElementById("confirm-ok").textContent = buttonLabel;
 Find the confirm button box (id confirm-ok) and set its text to buttonLabel.
 
@@ -5216,6 +6692,8 @@ Find the confirm button box (id confirm-ok) and set its text to buttonLabel.
 Show the confirm box (id confirm-box).
 
 }
+This closes the block above.
+
 
 function getTimerButtonLabel() {
 This is the getTimerButtonLabel function. It chooses the words on the Timer button.
@@ -5226,6 +6704,7 @@ Copy state.round.timers into timer.
   if (!timer) return "Timer";
 If timer is empty or missing, hand back "Timer".
 
+
   if (timer.running && timer.deadline) {
 If timer.running && timer.deadline, do the next lines.
 
@@ -5233,13 +6712,19 @@ If timer.running && timer.deadline, do the next lines.
 Hand back formatSecondsToClock(timer.deadline - Date.now()).
 
   }
+This closes the block above.
+
+
   if (timer.timeUp) return "0:00";
 If timer.timeUp, hand back "0:00".
+
 
   return "Timer";
 Hand back "Timer".
 
 }
+This closes the block above.
+
 
 function updateTimerButton() {
 This is the updateTimerButton function. It refreshes the Timer button and the clock in the timer panel.
@@ -5249,6 +6734,7 @@ Find the Timer button box (id timer-btn) and save it as btn.
 
   if (!btn || !state.round || !state.round.timers) return;
 If !btn || !state.round || !state.round.timers, stop here.
+
 
   btn.textContent = getTimerButtonLabel();
 Set btn.textContent to getTimerButtonLabel().
@@ -5266,6 +6752,9 @@ Otherwise, do the next lines.
 Remove option number "running", so old choices do not pile up. Option 0 stays.
 
   }
+This closes the block above.
+
+
   if (state.round.timers.timeUp) {
 If state.round.timers.timeUp, do the next lines.
 
@@ -5279,14 +6768,19 @@ Otherwise, do the next lines.
 Remove option number "time-up", so old choices do not pile up. Option 0 stays.
 
   }
+This closes the block above.
+
+
   var clock = document.getElementById("popover-clock");
 Find the timer clock box (id popover-clock) and save it as clock.
+
 
   if (clock) {
 If clock, do the next lines.
 
     var shown = state.round.timers.remainingMs;
 Copy state.round.timers.remainingMs into shown.
+
 
     if (state.round.timers.running && state.round.timers.deadline) {
 If state.round.timers.running && state.round.timers.deadline, do the next lines.
@@ -5295,12 +6789,19 @@ If state.round.timers.running && state.round.timers.deadline, do the next lines.
 Set shown to state.round.timers.deadline - Date.now().
 
     }
+This closes the block above.
+
+
     clock.textContent = formatSecondsToClock(shown);
 Set clock.textContent to formatSecondsToClock(shown).
 
   }
+This closes the block above.
+
+
   var startBtn = document.getElementById("timer-start-btn");
 Find the timer Start button box (id timer-start-btn) and save it as startBtn.
+
 
   if (startBtn) {
 If startBtn, do the next lines.
@@ -5318,14 +6819,21 @@ Otherwise, do the next lines.
 Set startBtn.textContent to "Start".
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 function beep() {
 This is the beep function. It plays a short beep when the timer hits zero, if sound is on.
 
   if (!db.settings.sound) return;
 If db.settings.sound is missing, stop here.
+
 
   try {
 Try the next lines. If they fail, the catch block handles it.
@@ -5336,6 +6844,7 @@ Make AudioCtx and set it to window.AudioContext || window.webkitAudioContext.
     if (!AudioCtx) return;
 If AudioCtx is missing, stop here.
 
+
     var ctx = new AudioCtx();
 Make ctx and set it to new AudioCtx().
 
@@ -5344,6 +6853,7 @@ Make osc and set it to ctx.createOscillator().
 
     var gain = ctx.createGain();
 Make gain and set it to ctx.createGain().
+
 
     osc.type = "sine";
 Set osc.type to "sine".
@@ -5373,6 +6883,8 @@ Run osc.stop, passing ctx.currentTime + 0.35.
 If the try block fails, do the next lines.
 
 }
+This closes the block above.
+
 
 function readTimerLength() {
 This is the readTimerLength function. It reads the minutes and seconds typed into the timer.
@@ -5386,6 +6898,7 @@ Find the timer seconds box (id timer-seconds) and save it as secondsBox.
   var minutes = 0;
 Copy 0 into minutes.
 
+
   if (minutesBox) {
 If minutesBox, do the next lines.
 
@@ -5393,8 +6906,12 @@ If minutesBox, do the next lines.
 Set minutes to Number(minutesBox.value).
 
   }
+This closes the block above.
+
+
   var seconds = 0;
 Copy 0 into seconds.
+
 
   if (secondsBox) {
 If secondsBox, do the next lines.
@@ -5403,6 +6920,9 @@ If secondsBox, do the next lines.
 Set seconds to Number(secondsBox.value).
 
   }
+This closes the block above.
+
+
   if (!minutes || minutes < 0) {
 If !minutes || minutes < 0, do the next lines.
 
@@ -5410,6 +6930,9 @@ If !minutes || minutes < 0, do the next lines.
 Set minutes to 0.
 
   }
+This closes the block above.
+
+
   if (!seconds || seconds < 0) {
 If !seconds || seconds < 0, do the next lines.
 
@@ -5417,16 +6940,22 @@ If !seconds || seconds < 0, do the next lines.
 Set seconds to 0.
 
   }
+This closes the block above.
+
+
   return (minutes * 60 + seconds) * 1000;
 Hand back (minutes * 60 + seconds) * 1000.
 
 }
+This closes the block above.
+
 
 function fillTimerInputs(ms) {
 This is the fillTimerInputs function. It fills the timer minutes and seconds boxes.
 
   var safeMs = ms;
 Copy ms into safeMs.
+
 
   if (!safeMs) {
 If safeMs is empty or missing, do the next lines.
@@ -5435,6 +6964,9 @@ If safeMs is empty or missing, do the next lines.
 Set safeMs to 0.
 
   }
+This closes the block above.
+
+
   var total = Math.max(0, Math.ceil(safeMs / 1000));
 Make total and set it to Math.max(0, Math.ceil(safeMs / 1000)).
 
@@ -5444,6 +6976,7 @@ Find the timer minutes box (id timer-minutes) and save it as minutesBox.
   var secondsBox = document.getElementById("timer-seconds");
 Find the timer seconds box (id timer-seconds) and save it as secondsBox.
 
+
   if (minutesBox) {
 If minutesBox, do the next lines.
 
@@ -5451,6 +6984,9 @@ If minutesBox, do the next lines.
 Set minutesBox.value to String(Math.floor(total / 60)).
 
   }
+This closes the block above.
+
+
   if (secondsBox) {
 If secondsBox, do the next lines.
 
@@ -5458,7 +6994,11 @@ If secondsBox, do the next lines.
 Set secondsBox.value to String(total % 60).
 
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 function openSimpleTimer(anchor) {
 This is the openSimpleTimer function. It opens the timer panel.
@@ -5466,19 +7006,44 @@ This is the openSimpleTimer function. It opens the timer panel.
   if (!state.round || state.round.isPreflow || !state.round.timers) return;
 If !state.round || state.round.isPreflow || !state.round.timers, stop here.
 
+
+  var pop = document.getElementById("timer-popover");
+Find the timer panel box (id timer-popover) and save it as pop.
+
+  if (!pop) return;
+If timer popover element was not found, stop here.
+
+
+  if (state.popover === pop) {
+If the timer popover is already open, do the next lines.
+
+    closeDropdownMenu();
+Run closeDropdownMenu.
+
+    return;
+Stop this function here.
+
+  }
+This closes the block above.
+
+
   var timers = state.round.timers;
 Copy state.round.timers into timers.
 
   var ms = timers.remainingMs;
 Copy timers.remainingMs into ms.
 
+
   if (timers.running && timers.deadline) {
 If timers.running && timers.deadline, do the next lines.
 
-    ms = timers.deadline - Date.now();
-Set ms to timers.deadline - Date.now().
+    ms = Math.max(0, timers.deadline - Date.now());
+Calculate remaining countdown time in milliseconds.
 
   }
+This closes the block above.
+
+
   var clock = document.getElementById("popover-clock");
 Find the timer clock box (id popover-clock) and save it as clock.
 
@@ -5489,6 +7054,9 @@ If clock, do the next lines.
 Set clock.textContent to formatSecondsToClock(ms).
 
   }
+This closes the block above.
+
+
   if (!timers.running) {
 If timers.running is empty or missing, do the next lines.
 
@@ -5496,30 +7064,40 @@ If timers.running is empty or missing, do the next lines.
 Run fillTimerInputs, passing ms.
 
   }
+This closes the block above.
+
+
   var startBtn = document.getElementById("timer-start-btn");
 Find the timer Start button box (id timer-start-btn) and save it as startBtn.
 
   if (startBtn) {
 If startBtn, do the next lines.
 
-    if (timers.running) {
-If timers.running, do the next lines.
+    startBtn.textContent = timers.running ? "Pause" : "Start";
+Set timer toggle button text to Pause or Start.
 
-      startBtn.textContent = "Pause";
-Set startBtn.textContent to "Pause".
-
-    } else {
-Otherwise, do the next lines.
-
-      startBtn.textContent = "Start";
-Set startBtn.textContent to "Start".
-
-    }
   }
-  showDropdownMenu(anchor, document.getElementById("timer-popover"));
-Run showDropdownMenu, passing anchor, document.getElementById("timer-popover").
+This closes the block above.
+
+
+  pop.style.top = "14px";
+Position popover 14px from top.
+
+  pop.style.right = "18px";
+Position popover 18px from right corner so it never obscures debate cards.
+
+  pop.style.left = "auto";
+Set left position to auto.
+
+  showElement(pop);
+Display the timer popover.
+
+  state.popover = pop;
+Record active popover in application state.
 
 }
+This closes the block above.
+
 
 function startOrPauseTimer() {
 This is the startOrPauseTimer function. It starts the timer, or pauses it if it is already running.
@@ -5527,8 +7105,10 @@ This is the startOrPauseTimer function. It starts the timer, or pauses it if it 
   if (!state.round || !state.round.timers) return;
 If !state.round || !state.round.timers, stop here.
 
+
   var timers = state.round.timers;
 Copy state.round.timers into timers.
+
 
   if (timers.running) {
 If timers.running, do the next lines.
@@ -5554,8 +7134,9 @@ Otherwise, do the next lines.
     var amount = readTimerLength();
 Make amount and set it to readTimerLength().
 
-    if (amount <= 0) return;
-If amount <= 0, stop here.
+    if (amount <= 0) amount = 240000;
+Default speech duration to 4 minutes (240,000 ms) if empty or zero.
+
 
     timers.remainingMs = amount;
 Set timers.remainingMs to amount.
@@ -5567,19 +7148,15 @@ Set timers.timeUp to false.
 Run startTimer, passing "speech".
 
   }
+This closes the block above.
+
+
   updateTimerButton();
 Run updateTimerButton.
 
-  var pop = document.getElementById("timer-popover");
-Find the timer panel box (id timer-popover) and save it as pop.
-
-  if (state.popover === pop) return;
-If state.popover === pop, stop here.
-
-  openSimpleTimer(document.getElementById("timer-btn"));
-Run openSimpleTimer, passing document.getElementById("timer-btn").
-
 }
+This closes the block above.
+
 
 function resetSimpleTimer() {
 This is the resetSimpleTimer function. It stops the timer and puts it back to the typed length.
@@ -5587,8 +7164,10 @@ This is the resetSimpleTimer function. It stops the timer and puts it back to th
   if (!state.round || !state.round.timers) return;
 If !state.round || !state.round.timers, stop here.
 
+
   var timers = state.round.timers;
 Copy state.round.timers into timers.
+
 
   timers.running = false;
 Set timers.running to false.
@@ -5602,8 +7181,17 @@ Set timers.deadline to null.
   timers.timeUp = false;
 Set timers.timeUp to false.
 
-  timers.remainingMs = readTimerLength();
-Set timers.remainingMs to readTimerLength().
+  var amount = readTimerLength();
+Make amount and set it to readTimerLength().
+
+  if (amount <= 0) amount = 240000;
+Default speech duration to 4 minutes (240,000 ms) if empty or zero.
+
+  timers.remainingMs = amount;
+Set timers.remainingMs to amount.
+
+  fillTimerInputs(amount);
+Fill the minutes and seconds inputs with the selected time.
 
   saveRoundAfterAMoment(true);
 Save after a short wait, or save now if the flag says so.
@@ -5612,6 +7200,8 @@ Save after a short wait, or save now if the flag says so.
 Run updateTimerButton.
 
 }
+This closes the block above.
+
 
 function formatSelectedProof(command, value) {
 This is the formatSelectedProof function. It bolds or highlights the selected text in the evidence box or in a point box.
@@ -5622,14 +7212,17 @@ Make selection and set it to window.getSelection().
   if (!selection || !selection.rangeCount) return;
 If !selection || !selection.rangeCount, stop here.
 
+
   var node = selection.anchorNode;
 Copy selection.anchorNode into node.
 
   if (!node) return;
 If node is missing, stop here.
 
+
   var el = node.parentElement;
 Copy node.parentElement into el.
+
 
   if (node.nodeType === 1) {
 If node.nodeType === 1, do the next lines.
@@ -5638,8 +7231,12 @@ If node.nodeType === 1, do the next lines.
 Set el to node.
 
   }
+This closes the block above.
+
+
   if (!el || !el.closest) return;
 If !el || !el.closest, stop here.
+
 
   var proof = el.closest(".proof-text");
 Make proof and set it to el.closest(".proof-text").
@@ -5652,6 +7249,7 @@ Use the evidence box if the selection is there. Otherwise use the card box.
 
   if (!editor) return;
 If the selection is not inside evidence or a card box, stop here.
+
 
   document.execCommand("styleWithCSS", false, true);
 Run document.execCommand, passing "styleWithCSS", false, true.
@@ -5669,19 +7267,25 @@ Otherwise, do the next lines.
 Run document.execCommand, passing command, false, null.
 
   }
+This closes the block above.
+
+
   if (proof && typeof saveEvidenceText === "function") {
 If the selection is in the evidence box and saveEvidenceText exists, do the next lines.
 
     startTypingUndo();
-Start one undo step for this burst of typing.
+Run startTypingUndo.
 
     saveEvidenceText(proof);
 Run saveEvidenceText, passing proof.
 
     saveRoundAfterAMoment(false);
-Save after a short wait, or save now if the flag says so.
+Run saveRoundAfterAMoment, passing false.
 
   }
+This closes the block above.
+
+
   if (card && card.classList.contains("point-input") && typeof savePointFormatting === "function") {
 If the selection is in a point box and savePointFormatting exists, do the next lines.
 
@@ -5694,16 +7298,19 @@ Save the point text, including bold and highlight.
     saveRoundAfterAMoment(false);
 Run saveRoundAfterAMoment, passing false.
 
-}
+  }
+This closes the block above.
 
 }
 This closes the block above.
+
 
 function startTimer(mode, side) {
 This is the startTimer function. It starts the countdown.
 
   var timer = state.round.timers;
 Copy state.round.timers into timer.
+
 
   timer.running = true;
 Set timer.running to true.
@@ -5723,6 +7330,7 @@ Set timer.prepSide to side.
     var prepMs = timer.prepLeft[side];
 Make prepMs and set it to timer.prepLeft[side].
 
+
     if (!prepMs) {
 If prepMs is empty or missing, do the next lines.
 
@@ -5730,6 +7338,9 @@ If prepMs is empty or missing, do the next lines.
 Set prepMs to 0.
 
     }
+This closes the block above.
+
+
     timer.deadline = Date.now() + prepMs;
 Set timer.deadline to Date.now() + prepMs.
 
@@ -5740,10 +7351,15 @@ Otherwise, do the next lines.
 Set timer.deadline to Date.now() + timer.remainingMs.
 
   }
+This closes the block above.
+
+
   saveRoundAfterAMoment(true);
 Save after a short wait, or save now if the flag says so.
 
 }
+This closes the block above.
+
 
 function calculateColumnWidth(pane, count) {
 This is the calculateColumnWidth function. It chooses how wide each speech column should be.
@@ -5754,6 +7370,7 @@ Copy 800 into total.
   var sidePad = 0;
 Copy 0 into sidePad.
 
+
   if (pane && pane.clientWidth) {
 If pane && pane.clientWidth, do the next lines.
 
@@ -5763,8 +7380,10 @@ Set total to pane.clientWidth.
     var box = window.getComputedStyle(pane);
 Make box and set it to window.getComputedStyle(pane).
 
+
     sidePad = parseFloat(box.paddingLeft) + parseFloat(box.paddingRight);
 Set sidePad to parseFloat(box.paddingLeft) + parseFloat(box.paddingRight).
+
 
   } else if (typeof pane === "number" && pane > 0) {
 Otherwise, if typeof pane === "number" && pane > 0, do the next lines.
@@ -5773,6 +7392,9 @@ Otherwise, if typeof pane === "number" && pane > 0, do the next lines.
 Set total to pane.
 
   }
+This closes the block above.
+
+
   if (!count || count < 1) {
 If !count || count < 1, do the next lines.
 
@@ -5780,6 +7402,9 @@ If !count || count < 1, do the next lines.
 Set count to 1.
 
   }
+This closes the block above.
+
+
   var gap = 20;
 Copy 20 into gap.
 
@@ -5788,6 +7413,7 @@ Copy 220 into minWidth.
 
   var columnsInView = count;
 Copy count into columnsInView.
+
 
   if (window.innerWidth <= 899) {
 If window.innerWidth <= 899, do the next lines.
@@ -5811,9 +7437,15 @@ Otherwise, do the next lines.
 Set columnsInView to 2.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   var inner = total - sidePad;
 Make inner and set it to total - sidePad.
+
 
   if (inner < minWidth) {
 If inner < minWidth, do the next lines.
@@ -5822,8 +7454,12 @@ If inner < minWidth, do the next lines.
 Set inner to total.
 
   }
+This closes the block above.
+
+
   var w = Math.floor((inner - (columnsInView - 1) * gap) / columnsInView);
 Make w and set it to Math.floor((inner - (columnsInView - 1) * gap) / columnsInView).
+
 
   if (w < minWidth) {
 If w < minWidth, do the next lines.
@@ -5832,10 +7468,15 @@ If w < minWidth, do the next lines.
 Set w to minWidth.
 
   }
+This closes the block above.
+
+
   return w;
 Hand back w.
 
 }
+This closes the block above.
+
 
 function showDropdownMenu(anchor, node) {
 This is the showDropdownMenu function. It opens a small menu under a button.
@@ -5850,14 +7491,19 @@ Run closeDropdownMenu.
 Stop this function here.
 
   }
+This closes the block above.
+
+
   closeDropdownMenu();
 Run closeDropdownMenu.
 
   if (!anchor || !node) return;
 If !anchor || !node, stop here.
 
+
   var rect = anchor.getBoundingClientRect();
 Make rect and set it to anchor.getBoundingClientRect().
+
 
   node.style.top = (rect.bottom + 6) + "px";
 Set node.style.top to (rect.bottom + 6) + "px".
@@ -5875,6 +7521,8 @@ Show node.
 Set state.popover to node.
 
 }
+This closes the block above.
+
 
 function closeDropdownMenu() {
 This is the closeDropdownMenu function. It closes the open small menu.
@@ -5886,10 +7534,15 @@ If state.popover, do the next lines.
 Hide state.popover.
 
   }
+This closes the block above.
+
+
   state.popover = null;
 Set state.popover to null.
 
 }
+This closes the block above.
+
 
 function getBallotInfoText() {
 This is the getBallotInfoText function. It builds the side, opponent, and speaking-order line.
@@ -5900,6 +7553,7 @@ Copy state.round.yourSide into your.
   var opp = "";
 Make opp and set it to "".
 
+
   if (state.round.opponent) {
 If state.round.opponent, do the next lines.
 
@@ -5907,18 +7561,26 @@ If state.round.opponent, do the next lines.
 Set opp to " vs " + state.round.opponent.
 
   }
-  var first = "Pro speaks first";
-Make first and set it to "Pro speaks first".
+This closes the block above.
 
-  if (state.round.firstSide === "con") {
-If state.round.firstSide === "con", do the next lines.
 
-    first = "Con speaks first";
-Set first to "Con speaks first".
+  var first = "Aff speaks first";
+Default speaking order text to Aff speaks first.
+
+
+  if (state.round.firstSide === "con" || state.round.firstSide === "neg") {
+If Neg speaks first, do the next lines.
+
+    first = "Neg speaks first";
+Set speaking order text to Neg speaks first.
 
   }
-  var side = "You are Pro";
-Make side and set it to "You are Pro".
+This closes the block above.
+
+
+  var side = "You are Aff";
+Default side indicator to You are Aff.
+
 
   if (your === "observer") {
 If your === "observer", do the next lines.
@@ -5926,17 +7588,23 @@ If your === "observer", do the next lines.
     side = "Observer";
 Set side to "Observer".
 
-  } else if (your === "con") {
-Otherwise, if your === "con", do the next lines.
 
-    side = "You are Con";
-Set side to "You are Con".
+  } else if (your === "con" || your === "neg") {
+If your side is con or neg, do the next lines.
+
+    side = "You are Neg";
+Set side indicator to You are Neg.
 
   }
+This closes the block above.
+
+
   return side + opp + " · " + first;
 Hand back side + opp + " · " + first.
 
 }
+This closes the block above.
+
 
 function updateRoundHeaderInfo() {
 This is the updateRoundHeaderInfo function. It fills the round title and the detail line under it.
@@ -5944,8 +7612,10 @@ This is the updateRoundHeaderInfo function. It fills the round title and the det
   if (!state.round) return;
 If state.round is missing, stop here.
 
+
   var title = document.querySelector(".title-input");
-Find the first page piece matching ".title-input" and save it as title.
+Make title and set it to document.querySelector(".title-input").
+
 
   if (title && document.activeElement !== title && title.value !== state.round.title) {
 If title && document.activeElement !== title && title.value !== state.round.title, do the next lines.
@@ -5954,17 +7624,22 @@ If title && document.activeElement !== title && title.value !== state.round.titl
 Set title.value to state.round.title.
 
   }
+This closes the block above.
+
+
   var note = document.getElementById("title-note");
 Find the round details line box (id title-note) and save it as note.
 
   if (!note) return;
 If note is missing, stop here.
 
+
   var line1 = joinFilledText([state.round.tournament, state.round.roundLabel], " · ");
 Make line1 and set it to joinFilledText([state.round.tournament, state.round.roundLabel], " · ").
 
   var topicLine = "";
 Make topicLine and set it to "".
+
 
   if (state.round.topic && state.round.topic !== state.round.title) {
 If state.round.topic && state.round.topic !== state.round.title, do the next lines.
@@ -5973,16 +7648,22 @@ If state.round.topic && state.round.topic !== state.round.title, do the next lin
 Set topicLine to state.round.topic.
 
   }
+This closes the block above.
+
+
   var line2 = joinFilledText([line1, topicLine], " — ");
 Make line2 and set it to joinFilledText([line1, topicLine], " — ").
 
   var line3 = joinFilledText([line2, getBallotInfoText()], " · ");
 Make line3 and set it to joinFilledText([line2, getBallotInfoText()], " · ").
 
+
   note.textContent = line3;
 Set note.textContent to line3.
 
 }
+This closes the block above.
+
 
 function renderContentionJumpLinks() {
 This is the renderContentionJumpLinks function. It draws the contention links in the sidebar.
@@ -5993,6 +7674,7 @@ Find the contention jump list box (id jump-links) and save it as list.
   if (!list || !state.round) return;
 If !list || !state.round, stop here.
 
+
   clearElement(list);
 Empty list.
 
@@ -6001,6 +7683,7 @@ Make caseSide and set it to getOpenCaseSide().
 
   var ids = state.round.cases[caseSide].contentionIds;
 Make ids and set it to state.round.cases[caseSide].contentionIds.
+
 
   for (var i = 0; i < ids.length; i++) {
 Loop through ids. i is the position, starting at 0.
@@ -6011,8 +7694,10 @@ Make contention and set it to state.round.contentions[ids[i]].
     if (!contention) continue;
 If contention is empty or missing, skip to the next loop turn.
 
+
     var jump = cloneTemplate("jump-sample");
 Copy a hidden sample from the page and save it as jump.
+
 
     jump.dataset.id = ids[i];
 Set jump.dataset.id to ids[i].
@@ -6027,13 +7712,18 @@ This line continues the step above.
 Put jump inside this box.
 
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 function setLinkActiveState(id, on) {
 This is the setLinkActiveState function. It marks one sidebar link as selected.
 
   var node = document.getElementById(id);
 Make node and set it to document.getElementById(id).
+
 
   if (node) {
 If node, do the next lines.
@@ -6042,13 +7732,18 @@ If node, do the next lines.
 Run node.classList.toggle, passing "active", on.
 
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 function updateActiveSideLinks() {
 This is the updateActiveSideLinks function. It marks Pro or Con as the open case.
 
   var onNotes = (document.body.dataset.page === "notes");
 Make onNotes and set it to (document.body.dataset.page === "notes").
+
 
   setLinkActiveState("link-pro", !onNotes && state.caseSide === "pro");
 Run setLinkActiveState, passing "link-pro", !onNotes && state.caseSide === "pro".
@@ -6069,12 +7764,15 @@ Run setLinkActiveState, passing "link-notes", onNotes.
 Run setLinkActiveState, passing "switch-notes", onNotes.
 
 }
+This closes the block above.
+
 
 function updateTopBarAndSidebar() {
 This is the updateTopBarAndSidebar function. It shows the debate tools, or the preflow tools, for the open page.
 
   if (!state.round) return;
 If state.round is missing, stop here.
+
 
   var preflow = state.round.isPreflow;
 Copy state.round.isPreflow into preflow.
@@ -6105,6 +7803,7 @@ Find the toolbar timer box (id toolbar-timer) and save it as toolbarTimer.
 
   var findBtn = document.getElementById("find-btn");
 Find the find button box (id find-btn) and save it as findBtn.
+
 
   if (preflow) {
 If preflow, do the next lines.
@@ -6143,6 +7842,8 @@ Set preLabel.textContent to formatSideName(state.round.preflowSide) + " preflow"
 Show preLabel.
 
     }
+This closes the block above.
+
   } else {
 Otherwise, do the next lines.
 
@@ -6174,6 +7875,9 @@ Hide preMenu.
 Hide preLabel.
 
   }
+This closes the block above.
+
+
   updateActiveSideLinks();
 Run updateActiveSideLinks.
 
@@ -6186,11 +7890,13 @@ Run renderContentionJumpLinks.
   var sizes = document.querySelector("[data-field='font-size']");
 Find the first page piece matching "[data-field='font-size']" and save it as sizes.
 
+
   if (sizes) {
 If sizes, do the next lines.
 
     var chosenSize = db.settings.fontSize;
 Copy db.settings.fontSize into chosenSize.
+
 
     if (!chosenSize) {
 If chosenSize is empty or missing, do the next lines.
@@ -6199,10 +7905,16 @@ If chosenSize is empty or missing, do the next lines.
 Set chosenSize to 14.
 
     }
+This closes the block above.
+
+
     sizes.value = String(chosenSize);
 Set sizes.value to String(chosenSize).
 
   }
+This closes the block above.
+
+
   showUndoButtons();
 Run showUndoButtons.
 
@@ -6210,6 +7922,8 @@ Run showUndoButtons.
 Run updateSideMenu.
 
 }
+This closes the block above.
+
 
 function render() {
 This is the render function. It redraws the current page and updates the timer button.
@@ -6221,23 +7935,31 @@ If window.renderCurrentPage, do the next lines.
 Run window.renderCurrentPage.
 
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 setInterval(function () {
 This line continues the step above.
 
-  if (!state.round || state.demo || state.round.isPreflow || !state.round.timers || !state.round.timers.running) {
-If !state.round || state.demo || state.round.isPreflow || !state.round.timers || !state.round.timers.running, do the next lines.
+  if (!state.round || state.round.isPreflow || !state.round.timers || !state.round.timers.running) {
+If no round is open or timers are not running, skip timer tick.
 
     return;
 Stop this function here.
 
   }
+This closes the block above.
+
+
   var timer = state.round.timers;
 Copy state.round.timers into timer.
 
   var left = timer.deadline - Date.now();
 Make left and set it to timer.deadline - Date.now().
+
 
   if (left <= 0) {
 If left <= 0, do the next lines.
@@ -6255,6 +7977,9 @@ Otherwise, do the next lines.
 Set timer.remainingMs to 0.
 
     }
+This closes the block above.
+
+
     timer.running = false;
 Set timer.running to false.
 
@@ -6274,15 +7999,22 @@ Run beep.
 Save after a short wait, or save now if the flag says so.
 
   }
+This closes the block above.
+
+
   updateTimerButton();
 Run updateTimerButton.
 
 }, 200);
+Execute the statement above.
+
+
 function keepProofSelection(event) {
 This is the keepProofSelection function. It stops Bold and Highlight from clearing the selected text.
 
   var trigger = event.target.closest("[data-action='make-bold'], [data-action='make-highlight']");
 Make trigger and set it to event.target.closest("[data-action='make-bold'], [data-action='make-highlight']").
+
 
   if (trigger) {
 If trigger, do the next lines.
@@ -6291,14 +8023,810 @@ If trigger, do the next lines.
 Run event.preventDefault.
 
   }
+This closes the block above.
+
 }
 This closes the block above.
+
 
 document.addEventListener("mousedown", keepProofSelection);
 Listen on document for mousedown. When it happens, run the steps below.
 
 document.addEventListener("pointerdown", keepProofSelection);
 Listen on document for pointerdown. When it happens, run the steps below.
+
+
+function preparePrintLayout(includeEvidence) {
+This is the preparePrintLayout function. It builds clean monochrome flowsheet tables for PDF export.
+
+  var round = state.round;
+Get the current round from application state.
+
+  if (!round) return;
+If round is missing, stop here.
+
+
+  var printTitle = round.title || "Debate Round";
+Get the debate round title or default to Debate Round.
+
+  var titleEl = document.getElementById("print-title");
+Find the print report title element.
+
+  if (titleEl) {
+If the title element exists, do the next lines.
+
+    titleEl.textContent = printTitle;
+Set the print header title text.
+
+  }
+This closes the block above.
+
+
+  var topicLine = round.topic ? "Topic / Resolution: " + round.topic : "";
+Format the topic line text.
+
+  setElementText(document.getElementById("print-topic"), topicLine);
+Display the topic line in the print header.
+
+
+  var tournamentLine = round.tournament ? "Tournament: " + round.tournament : "";
+Format the tournament name text.
+
+  var roundNumberLine = round.roundLabel ? "Round Number: " + round.roundLabel : "";
+Format the round number text.
+
+  var opponentLine = round.opponent ? "vs " + round.opponent : "";
+Format the opponent team text.
+
+  var firstSideLine = round.firstSide ? formatSideName(round.firstSide) + " speaks first" : "";
+Format the first speaking side line.
+
+
+  var metaLine = joinFilledText([
+Combine metadata fields with divider lines.
+
+    tournamentLine,
+Include tournament name.
+
+    roundNumberLine,
+Include round number.
+
+    opponentLine,
+Include opponent name.
+
+    "Your Side: " + formatSideName(round.yourSide),
+Include your debate side.
+
+    firstSideLine
+Include first speaker side.
+
+  ], "   |   ");
+Separate metadata fields with vertical pipes.
+
+  setElementText(document.getElementById("print-meta"), metaLine);
+Display the metadata line in the print report header.
+
+
+  var body = document.getElementById("print-body");
+Find the print report body container.
+
+  if (!body) return;
+If print body container does not exist, stop here.
+
+
+  clearElement(body);
+Clear any existing content from print body container.
+
+
+  var sides = ["pro", "con"];
+Make sides and set it to ["pro", "con"].
+
+
+  for (var sideIndex = 0; sideIndex < sides.length; sideIndex++) {
+Loop through debate sides (Aff and Neg).
+
+    var caseSide = sides[sideIndex];
+Get the case side (pro or con).
+
+    var section = cloneTemplate("print-case-sample");
+Clone the case section template.
+
+
+    if (sideIndex === 1) {
+If this is the second case side (Neg), do the next lines.
+
+      section.classList.add("new-page");
+Add page break so Neg case starts on a fresh page.
+
+    }
+This closes the block above.
+
+
+    var caseTitle = caseSide === "pro" ? "AFF CASE" : "NEG CASE";
+Label section as AFF CASE or NEG CASE.
+
+    section.querySelector(".print-case-name").textContent = caseTitle + " FLOW";
+Set case section title text.
+
+
+    var speeches = getSpeechesForSide(round, caseSide);
+Get speech sequence list for this debate side.
+
+    var groupIds = round.cases[caseSide].contentionIds;
+Make groupIds and set it to round.cases[caseSide].contentionIds.
+
+
+    for (var g = 0; g < groupIds.length; g++) {
+Loop through contention groups.
+
+      var contention = round.contentions[groupIds[g]];
+Retrieve contention object from round data.
+
+      if (!contention) continue;
+If contention is empty or missing, skip to the next loop turn.
+
+
+      var block = cloneTemplate("print-cont");
+Clone contention table template block.
+
+      if (!block) {
+If template is missing, do the next lines.
+
+        block = document.createElement("div");
+Create fallback container element for contention table.
+
+        block.className = "print-group";
+Assign "print-group" class name.
+
+        block.innerHTML = '<h3 class="print-group-name"></h3><table class="print-table"><thead><tr></tr></thead><tbody></tbody></table>';
+Create table structure with header and body.
+
+      }
+This closes the block above.
+
+
+      var groupHeader = block.querySelector(".print-group-name");
+Find contention group header element.
+
+      if (groupHeader) {
+If group header element exists, do the next lines.
+
+        if (contention.name && contention.name !== "Contention 1" && contention.name !== "Opening Case") {
+If custom contention name is defined, do the next lines.
+
+          groupHeader.textContent = contention.name;
+Set contention heading text.
+
+        } else {
+Otherwise, do the next lines.
+
+          hideElement(groupHeader);
+Hide group header when default name is used.
+
+        }
+This closes the block above.
+
+      }
+This closes the block above.
+
+
+      var headRow = block.querySelector("thead tr");
+Find table header row element.
+
+      if (!headRow) {
+If header row is missing, do the next lines.
+
+        var thead = block.querySelector("thead") || block.querySelector("table").appendChild(document.createElement("thead"));
+Create thead element.
+
+        headRow = thead.appendChild(document.createElement("tr"));
+Append header tr element.
+
+      }
+This closes the block above.
+
+
+      for (var s = 0; s < speeches.length; s++) {
+Loop through speeches to build table column headers.
+
+        var th = document.createElement("th");
+Create header cell element.
+
+        th.className = "print-head " + (SPEECHES[speeches[s]].team || "");
+Set header cell CSS class with team badge.
+
+        th.textContent = SPEECHES[speeches[s]].short;
+Set header cell text to speech short title.
+
+        headRow.appendChild(th);
+Append header cell into table header row.
+
+      }
+This closes the block above.
+
+
+      var tbody = block.querySelector("tbody");
+Find table body element.
+
+      if (!tbody) {
+If table body element is missing, do the next lines.
+
+        tbody = block.querySelector("table").appendChild(document.createElement("tbody"));
+Create and append tbody element.
+
+      }
+This closes the block above.
+
+
+      // Robust starting point collection
+This is a comment describing the code below.
+
+      var startingPointIds = (contention.startingPointIds || []).slice();
+Copy starting point IDs for this contention.
+
+      var allNotes = getListFromObject(round.notes);
+Get list of all notes in this round.
+
+      for (var an = 0; an < allNotes.length; an++) {
+Loop through all notes to collect unlinked starting points.
+
+        var nt = allNotes[an];
+Get individual note object.
+
+        if (nt.contentionId === groupIds[g] && !nt.parentId && startingPointIds.indexOf(nt.id) === -1) {
+If note belongs to this contention without a parent, do the next lines.
+
+          startingPointIds.push(nt.id);
+Add note ID to starting points list.
+
+        }
+This closes the block above.
+
+      }
+This closes the block above.
+
+
+      for (var p = 0; p < startingPointIds.length; p++) {
+Loop through starting points to build flowsheet rows.
+
+        var startId = startingPointIds[p];
+Get ID of starting point for this row.
+
+        var family = getAllChildPoints(round, startId, []);
+Collect all reply notes in this argument chain.
+
+        var tr = document.createElement("tr");
+Create table row element.
+
+        tr.className = "print-row";
+Set class name to "print-row".
+
+        var rowHasContent = false;
+Track whether any cell in this row has non-empty text or evidence.
+
+
+        for (var sp = 0; sp < speeches.length; sp++) {
+Loop through speech columns.
+
+          var td = document.createElement("td");
+Create table cell element.
+
+          td.className = "print-cell";
+Set class name to "print-cell".
+
+          var noteList = getListFromObject(round.notes);
+Get note list from round.
+
+
+          for (var n = 0; n < noteList.length; n++) {
+Loop through notes.
+
+            var item = noteList[n];
+Get individual note.
+
+            if (item.contentionId !== groupIds[g] || item.speechId !== speeches[sp]) continue;
+If note is from another contention or speech, skip it.
+
+
+            if (family.indexOf(item.id) === -1) continue;
+If note does not belong to this argument chain, skip it.
+
+
+            var hasText = Boolean(item.text && item.text.trim());
+Check if note contains argument text.
+
+            var hasEvidence = Boolean(includeEvidence && item.evidenceId && round.evidence[item.evidenceId] && round.evidence[item.evidenceId].plain && round.evidence[item.evidenceId].plain.trim());
+Check if note contains research evidence text.
+
+
+            if (!hasText && !hasEvidence) continue;
+Skip empty cards without text or evidence.
+
+
+            rowHasContent = true;
+Mark that this row contains actual argument content.
+
+
+            var card = cloneTemplate("print-card");
+Clone print card template.
+
+            if (!card) {
+Check the condition above and run the block if true.
+
+              card = document.createElement("div");
+Execute the statement above.
+
+              card.className = "print-card";
+Assign "print-card" class name.
+
+              card.innerHTML = '<span class="print-tag hide"></span><div class="print-words"></div><div class="print-proof hide"></div>';
+Build card markup structure.
+
+            }
+This closes the block above.
+
+
+            var marker = card.querySelector(".print-tag");
+Find card marker badge element.
+
+            if (marker) {
+If marker element exists, do the next lines.
+
+              if (item.marker) {
+If note has a marker badge, do the next lines.
+
+                marker.textContent = getMarkerLabel(item.marker);
+Set marker badge text.
+
+                showElement(marker);
+Show marker badge.
+
+              } else {
+Otherwise, do the next lines.
+
+                hideElement(marker);
+Hide marker badge.
+
+              }
+This closes the block above.
+
+            }
+This closes the block above.
+
+
+            var pointWords = item.text || "";
+Get argument text or empty string.
+
+            var wordsBox = card.querySelector(".print-words");
+Find text container element in print card.
+
+            if (wordsBox) {
+If words container exists, do the next lines.
+
+              if (item.html) {
+If note has formatted HTML, do the next lines.
+
+                wordsBox.innerHTML = cleanPastedHtml(item.html).html;
+Clean and insert formatted text HTML.
+
+              } else {
+Otherwise, do the next lines.
+
+                wordsBox.textContent = pointWords;
+Set plain argument text.
+
+              }
+This closes the block above.
+
+            }
+This closes the block above.
+
+
+            var evBox = card.querySelector(".print-proof");
+Find evidence quote box in print card.
+
+            if (evBox) {
+If evidence container exists, do the next lines.
+
+              if (includeEvidence && item.evidenceId && round.evidence[item.evidenceId]) {
+If evidence is included and exists for this note, do the next lines.
+
+                var proofText = round.evidence[item.evidenceId].plain || "";
+Get plain evidence text.
+
+                evBox.textContent = "Proof: " + proofText;
+Display evidence text with Proof: label.
+
+                showElement(evBox);
+Show evidence quote box.
+
+              } else {
+Otherwise, do the next lines.
+
+                hideElement(evBox);
+Hide evidence quote box.
+
+              }
+This closes the block above.
+
+            }
+This closes the block above.
+
+
+            td.appendChild(card);
+Append card into table cell.
+
+          }
+This closes the block above.
+
+
+          tr.appendChild(td);
+Append cell into table row.
+
+        }
+This closes the block above.
+
+
+        if (rowHasContent) {
+If this row has actual content, do the next lines.
+
+          tbody.appendChild(tr);
+Append row to table body.
+
+        }
+This closes the block above.
+
+      }
+This closes the block above.
+
+
+      if (tbody.children.length === 0) {
+If table has no rows with content, do the next lines.
+
+        var emptyTr = document.createElement("tr");
+Create empty fallback row.
+
+        emptyTr.className = "print-row";
+Set class name to "print-row".
+
+        for (var esp = 0; esp < speeches.length; esp++) {
+Loop through speeches.
+
+          var emptyTd = document.createElement("td");
+Create empty table cell.
+
+          emptyTd.className = "print-cell";
+Set class name to "print-cell".
+
+          emptyTr.appendChild(emptyTd);
+Append empty cell to row.
+
+        }
+This closes the block above.
+
+        tbody.appendChild(emptyTr);
+Append empty row to table.
+
+      }
+This closes the block above.
+
+
+      section.appendChild(block);
+Append contention table block into case section.
+
+    }
+This closes the block above.
+
+
+    body.appendChild(section);
+Append case section into print report body.
+
+  }
+This closes the block above.
+
+
+  var extra = cloneTemplate("print-cx");
+Clone crossfire notes section template.
+
+  if (!extra) {
+Check the condition above and run the block if true.
+
+    extra = document.createElement("div");
+Execute the statement above.
+
+    extra.className = "print-notes new-page";
+Set class name with page break before crossfire notes.
+
+    extra.innerHTML = '<h2 class="print-case-name">CROSSFIRE &amp; REFLECTION NOTES</h2>';
+Set crossfire section heading.
+
+  } else {
+Otherwise, do the next lines.
+
+    extra.classList.add("new-page");
+Add page break class before crossfire notes.
+
+  }
+This closes the block above.
+
+
+  var extraNotes = [
+Prepare array of crossfire and reflection notes.
+
+    ["First Crossfire", round.crossNotes.firstCrossfire],
+Include First Crossfire note.
+
+    ["Second Crossfire", round.crossNotes.secondCrossfire],
+Include Second Crossfire note.
+
+    ["Grand Crossfire", round.crossNotes.grandCrossfire],
+Include Grand Crossfire note.
+
+    ["Reflections & Decision", round.crossNotes.reflections]
+Include Reflections & Decision note.
+
+  ];
+Close notes array.
+
+
+  for (var e = 0; e < extraNotes.length; e++) {
+Loop through crossfire notes.
+
+    if (extraNotes[e][1] && extraNotes[e][1].trim()) {
+If note has text, do the next lines.
+
+      var cxCard = cloneTemplate("print-cx-card");
+Clone crossfire card template.
+
+      if (!cxCard) {
+Check the condition above and run the block if true.
+
+        cxCard = document.createElement("div");
+Execute the statement above.
+
+        cxCard.className = "print-note";
+Set class name to "print-note".
+
+        cxCard.innerHTML = '<h3 class="print-note-name"></h3><div class="print-note-words"></div>';
+Create note heading and words container.
+
+      }
+This closes the block above.
+
+
+      var nameEl = cxCard.querySelector(".print-note-name");
+Find note heading element.
+
+      if (nameEl) nameEl.textContent = extraNotes[e][0];
+Set note category title text.
+
+
+      var wordsEl = cxCard.querySelector(".print-note-words");
+Find note content container.
+
+      if (wordsEl) wordsEl.textContent = extraNotes[e][1];
+Set note content text.
+
+
+      extra.appendChild(cxCard);
+Append crossfire card into section.
+
+    }
+This closes the block above.
+
+  }
+This closes the block above.
+
+
+  body.appendChild(extra);
+Append crossfire section into print body.
+
+}
+This closes the block above.
+
+
+function downloadPdfReport(includeEvidence) {
+This is the downloadPdfReport function. It exports the flowsheet report as a downloadable PDF.
+
+  var report = document.getElementById("full-print-report");
+Find the print report container element.
+
+  if (!report) return;
+Check the condition above and run the block if true.
+
+
+  var downloadBtn = document.getElementById("btn-download-pdf");
+Find the Download PDF button.
+
+  var originalBtnText = downloadBtn ? downloadBtn.textContent : "Download PDF";
+Save the original button text.
+
+  if (downloadBtn) {
+If download button exists, do the next lines.
+
+    downloadBtn.textContent = "Generating PDF...";
+Update button text to Generating PDF....
+
+    downloadBtn.disabled = true;
+Disable button while PDF is being generated.
+
+  }
+This closes the block above.
+
+
+  preparePrintLayout(includeEvidence);
+Build the flowsheet print tables.
+
+
+  // Directly display report in normal in-flow layout with explicit landscape dimensions
+This is a comment describing the code below.
+
+  report.style.display = "block";
+Show the print report element in-flow.
+
+  report.style.width = "1000px";
+Set explicit width for PDF canvas capture.
+
+  report.style.background = "#ffffff";
+Set white background for PDF page.
+
+  report.style.padding = "24px";
+Set 24px padding around report.
+
+  report.style.margin = "0 auto";
+Center report horizontally.
+
+  report.style.boxSizing = "border-box";
+Use border-box sizing.
+
+
+  var round = state.round;
+Get the current round from application state.
+
+  var rawTitle = round && round.title ? round.title : "Debate";
+Get raw round title or default to Debate.
+
+  var safeTitle = rawTitle.replace(/[^a-zA-Z0-9_\- ]/g, "").trim().replace(/\s+/g, "_");
+Sanitize title for safe filename.
+
+  var filename = (safeTitle || "Debate_Flow") + ".pdf";
+Construct PDF filename.
+
+
+  var opt = {
+Configure html2pdf export options.
+
+    margin: [8, 8, 8, 8],
+Set 8mm margins on all sides.
+
+    filename: filename,
+Specify the output PDF filename.
+
+    image: { type: "jpeg", quality: 0.98 },
+Use high-quality JPEG compression.
+
+    html2canvas: {
+Configure html2canvas rendering options.
+
+      scale: 1.5,
+Render at 1.5x scale for sharp text.
+
+      useCORS: true,
+Enable CORS for loaded assets.
+
+      backgroundColor: "#ffffff",
+Set white background color for canvas.
+
+      windowWidth: 1060
+Set capture window width to 1060px.
+
+    },
+Execute the statement above.
+
+    jsPDF: {
+Configure jsPDF output options.
+
+      unit: "mm",
+Use millimeters as unit of measure.
+
+      format: "a4",
+Use standard A4 paper size.
+
+      orientation: "landscape"
+Use landscape page orientation for wide flowsheets.
+
+    },
+Execute the statement above.
+
+    pagebreak: { mode: ["css", "legacy"] }
+Honor CSS page breaks between cases.
+
+  };
+var SAFE_STYLES = [
+
+
+  function finishExport() {
+This is the finishExport helper. It cleans up temporary print report styles after export.
+
+    report.style.display = "none";
+Hide print report element.
+
+    report.style.width = "";
+Reset report width.
+
+    report.style.padding = "";
+Reset report padding.
+
+    report.style.margin = "";
+Reset report margin.
+
+    report.style.background = "";
+Reset report background.
+
+    if (downloadBtn) {
+If download button exists, do the next lines.
+
+      downloadBtn.textContent = originalBtnText;
+Restore original button label.
+
+      downloadBtn.disabled = false;
+Re-enable download button.
+
+    }
+This closes the block above.
+
+    closePopups();
+Run closePopups.
+
+  }
+This closes the block above.
+
+
+  setTimeout(function () {
+This line continues the step above.
+
+    if (typeof html2pdf !== "undefined") {
+If html2pdf library is loaded, do the next lines.
+
+      html2pdf().set(opt).from(report).save().then(function () {
+Generate and download the PDF file.
+
+        finishExport();
+Clean up export styles.
+
+      }).catch(function (err) {
+Handle any export error.
+
+        console.error("PDF export error:", err);
+Log export error to console.
+
+        finishExport();
+Clean up export styles.
+
+        window.print();
+Fall back to browser print dialog.
+
+      });
+This closes the listener.
+
+    } else {
+Otherwise, do the next lines.
+
+      finishExport();
+Clean up export styles.
+
+      window.print();
+Fall back to browser print dialog.
+
+    }
+This closes the block above.
+
+  }, 120);
+Execute the statement above.
+
+}
+This closes the block above.
+
 
 document.addEventListener("click", function (event) {
 This line continues the step above.
@@ -6315,8 +8843,10 @@ Run closeDropdownMenu.
   }
 This closes the block above.
 
+
   var trigger = event.target.closest("[data-action]");
 Make trigger and set it to event.target.closest("[data-action]").
+
 
   if (!trigger) {
 If !trigger, do the next lines.
@@ -6327,11 +8857,13 @@ Stop this function here.
   }
 This closes the block above.
 
+
   var action = trigger.dataset.action;
 Make action and set it to trigger.dataset.action.
 
   var id = trigger.dataset.id;
 Make id and set it to trigger.dataset.id.
+
 
   if (trigger.closest(".sidebar") && window.innerWidth <= 899 && action !== "toggle-nav") {
 If trigger.closest(".sidebar") && window.innerWidth <= 899 && action !== "toggle-nav", do the next lines.
@@ -6342,11 +8874,13 @@ Set state.navOpen to false.
   }
 This closes the block above.
 
+
   if (action === "home") {
 If action === "home", do the next lines.
 
     openPage("index.html");
 Run openPage, passing "index.html".
+
 
   } else if (action === "tour") {
 Otherwise, if action === "tour", do the next lines.
@@ -6354,11 +8888,13 @@ Otherwise, if action === "tour", do the next lines.
     beginFeatureTour();
 Run beginFeatureTour.
 
+
   } else if (action === "show-openings") {
 Otherwise, if action === "show-openings", do the next lines.
 
     openPage("preflows.html");
 Run openPage, passing "preflows.html".
+
 
   } else if (action === "show-notes") {
 Otherwise, if action === "show-notes", do the next lines.
@@ -6372,11 +8908,13 @@ Run openPage, passing "notes.html".
     }
 This closes the block above.
 
+
   } else if (action === "toggle-nav") {
 Otherwise, if action === "toggle-nav", do the next lines.
 
     state.navOpen = !state.navOpen;
 Set state.navOpen to !state.navOpen.
+
 
   } else if (action === "close-nav") {
 Otherwise, if action === "close-nav", do the next lines.
@@ -6384,11 +8922,13 @@ Otherwise, if action === "close-nav", do the next lines.
     state.navOpen = false;
 Set state.navOpen to false.
 
+
   } else if (action === "close-dialog") {
 Otherwise, if action === "close-dialog", do the next lines.
 
     closePopups();
 Run closePopups.
+
 
   } else if (action === "timer-toggle") {
 Otherwise, if action === "timer-toggle", do the next lines.
@@ -6396,11 +8936,13 @@ Otherwise, if action === "timer-toggle", do the next lines.
     openSimpleTimer(trigger);
 Run openSimpleTimer, passing trigger.
 
+
   } else if (action === "timer-start") {
 Otherwise, if action === "timer-start", do the next lines.
 
     startOrPauseTimer();
 Run startOrPauseTimer.
+
 
   } else if (action === "timer-reset") {
 Otherwise, if action === "timer-reset", do the next lines.
@@ -6408,11 +8950,13 @@ Otherwise, if action === "timer-reset", do the next lines.
     resetSimpleTimer();
 Run resetSimpleTimer.
 
+
   } else if (action === "make-bold") {
 Otherwise, if action === "make-bold", do the next lines.
 
     formatSelectedProof("bold");
 Run formatSelectedProof, passing "bold".
+
 
   } else if (action === "make-highlight") {
 Otherwise, if action === "make-highlight", do the next lines.
@@ -6420,8 +8964,51 @@ Otherwise, if action === "make-highlight", do the next lines.
     formatSelectedProof("hiliteColor", "#fff3a0");
 Run formatSelectedProof, passing "hiliteColor", "#fff3a0".
 
+
+  } else if (action === "print") {
+Otherwise, if the clicked action is "print", do the next lines.
+
+    closeDropdownMenu();
+Run closeDropdownMenu.
+
+    showElement(document.getElementById("print-box"));
+Open the Print / Save PDF dialog modal.
+
+
+  } else if (action === "do-print") {
+Otherwise, if the clicked action is "do-print", do the next lines.
+
+    var checkEl = document.getElementById("print-evidence");
+Find evidence inclusion checkbox.
+
+    downloadPdfReport(checkEl ? checkEl.checked : true);
+Start PDF download with evidence setting.
+
+
+  } else if (action === "print-browser") {
+Otherwise, if the clicked action is "print-browser", do the next lines.
+
+    var checkEl = document.getElementById("print-evidence");
+Find evidence inclusion checkbox.
+
+    closePopups();
+Run closePopups.
+
+    preparePrintLayout(checkEl ? checkEl.checked : true);
+Prepare print layout for browser printing.
+
+    setTimeout(function () {
+This line continues the step above.
+
+      window.print();
+Fall back to browser print dialog.
+
+    }, 100);
+Execute the statement above.
+
   }
 This closes the block above.
+
 
   if (action === "toggle-nav" || action === "close-nav" || trigger.closest(".sidebar")) {
 If action === "toggle-nav" || action === "close-nav" || trigger.closest(".sidebar"), do the next lines.
@@ -6433,8 +9020,12 @@ Run updateSideMenu.
 This closes the block above.
 
 });
+This closes the listener.
+
+
 var installPromptEvent = null;
 Make installPromptEvent and set it to null. This holds Chrome's install request until Install is clicked.
+
 
 window.addEventListener("beforeinstallprompt", function (event) {
 Listen for Chrome's install prompt. When it happens, run the steps below.
@@ -6451,6 +9042,7 @@ Show the Install button.
 });
 This closes the listener.
 
+
 window.addEventListener("appinstalled", function () {
 Listen for the app finishing install. When it happens, run the steps below.
 
@@ -6463,6 +9055,7 @@ Hide the Install button.
 });
 This closes the listener.
 
+
 function appAlreadyInstalled() {
 This is the appAlreadyInstalled function. It is true when the app is already open from the home screen.
 
@@ -6472,7 +9065,10 @@ If the app is already open from an iPhone home screen, stop here and hand back t
   return window.matchMedia("(display-mode: standalone)").matches;
 Hand back true when the app is already running in its own window.
 
-  }
+}
+This closes the block above.
+
+
 function isIosBrowser() {
 This is the isIosBrowser function. It is true on an iPhone or iPad.
 
@@ -6488,6 +9084,7 @@ Hand back true for an iPad that reports itself as a Mac.
 }
 This closes the block above.
 
+
 function showInstallButton() {
 This is the showInstallButton function. It shows the Install button.
 
@@ -6499,6 +9096,7 @@ If wrap was found, show it.
 
 }
 This closes the block above.
+
 
 function hideInstallButton() {
 This is the hideInstallButton function. It hides the Install button.
@@ -6512,11 +9110,13 @@ If wrap was found, hide it.
 }
 This closes the block above.
 
+
 function setupInstallButton() {
 This is the setupInstallButton function. It adds the Install button on the home page, beside Preflows.
 
   if (document.body.dataset.page !== "home" || appAlreadyInstalled()) return;
 If this is not the home page, or the app is already installed, stop here.
+
 
   var menu = document.querySelector(".top-menu");
 Find the top menu and save it as menu.
@@ -6527,6 +9127,7 @@ Find the Preflows link inside the menu and save it as preflows.
   if (!menu || !preflows || document.getElementById("install-wrap")) return;
 If the menu or the Preflows link is missing, or the Install button is already there, stop here.
 
+
   var wrap = document.createElement("div");
 Make wrap and set it to document.createElement("div").
 
@@ -6535,6 +9136,7 @@ Make a paragraph for the iPhone hint and save it as note.
 
   var button = document.createElement("button");
 Make a button and save it as button.
+
 
   wrap.id = "install-wrap";
 Name this group install-wrap.
@@ -6560,6 +9162,7 @@ Use the main button style.
   button.textContent = "Install";
 Label the button Install.
 
+
   button.addEventListener("click", function () {
 When Install is clicked, run the steps below.
 
@@ -6584,10 +9187,13 @@ Hide the Install button.
       });
 This closes the listener.
 
-    return;
+      return;
 Stop this function here.
 
-  }
+    }
+This closes the block above.
+
+
     if (isIosBrowser()) {
 If this is an iPhone or iPad, do the next lines.
 
@@ -6597,9 +9203,12 @@ If the hint is hidden, show it.
       else hideElement(note);
 Otherwise hide the hint.
 
-  }
+    }
+This closes the block above.
+
   });
 This closes the listener.
+
 
   wrap.appendChild(note);
 Put the hint inside the button group.
@@ -6610,10 +9219,14 @@ Put the Install button inside the group.
   preflows.insertAdjacentElement("afterend", wrap);
 Place the Install button immediately after Preflows.
 
+
   if (installPromptEvent || isIosBrowser()) showInstallButton();
 Show the button when Chrome can install the app, or when this is an iPhone.
 
-    }
+}
+This closes the block above.
+
+
 function registerInstalledApp() {
 This is the registerInstalledApp function. It registers the service worker so the app can be installed.
 
@@ -6623,7 +9236,10 @@ If this browser has no service worker, stop here.
   navigator.serviceWorker.register("sw.js");
 Register sw.js so the browser can install the app.
 
-  }
+}
+This closes the block above.
+
+
 function startApp() {
 This is the startApp function.
 
@@ -6632,6 +9248,7 @@ Register the service worker.
 
   setupInstallButton();
 Add the Install button on the home page.
+
 
   state.view = document.body.dataset.page;
 Set state.view to document.body.dataset.page.
@@ -6643,8 +9260,12 @@ If !state.view, do the next lines.
 Set state.view to "home".
 
   }
+This closes the block above.
+
+
   var okBtn = document.getElementById("confirm-ok");
 Make okBtn and set it to document.getElementById("confirm-ok").
+
 
   if (okBtn) {
 If okBtn, do the next lines.
@@ -6654,6 +9275,7 @@ This line continues the step above.
 
       var run = confirmRun;
 Make run and set it to confirmRun.
+
 
       confirmRun = null;
 Set confirmRun to null.
@@ -6670,10 +9292,16 @@ Run run.
       }
 This closes the block above.
 
-});
+    });
+This closes the listener.
+
   }
+This closes the block above.
+
+
   var icon = document.querySelector(".edit-mark");
 Make icon and set it to document.querySelector(".edit-mark").
+
 
   if (icon) {
 If icon, do the next lines.
@@ -6684,6 +9312,7 @@ This line continues the step above.
       var title = document.querySelector(".title-input");
 Make title and set it to document.querySelector(".title-input").
 
+
       if (title) {
 If title, do the next lines.
 
@@ -6691,19 +9320,32 @@ If title, do the next lines.
 Run title.focus.
 
       }
+This closes the block above.
+
     });
+This closes the listener.
+
   }
+This closes the block above.
+
+
   if ((state.view === "workspace" || state.view === "notes") && !loadOpenRound()) {
 If (state.view === "workspace" || state.view === "notes") && !loadOpenRound(), do the next lines.
 
     return;
 Stop this function here.
 
-      }
+  }
+This closes the block above.
+
+
   render();
 Run render.
 
-  }
+}
+This closes the block above.
+
+
 if (document.readyState === "loading") {
 If document.readyState === "loading", do the next lines.
 
@@ -6716,4 +9358,5 @@ Otherwise, do the next lines.
   startApp();
 Run startApp.
 
-  }
+}
+This closes the block above.

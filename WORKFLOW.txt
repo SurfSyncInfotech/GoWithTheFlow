@@ -1,918 +1,452 @@
-GO WITH THE FLOW
-Detailed workflow and code structure
-Public Forum debate flow. Everything runs in the browser. There is no server.
-
-
-================================================================================
-1. WHAT THE APP IS
-================================================================================
-
-A debater opens a round, flows both cases as columns of speeches, hangs each
-answer under the card it answers, clips evidence onto a card, writes crossfire
-notes, and runs one speech clock or one team's prep. The round is saved in
-this browser only. Export downloads a JSON record. Version 1 does not import
-that file back.
-
-Screens (each is its own HTML file):
-
-  index.html       Home. List of rounds, search, new round, rename, copy,
-                   export, delete.
-  workspace.html   The flow sheet, evidence panel, timer, menus, print.
-  notes.html       First crossfire, second crossfire, grand cross, reflections.
-  preflows.html    Reusable cases (constructive shells only).
-  settings.html    Speech times and the timer beep. Font size is changed on
-                   the flow toolbar, not here.
-  help.html        Short rules for how the page behaves.
-
-Every page loads the same CSS and the same six scripts, in this order:
-
-  js/rounds.js     Debate rules and the shape of a round.
-  js/lineup.js     Where each card sits vertically.
-  js/clean.js      Make a pasted card safe to show.
-  js/save.js       Read and write localStorage.
-  js/helpers.js    Clone sample HTML, show, hide, sort lists.
-  js/app.js        Buttons, typing, drawing, navigation.
-
-The body tag has data-page="home|workspace|notes|preflows|settings|help".
-app.js reads that and draws the matching screen.
-
-
-================================================================================
-2. BOOT
-================================================================================
-
-1. The HTML loads.
-2. rounds.js defines speeches, markers, and the functions that build rounds.
-3. lineup.js, clean.js, save.js, and helpers.js define their functions.
-   Nothing runs yet except those definitions.
-4. app.js line 1 calls openSave() and stores the result in db.
-5. app.js builds the state object (what you are doing right now).
-6. startApp() runs on DOMContentLoaded, or immediately if the page is
-   already loaded.
-7. If the page is workspace or notes, loadOpenRound() must find a round in
-   sessionStorage. If it cannot, the browser is sent back to index.html.
-8. render() draws the current page.
-
-Two stores:
-
-  localStorage     The permanent save. Survives closing the tab.
-                   Keys: "goWithTheFlow" and "goWithTheFlowBackup".
-
-  sessionStorage   Which round is open, which case, tour state, and a
-                   one-time jump (scroll to a contention, focus a card,
-                   focus a crossfire box). Dies when the tab closes.
-
-db   = everything saved (rounds, preflows, settings).
-state = the live session. It is not written as its own object.
-
-
-state fields
-------------
-
-  view            which page name
-  round           the round or preflow currently on screen (or null)
-  caseSide        "pro" or "con" — which case sheet is visible
-  selectedId      the card whose evidence panel is active
-  evidenceOpen    whether the evidence column is open
-  saveState       text in the save chip ("Saving…", "Saved in this browser",
-                  or an error)
-  saveTimer       the 400ms debounce timer
-  typingTimer     groups keystrokes into one undo step
-  history         { past: [], future: [], typing: false }
-  heights         measured pixel height of each card, by id
-  popover         the small menu currently open, or null
-  findText        the find box
-  findHits        cards and crossfire boxes that matched
-  findAt          which hit is selected
-  tourStep        -1 when the tour is off, otherwise 0..9
-  demo            true during the feature tour (not saved)
-  navOpen         phone sidebar open
-  query           home-page search text
-  composing       true while an IME is composing (so Enter does not split)
-
-
-================================================================================
-3. THE SAVED FILE  (save.js)
-================================================================================
-
-blankSave() returns:
-
-  {
-    rounds: {},
-    preflows: {},
-    settings: { fontSize: 14, sound: false, durations: timerTimes() },
-    lastRoundId: null
-  }
-
-openSave()
-  Read the main key. If JSON is missing or broken, read the backup.
-  If the backup is used, set data.recovered = true. The home page shows
-  the yellow banner.
-  If both fail, start from blankSave().
-  Fill missing rounds, preflows, and settings.
-  mendClocks() on the speech times (throw out 0, negative, or over 20 min).
-  For every round: mendRound(), then stopTimerOnOpen().
-  For every preflow: mendPreflow().
-
-writeSave(store)
-  Copies rounds, preflows, settings, and lastRoundId. The recovered flag
-  is not written back.
-  If JSON.stringify throws, return a message telling you to copy the cards
-  out before closing the tab.
-  Write the main key. If the browser quota is full (QuotaExceededError,
-  NS_ERROR_DOM_QUOTA_REACHED, or code 22 / 1014), return
-  "Browser storage is full. Export this round, then delete an old one."
-  Then try the backup. If only the backup fails, still return success.
-  The main copy is what matters.
-
-stopTimerOnOpen(round)
-  A running clock is a deadline in the future. If the laptop slept, that
-  deadline may already have passed. This freezes whatever time is left
-  onto remainingMs (speech) or prepLeft[side] (prep), then sets
-  running = false. Time does not keep burning while the app is closed.
-
-
-================================================================================
-4. A ROUND  (rounds.js)
-================================================================================
-
-Ids look like "round-<time>-<random>", "cont-...", "note-...", "ev-...",
-"preflow-...". uid() builds them from Date.now() and a random number.
-
-newRound(fields, settings) always creates BOTH cases. Each case starts
-with one contention named "Contention 1" and no cards.
-
-Round fields
-------------
-
-  id, title, topic, tournament, roundLabel, opponent
-  yourSide     "pro" | "con" | "observer"
-               Who you are. Observer flows both cases and has no prep.
-  firstSide    "pro" | "con"
-               Who won the flip and speaks first. Never observer.
-               If the form sends anything else, it becomes "pro".
-  createdAt, updatedAt     ISO date strings
-  cases.pro.contentionIds  ordered list of contention ids on the Pro case
-  cases.con.contentionIds  same for Con
-  contentions              map of id -> contention
-  notes                    map of id -> card
-  evidence                 map of id -> { id, noteId, html, plain }
-  crossNotes               four strings (see below)
-  timers                   speech clock + two prep pots
-  columnFocus.pro / .con   { count: null|2|3|4|5|6, start: index }
-                           count null means "show every column"
-  scroll.pro / .con        scrollTop of the sheet, remembered per case
-
-Contention
-----------
-
-  id, name, collapsed, startingPointIds
-
-  startingPointIds is the ordered list of SHELL cards: cards with no
-  parent. They are the tops of the vertical lines. A shell can sit in
-  any speech column, not only constructive. Replies are NOT in this list.
-  They hang off parentId.
-
-Card (stored in round.notes)
-----------------------------
-
-  id
-  contentionId     which contention block
-  speechId         which column, for example "pro-rebuttal"
-  parentId         the card it answers, or null if it is a shell
-  order            sort key among siblings in the same column
-  text             plain text of the card. Shift+Enter is a newline.
-  marker           "" | "answered" | "extend" | "dropped" | "turn"
-  evidenceId       id into round.evidence, or null
-
-Crossfire notes
----------------
-
-  firstCrossfire     the two first speakers, after the constructives
-  secondCrossfire    the two second speakers, after the rebuttals
-  grandCrossfire     all four, after the summaries
-  reflections        after the round. Not a timed speech.
-
-  These are not columns on the flow. They live on notes.html.
-
-
-================================================================================
-5. SPEECH ORDER
-================================================================================
-
-SPEECHES maps eight column ids:
-
-  pro-constructive, con-constructive
-  pro-rebuttal,     con-rebuttal
-  pro-summary,      con-summary
-  pro-final,        con-final
-
-speechOrder(firstSide)
-  Four pairs. If Pro speaks first, each pair is Pro then Con.
-  If Con speaks first, each pair is flipped: Con then Pro.
-  The same team stays first through rebuttal, summary, and final focus.
-  This is current NSDA. The old "rebuttal flip" (second constructive
-  speaks first rebuttal) is not implemented.
-
-speechesOnSide(round, caseSide)
-  A case sheet does not show speeches that happened before that side's
-  constructive.
-  Pro sheet, Pro speaks first:
-    Pro constr, Con constr, Pro reb, Con reb, Pro sum, Con sum, Pro FF, Con FF
-  Pro sheet, Con speaks first:
-    Pro constr, Con reb, Pro reb, Con sum, Pro sum, Con FF, Pro FF
-    (Con constructive is on the Con case, not here.)
-  A preflow returns only that side's constructive column.
-
-timerSteps(firstSide, durations)
-  The clock sequence, which includes crossfires the sheet does not show:
-
-    1st constructive     4 min
-    2nd constructive     4 min
-    first crossfire      3 min
-    1st rebuttal         4 min
-    2nd rebuttal         4 min
-    second crossfire     3 min
-    1st summary          3 min
-    2nd summary          3 min
-    grand crossfire      3 min
-    1st final focus      2 min
-    2nd final focus      2 min
-
-  "1st" means firstSide. Prep is NOT in this list. Prep is a separate pot
-  of 3 minutes per team for the whole round.
-
-pfClock(kind, raw)     used when you save settings
-  Blank, zero, or not a number: rejected.
-  Over 20 minutes: rejected. That is not a PF clock.
-  1 through 15: read as minutes. 4 constructive becomes 240 seconds.
-  16 or more: read as seconds. 240 stays 240. 90 stays a 90-second drill.
-
-Settings page stays put and shows the message when a value was converted
-or rejected. It only returns home when every box was already in seconds
-and the save succeeded.
-
-
-================================================================================
-6. CARDS: ADD, ANSWER, MOVE, DELETE, LINK
-================================================================================
-
-addShell(round, contentionId, speechId, text, afterId)
-  New card with parentId null. Inserted into startingPointIds.
-  If afterId is set, it is inserted directly under that shell.
-  Used by the empty "New point" box at the bottom of a column, and by
-  Enter when you split a shell.
-
-addAns(round, parentId, speechId, text, afterId)
-  New card whose parent is parentId, in the given speech column.
-  order is one past the last sibling, or afterId's order + 0.5 so it
-  sorts between that sibling and the next.
-  Used by the empty response slot, and by Enter when you split an answer.
-
-splitNote (app.js)
-  Enter inside a card, and not Shift+Enter, and not while an IME is
-  composing. Text before the caret stays. Text after the caret becomes
-  the next card (shell or answer, matching the card you split).
-
-underLine(round, noteId, list)
-  The card plus every card that answers it, recursively. Used to stop
-  a link from looping, and to know what would move with a card.
-
-whyNotLink(round, noteId, parentId)
-  Returns "" if the link is legal, otherwise a sentence for the menu.
-  Refuses:
-    - missing card
-    - a card answering itself
-    - a different contention (that is a different sheet)
-    - a loop (the target is already under this card)
-    - an answer in an earlier column than the card it answers
-      (a constructive shell cannot hang under a rebuttal)
-
-connectPoint(round, noteId, parentId)
-  Pulls the card out of startingPointIds if it was a shell, then sets
-  parentId. parentId null promotes it back to a shell.
-  Returns false when whyNotLink is not empty. The menu stays open and
-  shows the reason. Undo is not recorded for a failed link.
-
-nudgeCard(round, noteId, direction)
-  direction is -1 or +1. Shells swap places in startingPointIds.
-  Answers swap their order numbers with the sibling above or below.
-  You cannot move past the ends.
-
-cutCard(round, noteId)
-  Deletes the card and its evidence.
-  Children are NOT deleted. They are re-parented onto the deleted card's
-  parent (or become shells, spliced into the same spot in
-  startingPointIds). The extension stays on the line.
-  The UI asks first if the card has text, evidence, or children.
-  An empty card with no children is deleted immediately.
-
-dupeCard(round, noteId)
-  Copies text, marker, and evidence (new evidence id, same html).
-  The copy is inserted just after the original.
-
-addCont(round, caseSide)
-  Next contention. If contentions are still named "Contention N", the
-  new one is the next free number. Renamed contentions ("Uniqueness")
-  are left alone, and the next default name skips past any remaining
-  "Contention N".
-
-cutCont(round, contentionId)
-  Deletes the contention, its cards, and their evidence.
-  The click handler refuses when it is the last contention on that case.
-  Message: a case needs a contention to hold the constructive.
-  useOpening is allowed to delete the last one, because it is about to
-  replace the whole case with a preflow.
-
-bumpCont(round, contentionId, direction)
-  Swaps the contention with its neighbor in that case's contentionIds.
-
-roundHasWords(round)
-  True if any card has text or evidence, or if any evidence object exists.
-  While this is true, "who speaks first" is locked on the details form.
-  Changing it would reshuffle columns under cards that were already flowed.
-  Start a new round for a different order.
-
-groupHasWords
-  Same check for one contention, used before the delete confirmation.
-
-markerWarn(round, note, markerId)
-  The labels are yours. These only warn; Add label still applies them.
-    Dropped on a constructive shell
-      That speech is the argument. Nothing has gone unanswered yet.
-    Turn on your own constructive, and you are not Observer
-      A turn is their argument, flipped. It belongs on the other case.
-    Extend on a card with no parent
-      Extend means you are picking an earlier line back up.
-
-shownSpeeches(round, caseSide)
-  Applies columnFocus. If count is null or covers the whole list, show
-  everything. Otherwise a window of `count` columns starting at `start`,
-  clamped so it cannot run off the end. The status bar says
-  "Showing columns 3–5 of 7" and the arrows move the window.
-  Export and print ignore this window and include every speech.
-
-
-================================================================================
-7. COPYING A CASE OR A ROUND
-================================================================================
-
-copyParts(source)
-  New ids for every contention, card, and evidence item. Parents,
-  startingPointIds, and evidence links are rewritten through the map.
-  Speech ids stay the same ("pro-rebuttal" is a column name, not an id).
-
-dupeRound(round, settings)
-  New round via newRound (so the clock and prep are fresh — a copied
-  round does not inherit a half-burned prep pot), then the cases, cards,
-  evidence, crossfire text, and column focus are copied over.
-  Title gets " (copy)".
-
-useOpening(round, preflow)     preflow -> round
-  Copies the preflow, then DELETES every card that is not a constructive
-  shell on that side. Practice answers stay out of the round.
-  The round's existing contentions on that side are deleted and replaced.
-  The other side is left alone.
-  A Con preflow lands on the Con case even if your side is Pro.
-
-caseToOpening(round, caseSide, title)     round -> preflow
-  Only shells in that side's constructive column, plus their evidence
-  and marker. Rebuttal ink is not the case you want on the next ballot.
-  If nothing qualified, the preflow still gets an empty Contention 1.
-
-openingAsRound(preflow)
-  Wraps a preflow so the workspace can draw it with the same code as a
-  round. isPreflow is true. The other case has no contentions. The timer
-  exists but the workspace hides it.
-
-
-================================================================================
-8. REPAIR ON LOAD  (mendRound, mendPreflow)
-================================================================================
-
-Old saves and a write that died halfway can come back with holes.
-mendRound fixes a round in place:
-
-  yourSide must be pro, con, or observer. Anything else becomes pro.
-  firstSide must be con, otherwise pro.
-  Missing cases, contentions, notes, evidence, crossNotes, columnFocus,
-  scroll, or timers are filled in.
-  A missing prep pot rebuilds the whole timer. A negative prep pot
-  becomes 0.
-  Contention ids that point at nothing, or that are duplicated, are dropped.
-  startingPointIds keeps only real shells on that contention.
-  A case with zero contentions gets a blank "Contention 1".
-  Cards whose contention is gone are deleted, and so is their evidence.
-  A speechId that is not one of the eight columns is parked on that
-  side's constructive so the card is not invisible.
-  A parent chain that loops is broken: the card becomes a shell.
-  A parent that does not exist, is on another contention, or sits in a
-  later speech than the child, is unhooked. The child becomes a shell.
-  Evidence that points at a missing card is deleted.
-  A card with no evidenceId, but an evidence object that names it, gets
-  that link restored if it does not already have a valid one.
-  Shells missing from startingPointIds are pushed back on.
-
-mendPreflow does the smaller version: side pro or con, at least one
-contention, drop cards and evidence that point nowhere. It does not
-strip practice answers. Those are allowed to stay in the preflow file
-even though useOpening will not copy them into a round.
-
-
-================================================================================
-9. WHERE CARDS SIT  (lineup.js)
-================================================================================
-
-The sheet is not a table. Each contention is a positioned block.
-Columns share a vertical coordinate system so an answer lines up with
-the card above it.
-
-cardHeight(note, heights)
-  If the card has been measured and is at least 40px, use that.
-  Otherwise estimate: about 32 characters per line, 22px per visual line,
-  plus 16px padding, minimum 40px.
-
-spaceForPoint(round, note, caseSide, heights, saved)
-  The room a line needs. It is the card's own height, or the tallest
-  stack of answers in any later column, whichever is bigger.
-  Sibling answers are stacked with 8px gaps. The function calls itself
-  for each answer, so a summary extension has to clear the rebuttal pile
-  under it, not just the card it directly answers.
-  Results are cached in `saved` so each card is measured once.
-
-placePoint(...)
-  Writes positions[note.id] = { top, height, reserved, speechId }.
-  Then places each later column's answers starting at the same top,
-  walking down by each answer's reserved space.
-
-hasEarlierReply(round, noteId, speechId, caseSide)
-  True if some column before speechId already has an answer to this card.
-
-lineUpGroup(round, contention, caseSide, heights)
-  Places every shell, then decides empty response slots.
-  A blank box is added on a later speech only when that speech has no
-  answer yet AND no earlier speech has answered either.
-  Once a line is answered, later speeches answer that response (those
-  boxes come from the child cards), not the original.
-  Returns { positions, slots, height }.
-
-app.js then:
-  buildFlow() creates the DOM from templates.
-  measurePoints() reads real textarea heights into state.heights.
-  placePoints(width) writes CSS top/height from a second lineup pass
-  so the columns actually line up after the browser has measured text.
-
-column width (columnSize in app.js)
-  Under 900px the columns share the pane (phone).
-  On a wide screen each column is at least 260px. If they fit, they
-  share the pane evenly.
-
-
-================================================================================
-10. PASTED EVIDENCE  (clean.js)
-================================================================================
-
-A card paste from Google Docs, Word, or Verbatim is HTML, not plain text.
-The paste listener on .proof-text calls cleanHtml, then putHtmlHere at
-the caret, then saveProof.
-
-SAFE_TAGS
-  b, strong, i, em, u, s, strike, del, br, p, div, span, ul, ol, li, a,
-  mark, sub, sup, blockquote, h1, h2, h3, font.
-  Anything else is unwrapped and its children are kept.
-  h1–h3 become paragraphs. font becomes a span (Word's old color tag).
-
-SAFE_STYLES
-  color, background-color, font-size, font-family, font-weight,
-  font-style, text-decoration, text-align.
-  That is the highlight and the underline on a cut.
-  url(, expression, javascript, and @import in a style are dropped.
-
-Links
-  Only http, https, and mailto. Anything else (javascript:) is unwrapped
-  to text.
-
-Dropped entirely
-  script, style, iframe, object.
-
-Tables and images
-  Not kept as layout. The text inside a table is kept. An image is
-  dropped. The paste notice says some content was simplified.
-
-linesToHtml
-  Plain-text paste. Each line is escaped by putting it through
-  textContent, then joined with <br>. The words are not treated as HTML.
-
-putHtmlHere
-  Inserts the cleaned fragment at the selection and puts the caret after it.
-
-Size
-  If the plain text is longer than 60,000 characters, only the first
-  60,000 are kept, as plain lines. A full open-ev file will not fit in
-  localStorage and would stop the round from saving mid-elim.
-
-saveProof
-  Reads the contenteditable, stores html and plain on the evidence
-  object, and points the card's evidenceId at it. One evidence object
-  per card.
-
-
-================================================================================
-11. DRAWING AND PAGES  (app.js)
-================================================================================
-
-render()
-  home        listRounds()
-  settings    clockForm()
-  preflows    listPreflows()
-  notes       showCx()
-  workspace   showFlow()
-  If a tour is running on the workspace, showTour() after the draw.
-
-listRounds
-  If db.recovered, show the banner.
-  Filter rounds by the search box (title, topic, tournament, opponent).
-  Sort newest edited first.
-  No rounds and no search: the empty "your next round starts here" panel.
-  Search with no hits: "No rounds match".
-  Each card is cloned from the hidden #sample-round block.
-  Side pill: Pro (purple), Con (pink), Observer (gray). A missing side
-  is shown as Pro so the card is not blank.
-  Buttons carry data-id of the round.
-
-clockForm
-  Fills the seven number boxes from settings.durations and the sound
-  checkbox. The note says the current flow font size.
-
-listPreflows
-  Cards from #sample-pf. Side and topic on the second line.
-
-showFlow
-  Toggles the evidence column.
-  rdBar(): case links, timer chip, column tools, title, contention jumps,
-           undo buttons. Hidden pieces when the open document is a preflow.
-  colWindow(): the column-count and "start at" selects.
-  buildFlow(): the sheet.
-  Restores scroll for this case.
-  If sessionStorage has jumpTo, scroll that contention into view.
-  If sessionStorage has focusNote, select it and focus the textarea.
-  openEvidence=1 also opens the evidence panel.
-
-showCx
-  Same top bar. Fills the four textareas from crossNotes unless you are
-  already typing in one. focusCross from sessionStorage focuses a box
-  (used by Find).
-
-ballotLine()
-  The gray line under the title:
-    tournament · round label · vs opponent · You: Pro|Con|Observer
-    · Pro speaks first | Con speaks first
-  Only pro or con can "speak first". Observer is who you are, not a slot.
-
-Navigation
-  go(url) closes menus, copies textareas into the round, saves immediately,
-  writes sessionStorage, then sets location.
-  openRound(id) stores the id, clears any preflow, forces caseSide pro,
-  and goes to workspace.html.
-  openOpening(id) stores the preflow id and goes to the workspace.
-  loadOpenRound() is the reverse, on workspace and notes.
-  The tour wins over both: if tourDemo is "1", the round comes from
-  sessionStorage and is never written to db.
-
-Templates
-  Hidden blocks at the bottom of the HTML. cloneTpl(id) clones the first
-  child. The ids are not one pattern. Examples: sample-round, sample-pf,
-  jump-sample, head-row, speech-chip, cont-block, col-sample, card-sample,
-  ans-slot, ev-card, menu-btn-sample, opt-sample, ev-empty, print-case-sample,
-  print-cont, print-th, print-tr, print-td, print-card, print-cx,
-  print-cx-card.
-
-
-================================================================================
-12. SAVING AND UNDO
-================================================================================
-
-Typing
-  beginTyping() takes one undo snapshot at the start of a burst, then
-  sets history.typing. One second after the last keystroke, typing
-  becomes false, so the next burst is a new undo step.
-  saveSoon(false) shows "Saving…" and writes 400ms later.
-  saveSoon(true) writes on the next tick (structural edits: new card,
-  delete, link, timer).
-
-saveThisRound()
-  Preflow: copy title, topic, side, contentions, notes, evidence, and
-  contention ids back onto db.preflows[id].
-  Round: store state.round onto db.rounds[id] and set lastRoundId.
-  Tour (state.demo): do nothing to db. The label says "Tour only — not saved".
-  The tour round is kept in sessionStorage instead.
-
-saveTypedWords()
-  Before leaving the page, copy every point textarea and every crossfire
-  textarea into the round. Otherwise the last keystroke can still be
-  sitting only in the DOM.
-
-Undo snapshot (copyFlow / putFlowBack)
-  JSON of cases, contentions, notes, and evidence.
-  NOT included: crossfire text, the clock, the title, column focus, scroll.
-  Undoing a rebuttal card does not rewind prep.
-  past is capped at 100. A new step clears future (so a new edit after
-  undo drops the redo stack).
-  If the stored JSON cannot be parsed, undo does nothing and does not
-  destroy the current flow.
-  Ctrl+Z / Ctrl+Y (and Ctrl+Shift+Z) work when focus is not in a textarea
-  or a contenteditable. Inside a card, those keys are the browser's.
-
-rememberBeforeChange()
-  Called before a structural edit. If a typing burst is open, it closes
-  that burst with its own snapshot first, so the typed text and the
-  structural edit are separate steps.
-
-
-================================================================================
-13. THE TIMER
-================================================================================
-
-timers object
-  index          which step in timerSteps (0 = first constructive)
-  running        true while a deadline is in the future
-  mode           "speech" | "prep" | null
-  prepSide       "pro" or "con" — which pot is running
-  deadline       Date.now() + remaining, or null
-  remainingMs    speech time left when paused
-  allotted       seconds for each step id, copied from settings at creation
-  prepLeft       { pro: ms, con: ms }
-  timeUp         true after a countdown hits zero
-
-kickClock(mode, side)
-  If something is already running, fold the leftover time back into
-  remainingMs or the correct prep pot, then stop it. Speech and prep
-  never run together.
-  Prep is refused unless side is "pro" or "con". Observer has no pot.
-  A missing timers object, a missing prep pot, a non-finite time, or
-  zero time: return without starting.
-  Otherwise set deadline = now + amount.
-
-The chip (timer-btn) is updated every 200ms while a clock runs.
-At zero: store 0, clear running, set timeUp, beep if settings.sound.
-beep() is a short 880Hz oscillator. If AudioContext is blocked, it
-fails quietly.
-
-Timer menu
-  Start / Pause speech     the current step only
-  Reset speech             full allotted time for this step.
-                           If allotted is missing, use the step's seconds.
-  Next                     advance index. The new step gets its full time.
-                           Does not auto-start.
-  Pro prep / Con prep      start or pause that pot
-  Reset prep               both pots back to settings.durations.prep
-                           (or 180 seconds if that value is missing)
-
-anchorMenu(anchor, node)
-  Closes any open menu, shows this one, and places it under the button.
-  If it would fall off the bottom of the window, it flips above.
-  If the button is gone, it returns instead of throwing.
-dropMenu() hides it.
-
-A click outside a menu closes it, unless the click is the button that
-opened the timer, find, round menu, card menu, or preflow menu.
-
-
-================================================================================
-14. FIND, PRINT, EXPORT, TOUR
-================================================================================
-
-Find
-  findWords() scans card text and the four crossfire strings.
-  Hits remember contention, speech, and whether it is a crossfire box.
-  openHit() switches case if needed, may navigate to the workspace or
-  to notes.html, then focuses the card or the crossfire textarea.
-
-Print
-  printSheets(includeEvidence) fills #print-body.
-  One section per case, Con starting on a new page.
-  Every speech, not just the columns you had zoomed.
-  Each contention is a table: one row per shell, one cell per speech,
-  and the answers in that cell.
-  Markers and, if checked, the plain text of the evidence.
-  Then the crossfire block.
-  do-print closes dialogs, builds the sheet, and calls window.print()
-  after 100ms so the DOM is ready. print.css hides the app and shows
-  the print sheet.
-
-Export
-  exportRound(round) downloads
-    { schemaVersion: 1, exportedAt, note, round }
-  The note says version 1 does not import the file. It is a record.
-  The filename is the title, lowercased, non-letters turned into dashes,
-  plus the date.
-
-Tour
-  demoRound() is a small round about a school-lunch resolution, with a
-  few cards and one piece of evidence, so the highlights have something
-  to point at.
-  startTour() remembers the real round id in tourReturn, stores the demo
-  in sessionStorage, and opens the workspace.
-  Ten steps, defined in the TOUR array at the top of app.js.
-  Escape or the close button calls closeTour(), which clears the demo
-  keys and returns to the real round, or to home if there wasn't one.
-  Nothing from the tour is written by writeSave.
-
-
-================================================================================
-15. WHAT EACH BUTTON DOES
-================================================================================
-
-The click listener looks for the closest [data-action].
-
-Home and global
-  new-round          open the new-round dialog. Title defaults to
-                     "Untitled round". The preflow dropdown is filled
-                     from db.preflows.
-  create-round       startRound(). Build the round, pour in a preflow
-                     if one was chosen, writeSave. If the save fails,
-                     the round is removed from memory and the error is
-                     shown in the dialog. You are not sent to a round
-                     that will vanish on refresh.
-  open-round         workspace for that id
-  rename-round       dialog, then save-rename
-  duplicate-round    dupeRound, write, redraw the list
-  export-round       download that round
-  delete-round       confirm, then delete db.rounds[id]
-  tour               start the feature tour
-  save-settings      pfClock on every box. Block the save if any value
-                     is illegal. If minutes were converted, stay on the
-                     page and say so. Then writeSave.
-
-Workspace toolbar
-  case-pro / case-con     switchCase. Saves scroll for the case you
-                          leave. From the notes page, this jumps back
-                          to the workspace on that case.
-  show-notes              notes.html
-  add-group               addCont on the visible case, then scroll to it
-  undo / redo
-  find-toggle, find-next, find-prev
-  columns-all             clear the column window
-  columns-left / right    slide the window
-  columns-count / start   change selects (the change listener)
-  timer-toggle and the timer actions in section 13
-  round-menu              rename details, export, print, save as preflow
-  edit-details            your side can always change. Who speaks first
-                          is hidden once roundHasWords is true.
-                          saveDetails forces yourSide to pro, con, or
-                          observer, and firstSide to pro or con.
-  save-opening            caseToOpening for the visible case
-  jump-link               scroll to that contention. From notes, go to
-                          the workspace first.
-  toggle-nav / close-nav  phone sidebar
-  font-size               settings.fontSize, restyle the cards, remeasure
-
-Contention header
-  collapse toggle         contention.collapsed. Hides the grid.
-  group-up / group-down   bumpCont
-  delete-group            refused if it is the last one. Confirm if the
-                          contention has text or evidence. Undo can bring
-                          it back during this visit.
-
-Card
-  click a card            selectNote. Opens evidence if you asked, and
-                          scrolls that card's evidence into view.
-                          Scrolling the evidence list does not change
-                          which card is selected.
-  note-menu               insert below, link, move up/down, duplicate,
-                          delete, markers
-  add-evidence            select and open the panel
-  paperclip number        same idea from the card
-
-Keyboard on a card
-  Enter                   edit the card (when the card, not the textarea,
-                          is focused) or split the card (when typing)
-  Shift+Enter             newline inside the card
-  Escape                  blur the textarea, focus the card
-  Tab / Shift+Tab         next or previous card, response box, or new box
-  Arrow keys              move focus to a nearby card (moveWithArrows)
-
-Typing
-  title                   saved, no undo snapshot of the title
-  contention name         undo-grouped as typing. Empty becomes "Contention".
-                          The jump link updates live.
-  point textarea          writes note.text, updates "Response to …" labels,
-                          remeasures, debounced save
-  crossfire textarea      writes crossNotes[data-cross]
-  response slot           first character calls typeReply, which creates
-                          the answer and focuses it
-  new-point box           first character calls typeNewPoint
-                          On a preflow, the speech must be that side's
-                          constructive or the keystroke is ignored
-  evidence box            saveProof
-
-Resize
-  After 120ms, redraw the workspace so columns match the new width.
-  A wide window closes the phone sidebar.
-
-
-================================================================================
-16. HELPERS  (helpers.js)
-================================================================================
-
-  cloneTpl(id)         clone the first child of a hidden sample block
-  unhide(node)         remove class "hide"
-  foldAway(node)       add class "hide"
-  clearNode(node)      remove all children
-  setLine(node, text)  set text, hide the node when the text is empty
-  objList(box)         values of an object, own keys only
-  joinSkipEmpty        join the parts that are not empty
-  sortRecent           newest updatedAt first. ISO dates sort as text.
-
-
-================================================================================
-17. CSS
-================================================================================
-
-These files do not change data. They only paint.
-
-  page.css        page background, type, the top bar, form rows
-  buttons.css     buttons, and the Pro / Con / Observer pills
-  home.css        the round list and empty state
-  sidebar.css     the case list on the workspace
-  workspace.css   the sheet, columns, cards, timer chip
-  evidence.css    the evidence column and pasted card text
-  popups.css      dialogs, menus, the tour
-  phone.css       layout under about 900px
-  print.css       what window.print shows
-
-The ?v=31 on each link is a cache buster. Change it when CSS or JS
-changes and the browser is still showing an old file.
-
-
-================================================================================
-18. ONE ROUND, START TO FINISH
-================================================================================
-
-1. Home. No rounds: the empty panel. Otherwise a card per round, newest
-   first. Search filters title, topic, tournament, and opponent.
-
-2. New round. Title, topic, tournament, round label, opponent, your side
-   (Pro, Con, or Observer), who speaks first (Pro or Con only), and an
-   optional preflow.
-   startRound builds the object, copies constructive shells from the
-   preflow onto that preflow's side, and writeSave. Failure stays on
-   the dialog.
-
-3. Workspace opens on the Pro case. The ballot line shows your side and
-   who speaks first. The columns are speechesOnSide for Pro.
-   Each contention has a "New point" box in every visible column and,
-   once a shell exists, response boxes on later speeches until the line
-   is answered.
-
-4. You type a shell on Pro constructive. Enter makes the next shell.
-   Shift+Enter stays in the card. The sheet remeasures and realigns.
-
-5. In a later column you answer it. That card's parentId is the shell.
-   A second answer stacks under the first. Summary answers the rebuttal
-   card, not the original, unless you link it yourself.
-
-6. Card menu: reorder, duplicate, link onto an earlier card in the same
-   contention, delete, or label it. Illegal links stay on the menu with
-   the reason. Dropped / Turn / Extend warn when the label does not match
-   the card, and you can still apply them.
-
-7. Paperclip. Paste a card. Formatting that is highlight and underline
-   stays. A huge paste is cut. The flow behind the panel does not move.
-
-8. Notes page. Three crossfires and reflections. Enter there is a normal
-   newline, not a new card.
-
-9. Timer. One speech at a time, in NSDA order, plus a 3 minute prep pot
-   for each team. Next steps to the following speech. Only one countdown
-   runs. Closing the laptop freezes what was left.
-
-10. Details. You can fix the title, opponent, and your side. Who speaks
-    first locks after the first card with text or evidence.
-
-11. Save as preflow keeps that case's constructive shells for the next
-    tournament. Duplicate round copies the flow and gives you a fresh clock.
-
-12. Every edit debounces into localStorage, with a second copy as backup.
-    Undo covers the cards. Export downloads the record. Deleting the
-    round removes it from this browser only.
-
-
-================================================================================
-19. WHERE TO LOOK
-================================================================================
-
-  Change speech order or times          js/rounds.js   speechOrder, timerTimes,
-                                                       timerSteps, pfClock
-  Change what a card is allowed to do   js/rounds.js   whyNotLink, cutCard,
-                                                       markerWarn, addShell,
-                                                       addAns
-  Change vertical alignment             js/lineup.js
-  Change paste rules                    js/clean.js
-  Change how saves fail                 js/save.js
-  Change a button or the sheet UI       js/app.js      the click listener,
-                                                       showFlow, buildFlow
-  Change a screen's markup              the matching HTML file
-  Change colors and layout              css/
-
-End of workflow.
+﻿GO WITH THE FLOW
+Beginner Workflow Guide
+=======================
+
+This project is a browser-only debate planner. It does not use a backend server or database.
+Everything is saved in the browser with localStorage, and the current screen / round is tracked
+with sessionStorage.
+
+The app is built around one idea:
+- A user creates a debate round.
+- The round has two cases: Aff and Neg.
+- Each case is made of contentions.
+- Each contention has supporting points.
+- Some points are main points; others are replies.
+- Evidence can be attached to notes.
+- The user can write crossfire notes and export a PDF/print version.
+
+
+1) Main screens and what they do
+=================================
+
+1.1 index.html  -> Home screen
+- Purpose: manage saved rounds.
+- Responsibilities:
+  * show all saved rounds
+  * search rounds by title/topic/tournament/opponent
+  * create a new round
+  * rename a round
+  * delete a round
+  * open an existing round
+- JS file: js/index.js
+- This screen is for navigation and round management, not debate writing itself.
+
+1.2 workspace.html -> Debate flow sheet
+- Purpose: write and organize the actual round.
+- Responsibilities:
+  * switch between Aff Flow and Neg Flow
+  * create and edit contentions
+  * add main points and replies
+  * show speech columns (constructive, rebuttal, summary, final)
+  * attach evidence to a point
+  * run timer
+  * save automatically
+- JS file: js/workspace.js
+- This is the main working screen.
+
+1.3 notes.html -> Crossfire notes screen
+- Purpose: capture notes that happen outside the main flow chart.
+- Responsibilities:
+  * track first crossfire, second crossfire, grand crossfire, reflections
+  * save note content as the user types
+  * update the round title and side info
+- JS file: js/notes.js
+
+1.4 preflows.html -> Reusable pre-write screen
+- Purpose: save reusable topic/side templates called preflows.
+- Responsibilities:
+  * create a preflow
+  * edit a preflow
+  * delete a preflow
+  * open a preflow as a starting structure for a round
+- JS file: js/preflows.js
+
+1.5 common.js -> shared logic for all screens
+- Purpose: the core engine of the app.
+- This file builds the round data model, saves data, creates timers, handles DOM helpers,
+  and defines the rendering logic used by all pages.
+
+
+2) How the app starts
+=====================
+
+When a page loads:
+1. The HTML is parsed.
+2. CSS is loaded.
+3. Scripts are loaded.
+4. The script order is important:
+   - js/common.js
+   - page-specific script: js/index.js / js/workspace.js / js/notes.js / js/preflows.js
+5. common.js immediately runs:
+   - loadSavedData() reads saved browser data
+   - db is created from localStorage
+   - state is created as the live UI session object
+   - startApp() runs to initialize the page
+
+Important idea:
+- db = saved data
+- state = current in-memory view of what the user is doing now
+
+Example:
+- db.rounds stores the full saved rounds.
+- state.round stores the round currently open on-screen.
+
+
+3) Data storage model
+=====================
+
+The app keeps two main storage layers:
+
+3.1 localStorage
+- Used for permanent saved app data.
+- Key names are:
+  * goWithTheFlow
+  * goWithTheFlowBackup
+- This stores:
+  * all rounds
+  * all preflows
+  * user settings
+  * last selected round
+
+3.2 sessionStorage
+- Used for temporary current-session info.
+- Examples:
+  * open round id
+  * current case side
+  * jump-to-contention target
+  * focus target note
+  * open evidence panel
+
+
+4) Main data objects
+=====================
+
+4.1 Round object
+A round is the main debate record. It contains:
+- id
+- title
+- topic
+- tournament
+- roundLabel
+- opponent
+- yourSide (pro / con / observer)
+- firstSide (pro / con)
+- createdAt / updatedAt
+- cases
+- contentions
+- notes
+- evidence
+- crossNotes
+- timers
+- scroll state
+
+A round always has two cases:
+- pro
+- con
+
+Each case has a list of contentionIds.
+
+4.2 Contention
+A contention is a major argument block, such as:
+- "Need for policy change"
+- "Cost concerns"
+- "Education benefits"
+
+A contention keeps:
+- id
+- name
+- startingPointIds
+
+startingPointIds holds the top-level point ids that belong to that contention.
+
+4.3 Note
+A note is a point or reply card inside a contention. Each note has:
+- id
+- contentionId
+- speechId
+- parentId
+- order
+- text
+- html
+- marker
+- evidenceId
+
+speechId tells which speech column it belongs to, for example:
+- pro-constructive
+- con-rebuttal
+- pro-summary
+
+parentId means "this note is a reply to that note".
+If parentId is null, it is a starting point.
+
+4.4 Evidence
+Evidence is one attached research item for a point.
+It stores:
+- id
+- noteId
+- html
+- plain
+
+This allows the user to paste evidence and keep it attached to a specific point.
+
+
+5) Screen-by-screen workflow
+===========================
+
+5.1 Home screen workflow
+File: index.html + js/index.js
+
+How it works:
+- The page renders a list of rounds from db.rounds.
+- Each card shows:
+  * title
+  * side
+  * tournament / round info
+  * topic
+  * last edit time
+- Search filters the list by title/topic/tournament/opponent.
+- Clicking Open loads the selected round into state.round and sends the user to workspace.html.
+- Clicking New round opens a popup form with:
+  * topic
+  * tournament
+  * round number
+  * opponent
+  * your side
+  * first speaking side
+  * starting preflow
+- `createRoundFromForm()` builds a new round with `createNewRound()`.
+- `saveToLocalStorage(db)` saves it in the browser.
+
+The central functions here are:
+- loadPreflowDropdown()
+- openNewRoundModal()
+- createRoundFromForm()
+- displayRoundsList()
+
+
+5.2 Workspace screen workflow
+File: workspace.html + js/workspace.js + common.js
+
+This is the main debate board.
+
+The page is laid out like a debate flow sheet:
+- left sidebar with case buttons
+- title bar with timer and save status
+- toolbar with undo/redo/font actions
+- center flow paper with speech columns
+- evidence panel on the right
+
+When a round opens:
+- `openRound(id)` loads the round from the saved data into state.round
+- `renderWorkspace()` runs
+- `buildFlowSheet()` clears and redraws the flow paper
+- `calculateCaseFlowLayout()` decides where each point sits in the board
+- `renderPointCard()` creates the visual card for each note
+- `measurePointHeights()` computes height of cards
+- `applyPointPositions()` places cards on the canvas
+
+This is where the actual debate logic exists.
+
+Core functions:
+- addMainPoint(round, contentionId, speechId, text)
+- addReplyPoint(round, parentId, speechId, text)
+- addContention(round, caseSide)
+- deletePoint(round, noteId)
+- openPointActionsMenu()
+- switchDebateSide()
+- saveRoundAfterAMoment()
+
+The points are not stored in one flat array. They are stored in a map like:
+- round.notes[note.id] = note
+
+That makes it easy to:
+- find any note by id
+- attach evidence to a note
+- move a note under a parent reply
+- rebuild the board from the current data
+
+
+5.3 Notes screen workflow
+File: notes.html + js/notes.js
+
+This page is simpler than the workspace.
+It does not draw the flow board. It only stores crossfire notes and round metadata.
+
+`renderCrossfireNotes()` reads from `state.round.crossNotes` and fills the four textareas:
+- firstCrossfire
+- secondCrossfire
+- grandCrossfire
+- reflections
+
+The listener on input automatically updates the round object and saves after a short delay.
+This page is mainly about reflection and after-round analysis.
+
+
+5.4 Preflow screen workflow
+File: preflows.html + js/preflows.js
+
+A preflow is a reusable opening structure.
+It is not a full debate round, but a saved argument skeleton.
+
+A preflow contains:
+- title
+- topic
+- side (Aff or Neg)
+- contentions
+- notes
+- evidence
+
+When a user creates a preflow, it is stored in db.preflows.
+Later, when creating a round, the dropdown can load a preflow as the starting structure.
+
+This lets a debater re-use a prior argument set rather than building from zero.
+
+
+6) How the flow board is laid out
+=================================
+
+This is the most important visual logic in the app.
+
+The app uses these helper functions:
+- getSpeechesForSide(round, caseSide)
+- getSpeechesAfter(round, caseSide, speechId)
+- getReplyPoints(round, parentId, speechId)
+- calculateSpaceForPoint(round, note, caseSide, heights, saved)
+- calculatePointPosition(round, note, top, caseSide, heights, saved, positions)
+- calculateCaseFlowLayout(round, caseSide, heights)
+
+Why this matters:
+- The board has columns by speech type.
+- A parent point may have replies in later speeches.
+- Replies need to be stacked under the right parent card.
+- The app must compute their vertical placement so the cards do not overlap.
+
+The flow board is a visual tree:
+- top-level note = root of a chain
+- reply note = child under a parent
+- replies can continue into later speeches
+- the layout engine calculates spacing recursively
+
+This is where the app becomes more than a text editor. It is a debate mapping engine.
+
+
+7) Saving and auto-save logic
+=============================
+
+This project auto-saves often.
+
+Main save flow:
+- user edits a note / title / timer / crossfire field
+- `saveRoundAfterAMoment(false)` starts a short delay
+- after ~450ms, `saveThisRound()` writes the object
+- `saveToLocalStorage(db)` writes to browser storage
+
+The save system is defensive:
+- if storage is full, the app shows a warning
+- if save data is corrupted, it tries the backup key
+- if both fail, it restores defaults
+
+`db` is not restored from a server; it is loaded from localStorage on page load.
+
+
+8) Timer logic
+==============
+
+The app includes a speech timer and prep timer.
+
+Relevant ideas:
+- `getTimerSteps(firstSide, durations)` defines the standard sequence of speeches.
+- `createNewTimer(firstSide, durations)` creates working timer state.
+- `startOrPauseTimer()` starts or pauses the active timer.
+- `resetSimpleTimer()` resets the currently visible timer.
+- `updateTimerButton()` updates the visible label.
+
+The timer keeps track of:
+- remainingMs
+- prepLeft
+- deadline
+- running
+- mode
+
+This means it can stop cleanly when the tab closes or the app is reopened.
+
+
+9) Evidence logic
+=================
+
+Evidence is used like this:
+- the user clicks the clip button on a note
+- that note gets an evidence panel opened
+- the user pastes copied text or formatted content
+- `cleanPastedHtml()` removes unsafe formatting and keeps readable HTML
+- the evidence is attached to the note with evidenceId
+- the note card shows a clip badge
+
+This is handled in the common.js paste/cleaning utilities and in workspace.js rendering.
+
+
+10) Where the unused helper was used
+=====================================
+
+The earlier helper `calculateContentionLayout()` was not connected to the real render flow.
+It was not used by any call site in the app.
+
+The actual active layout path is:
+- `renderWorkspace()`
+  -> `buildFlowSheet()`
+  -> `calculateCaseFlowLayout()`
+  -> `renderPointCard()`
+
+So the real layout logic used by the app is the case layout function, not `calculateContentionLayout`.
+The removed helper was effectively dead code.
+
+This is why the app still works normally after its removal: the live screen depended on the active layout engine instead of the unused helper.
+
+
+11) Simple beginner summary
+==========================
+
+Think of the project as a debate planning board:
+
+- Home page = round library
+- Preflows page = reusable argument outlines
+- Workspace page = the actual debate map
+- Notes page = reflection and crossfire notes
+- common.js = core logic and data engine
+- HTML files = screens
+- JS files = behavior and rendering
+
+The project is not a traditional app with a backend.
+It is a single-page browser app that stores everything locally and redraws the interface based on state.
+
+A beginner can understand it by following this path:
+1. create a round
+2. add contentions
+3. add main points
+4. add replies
+5. attach evidence
+6. save automatically
+7. switch sides
+8. edit notes and export PDF
+
+That is the whole project lifecycle.
+
+
+12) Recommended reading order
+=============================
+
+If you want to understand the project step by step, read in this order:
+1. index.html
+2. workspace.html
+3. notes.html
+4. preflows.html
+5. js/common.js
+6. js/index.js
+7. js/workspace.js
+8. js/notes.js
+9. js/preflows.js
+
+This order follows how the app starts, how data is modeled, and how the UI is built.
+
+
+End of beginner workflow guide.

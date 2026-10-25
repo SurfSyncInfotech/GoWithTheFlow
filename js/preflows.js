@@ -20,7 +20,9 @@ function renderPreflowsList() {
       cardName = "Untitled preflow";
     }
 
-    card.querySelector(".card-name").textContent = cardName;
+    var cardTitle = card.querySelector(".card-name");
+    cardTitle.textContent = cardName;
+    cardTitle.dataset.id = singlePreflow.id;
     card.querySelector(".card-extra").textContent = formatSideName(singlePreflow.side);
 
     var buttons = card.querySelectorAll("button");
@@ -47,6 +49,51 @@ document.addEventListener("click", function (event) {
   if (action === "open-opening") {
     openOpening(id);
 
+  } else if (action === "edit-preflow") {
+    var preflow = db.preflows[id];
+    if (!preflow) return;
+    var editBox = document.getElementById("edit-preflow-box");
+    editBox.dataset.id = id;
+    document.getElementById("edit-preflow-topic").value = preflow.topic || preflow.title || "";
+    document.getElementById("edit-preflow-side").value = preflow.side || "pro";
+    showElement(editBox);
+
+  } else if (action === "save-preflow-details") {
+    var box = document.getElementById("edit-preflow-box");
+    var preflowId = box.dataset.id;
+    var targetPreflow = db.preflows[preflowId];
+
+    if (targetPreflow) {
+      var nextTopic = document.getElementById("edit-preflow-topic").value.trim();
+      var nextSide = document.getElementById("edit-preflow-side").value;
+      if (nextSide !== "con") {
+        nextSide = "pro";
+      }
+
+      var oldSide = targetPreflow.side;
+      targetPreflow.topic = nextTopic;
+      targetPreflow.title = nextTopic || "Untitled preflow";
+
+      if (oldSide !== nextSide) {
+        targetPreflow.side = nextSide;
+        if (targetPreflow.notes) {
+          var noteKeys = Object.keys(targetPreflow.notes);
+          for (var nk = 0; nk < noteKeys.length; nk++) {
+            var nItem = targetPreflow.notes[noteKeys[nk]];
+            if (nItem.speechId === oldSide + "-constructive") {
+              nItem.speechId = nextSide + "-constructive";
+            }
+          }
+        }
+      }
+
+      targetPreflow.updatedAt = new Date().toISOString();
+      saveToLocalStorage(db);
+    }
+
+    closePopups();
+    render();
+
   } else if (action === "new-opening") {
     document.getElementById("preflow-topic").value = "";
     document.getElementById("preflow-side").value = "pro";
@@ -70,7 +117,8 @@ document.addEventListener("click", function (event) {
 
     db.preflows[made.id] = made;
     saveToLocalStorage(db);
-    openOpening(made.id);
+    closePopups();
+    render();
 
   } else if (action === "delete-opening") {
     askConfirm(

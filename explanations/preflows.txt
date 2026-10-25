@@ -1,5 +1,5 @@
 preflows.js
-Preflows page. This file draws the preflow cards and handles New preflow and Delete.
+Preflows page. This file draws the preflow cards and handles New preflow, Edit details, and Delete.
 
 Read it from top to bottom. Each code line is followed by what that line does.
 
@@ -44,11 +44,17 @@ If cardName is empty or missing, do the next lines.
 Set cardName to "Untitled preflow".
 
     }
-    card.querySelector(".card-name").textContent = cardName;
-This line continues the step above.
+    var cardTitle = card.querySelector(".card-name");
+Find the card-name element inside the card and save it as cardTitle.
+
+    cardTitle.textContent = cardName;
+Set the text content of cardTitle to cardName.
+
+    cardTitle.dataset.id = singlePreflow.id;
+Attach the preflow id to cardTitle dataset so clicking it can open the preflow.
 
     card.querySelector(".card-extra").textContent = formatSideName(singlePreflow.side);
-This line continues the step above.
+Format the side name (Aff or Neg) and put it into card-extra.
 
     var buttons = card.querySelectorAll("button");
 Make buttons and set it to card.querySelectorAll("button").
@@ -93,6 +99,108 @@ If the clicked action is "open-opening", do the next lines.
 
     openOpening(id);
 Open the preflow id.
+
+  } else if (action === "edit-preflow") {
+Otherwise, if the clicked action is "edit-preflow", do the next lines.
+
+    var preflow = db.preflows[id];
+Look up this preflow in saved preflows by id.
+
+    if (!preflow) return;
+If preflow was not found, stop here.
+
+    var editBox = document.getElementById("edit-preflow-box");
+Find the Edit preflow details popup box.
+
+    editBox.dataset.id = id;
+Store the preflow id on the edit popup box.
+
+    document.getElementById("edit-preflow-topic").value = preflow.topic || preflow.title || "";
+Fill the topic input with the saved topic, title, or empty string.
+
+    document.getElementById("edit-preflow-side").value = preflow.side || "pro";
+Set the side dropdown to the saved side or default to pro.
+
+    showElement(editBox);
+Show the Edit preflow details popup box.
+
+  } else if (action === "save-preflow-details") {
+Otherwise, if the clicked action is "save-preflow-details", do the next lines.
+
+    var box = document.getElementById("edit-preflow-box");
+Find the Edit preflow details popup box.
+
+    var preflowId = box.dataset.id;
+Read the preflow id stored on the popup box.
+
+    var targetPreflow = db.preflows[preflowId];
+Look up the preflow being edited from database.
+
+    if (targetPreflow) {
+If the preflow exists in storage, do the next lines.
+
+      var nextTopic = document.getElementById("edit-preflow-topic").value.trim();
+Read the topic input and trim any whitespace.
+
+      var nextSide = document.getElementById("edit-preflow-side").value;
+Read the chosen side from the dropdown.
+
+      if (nextSide !== "con") {
+If the chosen side is not con, do the next lines.
+
+        nextSide = "pro";
+Default the side to pro.
+
+      }
+      var oldSide = targetPreflow.side;
+Remember the previous side of the preflow.
+
+      targetPreflow.topic = nextTopic;
+Save the updated topic on the preflow.
+
+      targetPreflow.title = nextTopic || "Untitled preflow";
+Save the updated title or default to Untitled preflow.
+
+      if (oldSide !== nextSide) {
+If the side was changed between Aff and Neg, do the next lines.
+
+        targetPreflow.side = nextSide;
+Update the side to the newly chosen side.
+
+        if (targetPreflow.notes) {
+If the preflow has existing notes, do the next lines.
+
+          var noteKeys = Object.keys(targetPreflow.notes);
+Get the list of all note IDs.
+
+          for (var nk = 0; nk < noteKeys.length; nk++) {
+Loop through note IDs to update speech associations.
+
+            var nItem = targetPreflow.notes[noteKeys[nk]];
+Get the individual note object.
+
+            if (nItem.speechId === oldSide + "-constructive") {
+If this note belongs to the old constructive speech, do the next lines.
+
+              nItem.speechId = nextSide + "-constructive";
+Switch the speechId to the new constructive speech.
+
+            }
+          }
+        }
+      }
+      targetPreflow.updatedAt = new Date().toISOString();
+Record the current timestamp as the update time.
+
+      saveToLocalStorage(db);
+Save the updated database to browser local storage.
+
+    }
+    closePopups();
+Close the open popup box.
+
+    render();
+Redraw the page with the updated preflow details.
 
   } else if (action === "new-opening") {
 Otherwise, if the clicked action is "new-opening", do the next lines.
@@ -144,8 +252,11 @@ Set db.preflows[made.id] to made.
     saveToLocalStorage(db);
 Save the data in this browser.
 
-    openOpening(made.id);
-Open the preflow made.id.
+    closePopups();
+Close the new preflow modal.
+
+    render();
+Redraw the preflow list on this page so the new preflow appears immediately.
 
   } else if (action === "delete-opening") {
 Otherwise, if the clicked action is "delete-opening", do the next lines.

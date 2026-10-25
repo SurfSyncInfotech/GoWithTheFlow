@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="css/evidence.css?v=32">
   <link rel="stylesheet" href="css/popups.css?v=31">
   <link rel="stylesheet" href="css/phone.css?v=39">
-  <link rel="stylesheet" href="css/print.css?v=31">
+  <link rel="stylesheet" href="css/print.css?v=70">
 </head>
 <body class="page" data-page="notes">
   <a class="skip-link" href="#notes-page">Skip to content</a>
@@ -102,9 +102,6 @@
 
   <div id="round-menu" class="drop-menu hide">
     <button type="button" data-action="edit-details">Edit details</button>
-    <button type="button" data-action="export">Export</button>
-    <button type="button" data-action="print">Print</button>
-    <button type="button" data-action="save-opening">Save case as preflow</button>
     <button type="button" data-action="home">Back to rounds</button>
   </div>
   <div id="timer-popover" class="small-popup hide">
@@ -154,11 +151,12 @@
       <h2>Print / Save PDF</h2>
       <div class="popup-body">
         <label class="form-line"><span><input type="checkbox" id="print-evidence" checked> Include research proof and evidence citations</span></label>
-        <p class="gray-text">Generates a complete debate brief with Pro Case, Con Case, all speech columns, evidence citations, and Crossfire notes formatted cleanly for PDF.</p>
+        <p class="gray-text">Generates a complete debate brief with Aff Case, Neg Case, all speech columns, evidence citations, and Crossfire notes formatted cleanly for PDF.</p>
       </div>
       <div class="popup-buttons">
         <button type="button" class="btn" data-action="close-dialog">Cancel</button>
-        <button type="button" class="btn main" data-action="do-print">Print / Save PDF</button>
+        <button type="button" class="btn" data-action="print-browser">Print (Browser)</button>
+        <button type="button" class="btn main" id="btn-download-pdf" data-action="do-print">Download PDF</button>
       </div>
     </div>
   </div>
@@ -212,7 +210,8 @@
     <div class="print-note"><h3 class="print-note-name"></h3><div class="print-note-words"></div></div>
   </div>
 
-  <script src="js/common.js?v=53"></script>
-  <script src="js/notes.js?v=37"></script>
+  <script src="js/html2pdf.bundle.min.js"></script>
+  <script src="js/common.js?v=70"></script>
+  <script src="js/notes.js?v=42"></script>
 </body>
 </html>

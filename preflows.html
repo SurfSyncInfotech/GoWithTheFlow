@@ -31,7 +31,6 @@
       </a>
       <div class="top-menu">
         <a class="btn plain" href="preflows.html">Preflows</a>
-        <button type="button" class="btn plain" data-action="tour">Feature tour</button>
       </div>
     </div>
 
@@ -57,14 +56,33 @@
         <label class="form-line"><span>Topic</span><input id="preflow-topic"></label>
         <label class="form-line"><span>Side</span>
           <select id="preflow-side">
-            <option value="pro">Pro</option>
-            <option value="con">Con</option>
+            <option value="pro">Aff</option>
+            <option value="con">Neg</option>
           </select>
         </label>
       </div>
       <div class="popup-buttons">
         <button type="button" class="btn" data-action="close-dialog">Cancel</button>
         <button type="button" class="btn main" data-action="make-opening">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="edit-preflow-box" class="popup-cover hide">
+    <div class="popup">
+      <h2>Edit preflow details</h2>
+      <div class="popup-body">
+        <label class="form-line"><span>Topic</span><input id="edit-preflow-topic"></label>
+        <label class="form-line"><span>Side</span>
+          <select id="edit-preflow-side">
+            <option value="pro">Aff</option>
+            <option value="con">Neg</option>
+          </select>
+        </label>
+      </div>
+      <div class="popup-buttons">
+        <button type="button" class="btn" data-action="close-dialog">Cancel</button>
+        <button type="button" class="btn main" data-action="save-preflow-details">Save</button>
       </div>
     </div>
   </div>
@@ -82,16 +100,16 @@
 
   <div class="hide" id="sample-pf">
     <div class="card">
-      <h2 class="card-name"></h2>
+      <h2 class="card-name" data-action="open-opening" style="cursor: pointer;"></h2>
       <p class="card-extra"></p>
       <div class="button-row">
-        <button type="button" class="btn main" data-action="open-opening">Edit</button>
+        <button type="button" class="btn main" data-action="edit-preflow">Edit details</button>
         <button type="button" class="btn red" data-action="delete-opening">Delete</button>
       </div>
     </div>
   </div>
 
-  <script src="js/common.js?v=53"></script>
-  <script src="js/preflows.js?v=36"></script>
+  <script src="js/common.js?v=70"></script>
+  <script src="js/preflows.js?v=40"></script>
 </body>
 </html>

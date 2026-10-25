@@ -1,12 +1,12 @@
 var SPEECHES = {
-  "pro-constructive": { team: "pro", type: "constructive", short: "Pro Constr.", full: "Pro Constructive" },
-  "con-constructive": { team: "con", type: "constructive", short: "Con Constr.", full: "Con Constructive" },
-  "pro-rebuttal": { team: "pro", type: "rebuttal", short: "Pro Reb.", full: "Pro Rebuttal" },
-  "con-rebuttal": { team: "con", type: "rebuttal", short: "Con Reb.", full: "Con Rebuttal" },
-  "pro-summary": { team: "pro", type: "summary", short: "Pro Sum.", full: "Pro Summary" },
-  "con-summary": { team: "con", type: "summary", short: "Con Sum.", full: "Con Summary" },
-  "pro-final": { team: "pro", type: "final", short: "Pro FF", full: "Pro Final Focus" },
-  "con-final": { team: "con", type: "final", short: "Con FF", full: "Con Final Focus" }
+  "pro-constructive": { team: "pro", type: "constructive", short: "Aff Constr.", full: "Aff Constructive" },
+  "con-constructive": { team: "con", type: "constructive", short: "Neg Constr.", full: "Neg Constructive" },
+  "pro-rebuttal": { team: "pro", type: "rebuttal", short: "Aff Reb.", full: "Aff Rebuttal" },
+  "con-rebuttal": { team: "con", type: "rebuttal", short: "Neg Reb.", full: "Neg Rebuttal" },
+  "pro-summary": { team: "pro", type: "summary", short: "Aff Sum.", full: "Aff Summary" },
+  "con-summary": { team: "con", type: "summary", short: "Neg Sum.", full: "Neg Summary" },
+  "pro-final": { team: "pro", type: "final", short: "Aff FF", full: "Aff Final Focus" },
+  "con-final": { team: "con", type: "final", short: "Neg FF", full: "Neg Final Focus" }
 };
 
 var MARKERS = [
@@ -154,10 +154,10 @@ function getSpeechName(id, full) {
 }
 
 function getTeamName(side) {
-  if (side === "pro") {
-    return "Pro";
+  if (side === "pro" || side === "aff") {
+    return "Aff";
   } else {
-    return "Con";
+    return "Neg";
   }
 }
 
@@ -1309,7 +1309,7 @@ function pauseTimerOnOpen(round) {
 
 function calculateCardHeight(note, heights) {
   var value = heights && heights[note.id];
-  if (value && value >= 40) return value;
+  if (value && value >= 56) return value;
 
   var noteText = note.text;
 
@@ -1321,14 +1321,14 @@ function calculateCardHeight(note, heights) {
   var visual = 0;
 
   for (var i = 0; i < lines.length; i++) {
-    visual += Math.max(1, Math.ceil((lines[i].length || 1) / 32));
+    visual += Math.max(1, Math.ceil((lines[i].length || 1) / 28));
   }
 
   if (!visual) {
     visual = 1;
   }
 
-  return Math.max(40, visual * 22 + 16);
+  return Math.max(58, visual * 20 + 38);
 }
 
 function getRepliesInColumn(round, parentId, speechId) {
@@ -1413,7 +1413,7 @@ function checkEarlierReplies(round, noteId, speechId, caseSide) {
   return false;
 }
 
-function calculateContentionLayout(round, contention, caseSide, heights) {
+function calculateCaseFlowLayout(round, caseSide, heights) {
   var saved = {};
   var positions = {};
   var slots = [];
@@ -1421,17 +1421,23 @@ function calculateContentionLayout(round, contention, caseSide, heights) {
 
   positions._threads = [];
 
-  for (var i = 0; i < contention.startingPointIds.length; i++) {
-    var id = contention.startingPointIds[i];
-    var note = round.notes[id];
-    if (!note) continue;
+  var contentionIds = (round.cases[caseSide] && round.cases[caseSide].contentionIds) || [];
+  for (var c = 0; c < contentionIds.length; c++) {
+    var contention = round.contentions[contentionIds[c]];
+    if (!contention) continue;
 
-    calculateSpaceForPoint(round, note, caseSide, heights, saved);
-    calculatePointPosition(round, note, y, caseSide, heights, saved, positions);
-    var threadSpace = saved[note.id];
+    for (var i = 0; i < contention.startingPointIds.length; i++) {
+      var id = contention.startingPointIds[i];
+      var note = round.notes[id];
+      if (!note) continue;
 
-    positions._threads.push({ id: note.id, top: y, reserved: threadSpace });
-    y += threadSpace + 8;
+      calculateSpaceForPoint(round, note, caseSide, heights, saved);
+      calculatePointPosition(round, note, y, caseSide, heights, saved, positions);
+      var threadSpace = saved[note.id];
+
+      positions._threads.push({ id: note.id, top: y, reserved: threadSpace });
+      y += threadSpace + 12;
+    }
   }
 
   var names = Object.keys(positions);
@@ -1471,7 +1477,7 @@ function calculateContentionLayout(round, contention, caseSide, heights) {
   return {
     positions: positions,
     slots: slots,
-    height: Math.max(bottom, 48)
+    height: bottom > 0 ? Math.max(bottom, 60) : 0
   };
 }
 
@@ -1698,9 +1704,9 @@ function formatSecondsToClock(ms) {
 }
 
 function formatSideName(side) {
-  if (side === "con") return "Con";
+  if (side === "con" || side === "neg") return "Neg";
 
-  if (side === "pro") return "Pro";
+  if (side === "pro" || side === "aff") return "Aff";
 
   if (side === "observer") return "Observer";
 
@@ -2454,30 +2460,12 @@ function beginFeatureTour() {
 
 function loadOpenRound() {
   try {
-    if (sessionStorage.getItem("tourDemo") === "1") {
-      var savedTour = sessionStorage.getItem("tourRound");
-
-      if (savedTour) {
-        state.round = JSON.parse(savedTour);
-        state.demo = true;
-        var savedSide = sessionStorage.getItem("caseSide");
-
-        if (!savedSide) {
-          savedSide = "pro";
-        }
-
-        state.caseSide = savedSide;
-        var savedStep = sessionStorage.getItem("tourStep");
-
-        if (!savedStep) {
-          savedStep = 0;
-        }
-
-        state.tourStep = Number(savedStep);
-        return true;
-      }
-    }
+    sessionStorage.removeItem("tourDemo");
+    sessionStorage.removeItem("tourRound");
+    sessionStorage.removeItem("tourStep");
+    sessionStorage.removeItem("tourReturn");
   } catch (error) {}
+  state.demo = false;
 
   var id = null;
   var isPre = false;
@@ -2702,15 +2690,22 @@ function fillTimerInputs(ms) {
 function openSimpleTimer(anchor) {
   if (!state.round || state.round.isPreflow || !state.round.timers) return;
 
+  var pop = document.getElementById("timer-popover");
+  if (!pop) return;
+
+  if (state.popover === pop) {
+    closeDropdownMenu();
+    return;
+  }
+
   var timers = state.round.timers;
   var ms = timers.remainingMs;
 
   if (timers.running && timers.deadline) {
-    ms = timers.deadline - Date.now();
+    ms = Math.max(0, timers.deadline - Date.now());
   }
 
   var clock = document.getElementById("popover-clock");
-
   if (clock) {
     clock.textContent = formatSecondsToClock(ms);
   }
@@ -2720,16 +2715,15 @@ function openSimpleTimer(anchor) {
   }
 
   var startBtn = document.getElementById("timer-start-btn");
-
   if (startBtn) {
-    if (timers.running) {
-      startBtn.textContent = "Pause";
-    } else {
-      startBtn.textContent = "Start";
-    }
+    startBtn.textContent = timers.running ? "Pause" : "Start";
   }
 
-  showDropdownMenu(anchor, document.getElementById("timer-popover"));
+  pop.style.top = "14px";
+  pop.style.right = "18px";
+  pop.style.left = "auto";
+  showElement(pop);
+  state.popover = pop;
 }
 
 function startOrPauseTimer() {
@@ -2745,7 +2739,7 @@ function startOrPauseTimer() {
     saveRoundAfterAMoment(true);
   } else {
     var amount = readTimerLength();
-    if (amount <= 0) return;
+    if (amount <= 0) amount = 240000;
 
     timers.remainingMs = amount;
     timers.timeUp = false;
@@ -2753,10 +2747,6 @@ function startOrPauseTimer() {
   }
 
   updateTimerButton();
-  var pop = document.getElementById("timer-popover");
-  if (state.popover === pop) return;
-
-  openSimpleTimer(document.getElementById("timer-btn"));
 }
 
 function resetSimpleTimer() {
@@ -2768,7 +2758,10 @@ function resetSimpleTimer() {
   timers.mode = null;
   timers.deadline = null;
   timers.timeUp = false;
-  timers.remainingMs = readTimerLength();
+  var amount = readTimerLength();
+  if (amount <= 0) amount = 240000;
+  timers.remainingMs = amount;
+  fillTimerInputs(amount);
   saveRoundAfterAMoment(true);
   updateTimerButton();
 }
@@ -2916,19 +2909,19 @@ function getBallotInfoText() {
     opp = " vs " + state.round.opponent;
   }
 
-  var first = "Pro speaks first";
+  var first = "Aff speaks first";
 
-  if (state.round.firstSide === "con") {
-    first = "Con speaks first";
+  if (state.round.firstSide === "con" || state.round.firstSide === "neg") {
+    first = "Neg speaks first";
   }
 
-  var side = "You are Pro";
+  var side = "You are Aff";
 
   if (your === "observer") {
     side = "Observer";
 
-  } else if (your === "con") {
-    side = "You are Con";
+  } else if (your === "con" || your === "neg") {
+    side = "You are Neg";
   }
 
   return side + opp + " · " + first;
@@ -3064,7 +3057,7 @@ function render() {
 }
 
 setInterval(function () {
-  if (!state.round || state.demo || state.round.isPreflow || !state.round.timers || !state.round.timers.running) {
+  if (!state.round || state.round.isPreflow || !state.round.timers || !state.round.timers.running) {
     return;
   }
 
@@ -3099,6 +3092,302 @@ function keepProofSelection(event) {
 
 document.addEventListener("mousedown", keepProofSelection);
 document.addEventListener("pointerdown", keepProofSelection);
+
+function preparePrintLayout(includeEvidence) {
+  var round = state.round;
+  if (!round) return;
+
+  var printTitle = round.title || "Debate Round";
+  var titleEl = document.getElementById("print-title");
+  if (titleEl) {
+    titleEl.textContent = printTitle;
+  }
+
+  var topicLine = round.topic ? "Topic / Resolution: " + round.topic : "";
+  setElementText(document.getElementById("print-topic"), topicLine);
+
+  var tournamentLine = round.tournament ? "Tournament: " + round.tournament : "";
+  var roundNumberLine = round.roundLabel ? "Round Number: " + round.roundLabel : "";
+  var opponentLine = round.opponent ? "vs " + round.opponent : "";
+  var firstSideLine = round.firstSide ? formatSideName(round.firstSide) + " speaks first" : "";
+
+  var metaLine = joinFilledText([
+    tournamentLine,
+    roundNumberLine,
+    opponentLine,
+    "Your Side: " + formatSideName(round.yourSide),
+    firstSideLine
+  ], "   |   ");
+  setElementText(document.getElementById("print-meta"), metaLine);
+
+  var body = document.getElementById("print-body");
+  if (!body) return;
+
+  clearElement(body);
+
+  var sides = ["pro", "con"];
+
+  for (var sideIndex = 0; sideIndex < sides.length; sideIndex++) {
+    var caseSide = sides[sideIndex];
+    var section = cloneTemplate("print-case-sample");
+
+    if (sideIndex === 1) {
+      section.classList.add("new-page");
+    }
+
+    var caseTitle = caseSide === "pro" ? "AFF CASE" : "NEG CASE";
+    section.querySelector(".print-case-name").textContent = caseTitle + " FLOW";
+
+    var speeches = getSpeechesForSide(round, caseSide);
+    var groupIds = round.cases[caseSide].contentionIds;
+
+    for (var g = 0; g < groupIds.length; g++) {
+      var contention = round.contentions[groupIds[g]];
+      if (!contention) continue;
+
+      var block = cloneTemplate("print-cont");
+      if (!block) {
+        block = document.createElement("div");
+        block.className = "print-group";
+        block.innerHTML = '<h3 class="print-group-name"></h3><table class="print-table"><thead><tr></tr></thead><tbody></tbody></table>';
+      }
+
+      var groupHeader = block.querySelector(".print-group-name");
+      if (groupHeader) {
+        if (contention.name && contention.name !== "Contention 1" && contention.name !== "Opening Case") {
+          groupHeader.textContent = contention.name;
+        } else {
+          hideElement(groupHeader);
+        }
+      }
+
+      var headRow = block.querySelector("thead tr");
+      if (!headRow) {
+        var thead = block.querySelector("thead") || block.querySelector("table").appendChild(document.createElement("thead"));
+        headRow = thead.appendChild(document.createElement("tr"));
+      }
+
+      for (var s = 0; s < speeches.length; s++) {
+        var th = document.createElement("th");
+        th.className = "print-head " + (SPEECHES[speeches[s]].team || "");
+        th.textContent = SPEECHES[speeches[s]].short;
+        headRow.appendChild(th);
+      }
+
+      var tbody = block.querySelector("tbody");
+      if (!tbody) {
+        tbody = block.querySelector("table").appendChild(document.createElement("tbody"));
+      }
+
+      var startingPointIds = (contention.startingPointIds || []).slice();
+      var allNotes = getListFromObject(round.notes);
+      for (var an = 0; an < allNotes.length; an++) {
+        var nt = allNotes[an];
+        if (nt.contentionId === groupIds[g] && !nt.parentId && startingPointIds.indexOf(nt.id) === -1) {
+          startingPointIds.push(nt.id);
+        }
+      }
+
+      for (var p = 0; p < startingPointIds.length; p++) {
+        var startId = startingPointIds[p];
+        var family = getAllChildPoints(round, startId, []);
+        var tr = document.createElement("tr");
+        tr.className = "print-row";
+        var rowHasContent = false;
+
+        for (var sp = 0; sp < speeches.length; sp++) {
+          var td = document.createElement("td");
+          td.className = "print-cell";
+          var noteList = getListFromObject(round.notes);
+
+          for (var n = 0; n < noteList.length; n++) {
+            var item = noteList[n];
+            if (item.contentionId !== groupIds[g] || item.speechId !== speeches[sp]) continue;
+
+            if (family.indexOf(item.id) === -1) continue;
+
+            var hasText = Boolean(item.text && item.text.trim());
+            var hasEvidence = Boolean(includeEvidence && item.evidenceId && round.evidence[item.evidenceId] && round.evidence[item.evidenceId].plain && round.evidence[item.evidenceId].plain.trim());
+
+            if (!hasText && !hasEvidence) continue;
+
+            rowHasContent = true;
+
+            var card = cloneTemplate("print-card");
+            if (!card) {
+              card = document.createElement("div");
+              card.className = "print-card";
+              card.innerHTML = '<span class="print-tag hide"></span><div class="print-words"></div><div class="print-proof hide"></div>';
+            }
+
+            var marker = card.querySelector(".print-tag");
+            if (marker) {
+              if (item.marker) {
+                marker.textContent = getMarkerLabel(item.marker);
+                showElement(marker);
+              } else {
+                hideElement(marker);
+              }
+            }
+
+            var pointWords = item.text || "";
+            var wordsBox = card.querySelector(".print-words");
+            if (wordsBox) {
+              if (item.html) {
+                wordsBox.innerHTML = cleanPastedHtml(item.html).html;
+              } else {
+                wordsBox.textContent = pointWords;
+              }
+            }
+
+            var evBox = card.querySelector(".print-proof");
+            if (evBox) {
+              if (includeEvidence && item.evidenceId && round.evidence[item.evidenceId]) {
+                var proofText = round.evidence[item.evidenceId].plain || "";
+                evBox.textContent = "Proof: " + proofText;
+                showElement(evBox);
+              } else {
+                hideElement(evBox);
+              }
+            }
+
+            td.appendChild(card);
+          }
+
+          tr.appendChild(td);
+        }
+
+        if (rowHasContent) {
+          tbody.appendChild(tr);
+        }
+      }
+
+      if (tbody.children.length === 0) {
+        var emptyTr = document.createElement("tr");
+        emptyTr.className = "print-row";
+        for (var esp = 0; esp < speeches.length; esp++) {
+          var emptyTd = document.createElement("td");
+          emptyTd.className = "print-cell";
+          emptyTr.appendChild(emptyTd);
+        }
+        tbody.appendChild(emptyTr);
+      }
+
+      section.appendChild(block);
+    }
+
+    body.appendChild(section);
+  }
+
+  var extra = cloneTemplate("print-cx");
+  if (!extra) {
+    extra = document.createElement("div");
+    extra.className = "print-notes new-page";
+    extra.innerHTML = '<h2 class="print-case-name">CROSSFIRE &amp; REFLECTION NOTES</h2>';
+  } else {
+    extra.classList.add("new-page");
+  }
+
+  var extraNotes = [
+    ["First Crossfire", round.crossNotes.firstCrossfire],
+    ["Second Crossfire", round.crossNotes.secondCrossfire],
+    ["Grand Crossfire", round.crossNotes.grandCrossfire],
+    ["Reflections & Decision", round.crossNotes.reflections]
+  ];
+
+  for (var e = 0; e < extraNotes.length; e++) {
+    if (extraNotes[e][1] && extraNotes[e][1].trim()) {
+      var cxCard = cloneTemplate("print-cx-card");
+      if (!cxCard) {
+        cxCard = document.createElement("div");
+        cxCard.className = "print-note";
+        cxCard.innerHTML = '<h3 class="print-note-name"></h3><div class="print-note-words"></div>';
+      }
+
+      var nameEl = cxCard.querySelector(".print-note-name");
+      if (nameEl) nameEl.textContent = extraNotes[e][0];
+
+      var wordsEl = cxCard.querySelector(".print-note-words");
+      if (wordsEl) wordsEl.textContent = extraNotes[e][1];
+
+      extra.appendChild(cxCard);
+    }
+  }
+
+  body.appendChild(extra);
+}
+
+function downloadPdfReport(includeEvidence) {
+  var report = document.getElementById("full-print-report");
+  if (!report) return;
+
+  var downloadBtn = document.getElementById("btn-download-pdf");
+  var originalBtnText = downloadBtn ? downloadBtn.textContent : "Download PDF";
+  if (downloadBtn) {
+    downloadBtn.textContent = "Generating PDF...";
+    downloadBtn.disabled = true;
+  }
+
+  preparePrintLayout(includeEvidence);
+
+  report.style.display = "block";
+  report.style.width = "1000px";
+  report.style.background = "#ffffff";
+  report.style.padding = "24px";
+  report.style.margin = "0 auto";
+  report.style.boxSizing = "border-box";
+
+  var round = state.round;
+  var rawTitle = round && round.title ? round.title : "Debate";
+  var safeTitle = rawTitle.replace(/[^a-zA-Z0-9_\- ]/g, "").trim().replace(/\s+/g, "_");
+  var filename = (safeTitle || "Debate_Flow") + ".pdf";
+
+  var opt = {
+    margin: [8, 8, 8, 8],
+    filename: filename,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: {
+      scale: 1.5,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+      windowWidth: 1060
+    },
+    jsPDF: {
+      unit: "mm",
+      format: "a4",
+      orientation: "landscape"
+    },
+    pagebreak: { mode: ["css", "legacy"] }
+  };
+
+  function finishExport() {
+    report.style.display = "none";
+    report.style.width = "";
+    report.style.padding = "";
+    report.style.margin = "";
+    report.style.background = "";
+    if (downloadBtn) {
+      downloadBtn.textContent = originalBtnText;
+      downloadBtn.disabled = false;
+    }
+    closePopups();
+  }
+
+  setTimeout(function () {
+    if (typeof html2pdf !== "undefined") {
+      html2pdf().set(opt).from(report).save().then(function () {
+        finishExport();
+      }).catch(function (err) {
+        console.error("PDF export error:", err);
+        finishExport();
+        window.print();
+      });
+    } else {
+      finishExport();
+      window.print();
+    }
+  }, 120);
+}
 
 document.addEventListener("click", function (event) {
   if (state.popover && !state.popover.contains(event.target) &&
@@ -3156,6 +3445,22 @@ document.addEventListener("click", function (event) {
 
   } else if (action === "make-highlight") {
     formatSelectedProof("hiliteColor", "#fff3a0");
+
+  } else if (action === "print") {
+    closeDropdownMenu();
+    showElement(document.getElementById("print-box"));
+
+  } else if (action === "do-print") {
+    var checkEl = document.getElementById("print-evidence");
+    downloadPdfReport(checkEl ? checkEl.checked : true);
+
+  } else if (action === "print-browser") {
+    var checkEl = document.getElementById("print-evidence");
+    closePopups();
+    preparePrintLayout(checkEl ? checkEl.checked : true);
+    setTimeout(function () {
+      window.print();
+    }, 100);
   }
 
   if (action === "toggle-nav" || action === "close-nav" || trigger.closest(".sidebar")) {

@@ -11,6 +11,44 @@
   background-color: #ffffff;
 }
 
+.timer-top-right {
+  position: fixed !important;
+  top: 14px !important;
+  right: 18px !important;
+  left: auto !important;
+  z-index: 100 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  background-color: #ffffff;
+  border: 1px solid #dcd9e9;
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.timer-pop-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.timer-pop-header h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.timer-pop-header .close-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #676c7f;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.timer-pop-header .close-btn:hover {
+  color: #121326;
+}
+
 .small-popup h2 {
   margin: 0 0 8px;
   color: #121326;

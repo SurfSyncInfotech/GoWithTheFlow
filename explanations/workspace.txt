@@ -1,5 +1,5 @@
 workspace.js
-Debate page. This file draws the flow, the points, the evidence, the timer steps on this page, and the feature tour.
+Debate page. This file draws the flow, the points, the evidence, and the flowsheet navigation.
 
 Read it from top to bottom. Each code line is followed by what that line does.
 
@@ -9,6 +9,7 @@ This is the renderWorkspace function. It draws the open debate.
   var workspaceShell = document.querySelector(".workspace");
 Find the first page piece matching ".workspace" and save it as workspaceShell.
 
+
   if (workspaceShell) {
 If workspaceShell, do the next lines.
 
@@ -16,11 +17,15 @@ If workspaceShell, do the next lines.
 Run workspaceShell.classList.toggle, passing "proof-open", state.evidenceOpen.
 
   }
+This closes the block above.
+
+
   updateTopBarAndSidebar();
 Update the top bar and the sidebar.
 
   buildFlowSheet();
 Draw the speeches and contentions again.
+
 
   if (state.evidenceOpen) {
 If state.evidenceOpen, do the next lines.
@@ -29,14 +34,19 @@ If state.evidenceOpen, do the next lines.
 Draw the evidence panel again.
 
   }
+This closes the block above.
+
+
   var scroller = document.getElementById("scroll-box");
 Find the flow scroll area box (id scroll-box) and save it as scroller.
+
 
   if (scroller) {
 If scroller, do the next lines.
 
     var savedScroll = state.round.scroll[getOpenCaseSide()];
 Make savedScroll and set it to state.round.scroll[getOpenCaseSide()].
+
 
     if (!savedScroll) {
 If savedScroll is empty or missing, do the next lines.
@@ -45,12 +55,19 @@ If savedScroll is empty or missing, do the next lines.
 Set savedScroll to 0.
 
     }
+This closes the block above.
+
+
     scroller.scrollTop = savedScroll;
 Set scroller.scrollTop to savedScroll.
 
   }
+This closes the block above.
+
+
   var jumpToId = sessionStorage.getItem("jumpTo");
 Make jumpToId and set it to sessionStorage.getItem("jumpTo").
+
 
   if (jumpToId) {
 If jumpToId, do the next lines.
@@ -61,6 +78,7 @@ Run sessionStorage.removeItem, passing "jumpTo".
     var targetGroup = document.querySelector('.group[data-id="' + jumpToId + '"]');
 Find the first page piece matching '.group[data-id="' + jumpToId + '"]' and save it as targetGroup.
 
+
     if (targetGroup) {
 If targetGroup, do the next lines.
 
@@ -68,9 +86,15 @@ If targetGroup, do the next lines.
 Run targetGroup.scrollIntoView, passing { block: "start" }.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   var focusNoteId = sessionStorage.getItem("focusNote");
 Make focusNoteId and set it to sessionStorage.getItem("focusNote").
+
 
   if (focusNoteId) {
 If focusNoteId, do the next lines.
@@ -83,6 +107,7 @@ Set state.selectedId to focusNoteId.
 
     var openEv = (sessionStorage.getItem("openEvidence") === "1");
 Make openEv and set it to (sessionStorage.getItem("openEvidence") === "1").
+
 
     selectPointCard(focusNoteId, openEv);
 Select this point.
@@ -97,8 +122,14 @@ This line continues the step above.
 Put the cursor in this point box.
 
     }, 30);
+Execute the statement above.
+
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 function buildFlowSheet() {
 This is the buildFlowSheet function. It draws the speech headers and the contention columns.
@@ -112,36 +143,27 @@ Find the flow scroll area box (id scroll-box) and save it as scroller.
   if (!sheet || !state.round) return;
 If !sheet || !state.round, stop here.
 
+
   var caseSide = getOpenCaseSide();
 Make caseSide and set it to getOpenCaseSide().
 
   var view = getVisibleSpeeches(state.round, caseSide);
 Make view and set it to getVisibleSpeeches(state.round, caseSide).
 
-  var paneWidthNum = 800;
-Copy 800 into paneWidthNum.
-
-  if (scroller) {
-If scroller, do the next lines.
-
-    paneWidthNum = scroller.clientWidth;
-Set paneWidthNum to scroller.clientWidth.
-
-  }
   var colWidth = calculateColumnWidth(scroller, view.visible.length);
 Make colWidth and set it to calculateColumnWidth(scroller, view.visible.length).
 
-  var paneWidthStr = paneWidthNum + "px";
-Make paneWidthStr and set it to paneWidthNum + "px".
 
   clearElement(sheet);
 Empty sheet.
+
 
   var headerRow = cloneTemplate("head-row");
 Copy a hidden sample from the page and save it as headerRow.
 
   var shortNames = { constructive: "Constr.", rebuttal: "Reb.", summary: "Sum.", final: "FF" };
 Make shortNames and set it to { constructive: "Constr.", rebuttal: "Reb.", summary: "Sum.", final: "FF" }.
+
 
   for (var i = 0; i < view.visible.length; i++) {
 Loop through view.visible. i is the position, starting at 0.
@@ -155,6 +177,7 @@ Make speechInfo and set it to SPEECHES[speechId].
     var speechChip = cloneTemplate("speech-chip");
 Copy a hidden sample from the page and save it as speechChip.
 
+
     speechChip.classList.add(speechInfo.team);
 Run speechChip.classList.add, passing speechInfo.team.
 
@@ -164,21 +187,17 @@ Set speechChip.style.width to colWidth + "px".
     speechChip.querySelector(".speech-name").textContent = speechInfo.full;
 This line continues the step above.
 
+
     var orderNumber = view.all.indexOf(speechId) + 1;
 Make orderNumber and set it to view.all.indexOf(speechId) + 1.
 
-    var kindName = speechInfo.short;
-Copy speechInfo.short into kindName.
+    var kindName = shortNames[speechInfo.type] || speechInfo.short;
+Look up the short name for this speech type, or fall back to speechInfo.short.
 
-    if (shortNames[speechInfo.type]) {
-If shortNames[speechInfo.type], do the next lines.
 
-      kindName = shortNames[speechInfo.type];
-Set kindName to shortNames[speechInfo.type].
-
-    }
     speechChip.querySelector(".speech-number").textContent = orderNumber + ". " + kindName;
 This line continues the step above.
+
 
     var seconds = 240;
 Copy 240 into seconds.
@@ -190,6 +209,9 @@ If db.settings.durations && db.settings.durations[speechInfo.type], do the next 
 Set seconds to db.settings.durations[speechInfo.type].
 
     }
+This closes the block above.
+
+
     speechChip.querySelector(".speech-time").textContent = Math.round(seconds / 60) + " min";
 This line continues the step above.
 
@@ -197,44 +219,195 @@ This line continues the step above.
 Put speechChip inside this box.
 
   }
+This closes the block above.
+
+
   sheet.appendChild(headerRow);
 Put headerRow inside this box.
 
   sheet.style.setProperty("--speech-head", headerRow.offsetHeight + "px");
 Run sheet.style.setProperty, passing "--speech-head", headerRow.offsetHeight + "px".
 
-  var contentionIds = state.round.cases[caseSide].contentionIds;
-Make contentionIds and set it to state.round.cases[caseSide].contentionIds.
 
-  for (var j = 0; j < contentionIds.length; j++) {
-Loop through contentionIds. j is the position, starting at 0.
+  var flowGrid = document.createElement("div");
+Create a new container element for the flowsheet grid.
 
-    var contentionObj = state.round.contentions[contentionIds[j]];
-Make contentionObj and set it to state.round.contentions[contentionIds[j]].
+  flowGrid.className = "flow-grid";
+Assign the CSS class "flow-grid" to the grid container.
 
-    if (contentionObj) {
-If contentionObj, do the next lines.
 
-      sheet.appendChild(renderContentionSection(contentionObj, caseSide, view, colWidth));
-Put renderContentionSection(contentionObj, caseSide, view, colWidth) inside this box.
+  var primaryContentionId = (state.round.cases[caseSide] && state.round.cases[caseSide].contentionIds[0]) || null;
+Get the first contention ID for this side, or null if none exists.
+
+  if (!primaryContentionId) {
+If no contention exists yet for this debate side, do the next lines.
+
+    var added = addContention(state.round, caseSide, "Arguments");
+Add a default contention named "Arguments" to the open case side.
+
+    primaryContentionId = added.id;
+Save the newly created contention ID as primaryContentionId.
+
+  }
+This closes the block above.
+
+
+  var contention = state.round.contentions[primaryContentionId];
+Retrieve the contention object from the round data.
+
+  if (contention && contention.startingPointIds.length === 0 && view.visible.length > 0) {
+If the contention has no points yet and columns are visible, do the next lines.
+
+    var starter = addMainPoint(state.round, primaryContentionId, view.visible[0], "");
+Create a blank starter point in the first speech column.
+
+    state.selectedId = starter.id;
+Select the starter point so the user can begin typing immediately.
+
+    saveRoundAfterAMoment(true);
+Save the round data immediately to browser storage.
+
+  }
+This closes the block above.
+
+
+  var layout = calculateCaseFlowLayout(state.round, caseSide, state.heights);
+Calculate the vertical layout, card positions, and reply slots for this case.
+
+
+  for (var s = 0; s < view.visible.length; s++) {
+Loop through view.visible. s is the position, starting at 0.
+
+    var speechId = view.visible[s];
+Make speechId and set it to view.visible[s].
+
+    var colElement = cloneTemplate("col-sample");
+Copy a hidden sample from the page and save it as colElement.
+
+
+    colElement.style.width = colWidth + "px";
+Set the width of this speech column in pixels.
+
+    colElement.dataset.speech = speechId;
+Store the speech ID on the column element dataset.
+
+    if (s % 2 === 1) {
+If this is an odd-numbered column (alternating column), do the next lines.
+
+      colElement.classList.add("alt-column");
+Add the "alt-column" CSS class for alternating background tint.
 
     }
+This closes the block above.
+
+
+    var canvas = colElement.querySelector(".column-area");
+Make canvas and set it to colElement.querySelector(".column-area").
+
+    canvas.style.height = layout.height + "px";
+Set the vertical drawing area height based on calculated flow layout.
+
+    canvas.dataset.speech = speechId;
+Store the speech ID on the column drawing area dataset.
+
+
+    var noteIds = Object.keys(state.round.notes);
+Get the list of all note IDs in the round.
+
+    for (var n = 0; n < noteIds.length; n++) {
+Loop through all note IDs in the round.
+
+      var note = state.round.notes[noteIds[n]];
+Get the individual note object.
+
+      if (note.speechId === speechId && layout.positions[noteIds[n]]) {
+If this note belongs in this column and has a calculated position, do the next lines.
+
+        canvas.appendChild(renderPointCard(note));
+Render the note card and place it into the column canvas.
+
+      }
+This closes the block above.
+
+    }
+This closes the block above.
+
+
+    for (var sl = 0; sl < layout.slots.length; sl++) {
+Loop through all calculated reply slots.
+
+      var slot = layout.slots[sl];
+Get the individual reply slot configuration.
+
+      if (slot.speechId !== speechId) continue;
+If this reply slot belongs to a different speech column, skip to the next one.
+
+
+      var parentNote = state.round.notes[slot.parentId];
+Look up the parent argument note this slot replies to.
+
+      if (!parentNote) continue;
+If the parent argument note does not exist, skip this slot.
+
+
+      var slotBox = cloneTemplate("ans-slot");
+Clone the reply slot button template from the page.
+
+      slotBox.setAttribute("aria-label", "Response to " + (parentNote.text || "point"));
+Set the accessibility label describing which argument this slot responds to.
+
+      slotBox.dataset.parent = slot.parentId;
+Attach the parent note ID to the reply slot dataset.
+
+      slotBox.dataset.speech = speechId;
+Attach the speech ID to the reply slot dataset.
+
+      slotBox.style.top = slot.top + "px";
+Set the vertical top position of the reply slot in pixels.
+
+      canvas.appendChild(slotBox);
+Place the reply slot button onto the column canvas.
+
+    }
+This closes the block above.
+
+
+    var addBtn = colElement.querySelector(".col-add-btn");
+Find the "+ Add point" button in this column header.
+
+    if (s === 0 && addBtn) {
+If this is the first speech column and the add button exists, do the next lines.
+
+      addBtn.classList.remove("hide");
+Show the "+ Add point" button in the constructive column.
+
+      addBtn.dataset.starter = primaryContentionId;
+Attach the contention ID to the add button.
+
+      addBtn.dataset.speech = speechId;
+Attach the constructive speech ID to the add button.
+
+    }
+This closes the block above.
+
+
+    flowGrid.appendChild(colElement);
+Append this speech column into the flowsheet grid.
+
   }
-  var groupHeaders = sheet.querySelectorAll(".group-top");
-Make groupHeaders and set it to sheet.querySelectorAll(".group-top").
+This closes the block above.
 
-  for (var h = 0; h < groupHeaders.length; h++) {
-Loop through groupHeaders. h is the position, starting at 0.
 
-    groupHeaders[h].style.maxWidth = paneWidthStr;
-Set groupHeaders[h].style.maxWidth to paneWidthStr.
+  sheet.appendChild(flowGrid);
+Append the full flowsheet grid into the flowsheet container.
 
-  }
+
   measurePointHeights();
 Run measurePointHeights.
 
   applyPointPositions(colWidth);
 Run applyPointPositions, passing colWidth.
+
 
   if (state.selectedId) {
 If state.selectedId, do the next lines.
@@ -249,210 +422,14 @@ If selectedElement, do the next lines.
 Run selectedElement.classList.add, passing "picked".
 
     }
-  }
-}
-
-function renderContentionSection(contention, caseSide, view, width) {
-This is the renderContentionSection function. It draws one contention, with a column for each speech.
-
-  var section = cloneTemplate("cont-block");
-Copy a hidden sample from the page and save it as section.
-
-  section.dataset.id = contention.id;
-Set section.dataset.id to contention.id.
-
-  var index = state.round.cases[caseSide].contentionIds.indexOf(contention.id);
-Make index and set it to state.round.cases[caseSide].contentionIds.indexOf(contention.id).
-
-  var safeIndex = index;
-Copy index into safeIndex.
-
-  if (index < 0) {
-If index < 0, do the next lines.
-
-    safeIndex = 0;
-Set safeIndex to 0.
+This closes the block above.
 
   }
-  var colorTone = CONTENTION_COLORS[safeIndex % CONTENTION_COLORS.length];
-Make colorTone and set it to CONTENTION_COLORS[safeIndex % CONTENTION_COLORS.length].
-
-  var header = section.querySelector(".group-top");
-Make header and set it to section.querySelector(".group-top").
-
-  header.style.backgroundColor = colorTone.head;
-Set header.style.backgroundColor to colorTone.head.
-
-  header.style.color = colorTone.ink;
-Set header.style.color to colorTone.ink.
-
-  header.style.borderLeft = "4px solid " + colorTone.accent;
-Set header.style.borderLeft to "4px solid " + colorTone.accent.
-
-  section.querySelector(".group-dot").style.backgroundColor = colorTone.accent;
-This line continues the step above.
-
-  var foldToggle = section.querySelector("[data-action='fold-group']");
-Make foldToggle and set it to section.querySelector("[data-action='fold-group']").
-
-  if (contention.collapsed) {
-If contention.collapsed, do the next lines.
-
-    foldToggle.textContent = "▸";
-Set foldToggle.textContent to "▸".
-
-    foldToggle.title = "Expand contention";
-Set foldToggle.title to "Expand contention".
-
-  } else {
-Otherwise, do the next lines.
-
-    foldToggle.textContent = "▾";
-Set foldToggle.textContent to "▾".
-
-    foldToggle.title = "Collapse contention";
-Set foldToggle.title to "Collapse contention".
-
-  }
-  var titleInput = section.querySelector(".group-name");
-Make titleInput and set it to section.querySelector(".group-name").
-
-  titleInput.value = contention.name;
-Set titleInput.value to contention.name.
-
-  titleInput.style.color = colorTone.ink;
-Set titleInput.style.color to colorTone.ink.
-
-  titleInput.dataset.id = contention.id;
-Set titleInput.dataset.id to contention.id.
-
-  var buttons = section.querySelectorAll("[data-action]");
-Make buttons and set it to section.querySelectorAll("[data-action]").
-
-  for (var b = 0; b < buttons.length; b++) {
-Loop through buttons. b is the position, starting at 0.
-
-    buttons[b].dataset.id = contention.id;
-Set buttons[b].dataset.id to contention.id.
-
-  }
-  var rowGrid = section.querySelector(".group-row");
-Make rowGrid and set it to section.querySelector(".group-row").
-
-  if (contention.collapsed) {
-If contention.collapsed, do the next lines.
-
-    hideElement(rowGrid);
-Hide rowGrid.
-
-    return section;
-Hand back section.
-
-  }
-  var layout = calculateContentionLayout(state.round, contention, caseSide, state.heights);
-Make layout and set it to calculateContentionLayout(state.round, contention, caseSide, state.heights).
-
-  for (var s = 0; s < view.visible.length; s++) {
-Loop through view.visible. s is the position, starting at 0.
-
-    var speechId = view.visible[s];
-Make speechId and set it to view.visible[s].
-
-    var colElement = cloneTemplate("col-sample");
-Copy a hidden sample from the page and save it as colElement.
-
-    colElement.style.width = width + "px";
-Set colElement.style.width to width + "px".
-
-    colElement.dataset.speech = speechId;
-Set colElement.dataset.speech to speechId.
-
-    var canvas = colElement.querySelector(".column-area");
-Make canvas and set it to colElement.querySelector(".column-area").
-
-    canvas.style.height = layout.height + "px";
-Set canvas.style.height to layout.height + "px".
-
-    canvas.dataset.group = contention.id;
-Set canvas.dataset.group to contention.id.
-
-    canvas.dataset.speech = speechId;
-Set canvas.dataset.speech to speechId.
-
-    var noteIds = Object.keys(state.round.notes);
-Get the saved ids from state.round.notes and save them as noteIds.
-
-    for (var n = 0; n < noteIds.length; n++) {
-Loop through noteIds. n is the position, starting at 0.
-
-      var note = state.round.notes[noteIds[n]];
-Make note and set it to state.round.notes[noteIds[n]].
-
-      if (note.contentionId === contention.id && note.speechId === speechId && layout.positions[noteIds[n]]) {
-If note.contentionId === contention.id && note.speechId === speechId && layout.positions[noteIds[n]], do the next lines.
-
-        canvas.appendChild(renderPointCard(note));
-Put renderPointCard(note) inside this box.
-
-      }
-    }
-    for (var sl = 0; sl < layout.slots.length; sl++) {
-Loop through layout.slots. sl is the position, starting at 0.
-
-      var slot = layout.slots[sl];
-Make slot and set it to layout.slots[sl].
-
-      if (slot.speechId !== speechId) continue;
-If slot.speechId !== speechId, skip to the next loop turn.
-
-      var parentNote = state.round.notes[slot.parentId];
-Make parentNote and set it to state.round.notes[slot.parentId].
-
-      if (!parentNote || parentNote.contentionId !== contention.id) continue;
-If !parentNote || parentNote.contentionId !== contention.id, skip to the next loop turn.
-
-      var slotBox = cloneTemplate("ans-slot");
-Copy a hidden sample from the page and save it as slotBox.
-
-      slotBox.style.fontSize = getFontSize() + "px";
-Set slotBox.style.fontSize to getFontSize() + "px".
-
-      slotBox.setAttribute("aria-label", "Response to " + (parentNote.text || "point"));
-Run slotBox.setAttribute, passing "aria-label", "Response to " + (parentNote.text || "point").
-
-      slotBox.dataset.parent = slot.parentId;
-Set slotBox.dataset.parent to slot.parentId.
-
-      slotBox.dataset.speech = speechId;
-Set slotBox.dataset.speech to speechId.
-
-      canvas.appendChild(slotBox);
-Put slotBox inside this box.
-
-    }
-    var starterBox = colElement.querySelector(".new-box");
-Make starterBox and set it to colElement.querySelector(".new-box").
-
-    starterBox.style.fontSize = getFontSize() + "px";
-Set starterBox.style.fontSize to getFontSize() + "px".
-
-    starterBox.dataset.starter = contention.id;
-Set starterBox.dataset.starter to contention.id.
-
-    starterBox.dataset.speech = speechId;
-Set starterBox.dataset.speech to speechId.
-
-    starterBox.setAttribute("aria-label", "New point in " + getSpeechName(speechId, true));
-Run starterBox.setAttribute, passing "aria-label", "New point in " + getSpeechName(speechId, true).
-
-    rowGrid.appendChild(colElement);
-Put colElement inside this box.
-
-  }
-  return section;
-Hand back section.
+This closes the block above.
 
 }
+This closes the block above.
+
 
 function renderPointCard(note) {
 This is the renderPointCard function. It draws one point card.
@@ -463,6 +440,19 @@ Copy a hidden sample from the page and save it as box.
   box.dataset.id = note.id;
 Set box.dataset.id to note.id.
 
+  box.dataset.speech = note.speechId;
+Attach the speech ID to the card box dataset.
+
+  if (note.parentId) {
+If note.parentId, do the next lines.
+
+    box.dataset.parent = note.parentId;
+Attach the parent note ID to the card box dataset if replying.
+
+  }
+This closes the block above.
+
+
   if (note.id === state.selectedId) {
 If note.id === state.selectedId, do the next lines.
 
@@ -470,6 +460,9 @@ If note.id === state.selectedId, do the next lines.
 Run box.classList.add, passing "picked".
 
   }
+This closes the block above.
+
+
   var marker = box.querySelector(".point-tag");
 Make marker and set it to box.querySelector(".point-tag").
 
@@ -479,8 +472,8 @@ If note.marker, do the next lines.
     marker.textContent = getMarkerLabel(note.marker);
 Set marker.textContent to getMarkerLabel(note.marker).
 
-    marker.className = "point-tag tag-" + note.marker;
-Set marker.className to "point-tag tag-" + note.marker.
+    marker.className = "point-tag tag-" + note.marker + " " + note.marker;
+Apply the badge CSS classes matching the marker type.
 
     showElement(marker);
 Show marker.
@@ -492,6 +485,9 @@ Otherwise, do the next lines.
 Hide marker.
 
   }
+This closes the block above.
+
+
   var area = box.querySelector(".point-input");
 Make area and set it to box.querySelector(".point-input").
 
@@ -525,48 +521,63 @@ Set area.dataset.id to note.id.
   area.setAttribute("aria-label", getSpeechName(note.speechId, true) + " point");
 Run area.setAttribute, passing "aria-label", getSpeechName(note.speechId, true) + " point".
 
-  if (!document.querySelector("[data-tour='point']")) {
-If !document.querySelector("[data-tour='point']"), do the next lines.
 
-    area.dataset.tour = "point";
-Set area.dataset.tour to "point".
-
-  }
   var clipBtn = box.querySelector(".clip-btn");
 Make clipBtn and set it to box.querySelector(".clip-btn").
 
   clipBtn.dataset.id = note.id;
 Set clipBtn.dataset.id to note.id.
 
-  if (note.evidenceId) {
-If note.evidenceId, do the next lines.
 
-    clipBtn.classList.add("has-proof");
-Run clipBtn.classList.add, passing "has-proof".
+  var num = clipBtn.querySelector(".clip-number");
+Find the clip number badge on the evidence button.
+
+  if (note.evidenceId && state.round.evidence && state.round.evidence[note.evidenceId]) {
+If this note has linked evidence research text, do the next lines.
+
+    clipBtn.classList.add("has-proof", "has-ev");
+Highlight the evidence button to show evidence is attached.
 
     clipBtn.setAttribute("aria-label", "Open evidence");
 Run clipBtn.setAttribute, passing "aria-label", "Open evidence".
 
-    showElement(clipBtn.querySelector(".clip-number"));
-Show clipBtn.querySelector(".clip-number").
+    if (num) {
+If the number badge element exists, do the next lines.
+
+      num.textContent = "1";
+Display "1" to indicate attached evidence.
+
+      showElement(num);
+Show the number badge.
+
+    }
+This closes the block above.
 
   } else {
 Otherwise, do the next lines.
 
+    clipBtn.classList.remove("has-proof", "has-ev");
+Remove evidence highlight styling when no evidence is attached.
+
     clipBtn.setAttribute("aria-label", "Add evidence");
 Run clipBtn.setAttribute, passing "aria-label", "Add evidence".
 
-    hideElement(clipBtn.querySelector(".clip-number"));
-Hide clipBtn.querySelector(".clip-number").
+    if (num) {
+If the number badge element exists, do the next lines.
+
+      num.textContent = "";
+Clear the number badge text.
+
+      hideElement(num);
+Hide the number badge.
+
+    }
+This closes the block above.
 
   }
-  if (!document.querySelector("[data-tour='clip-btn']")) {
-If !document.querySelector("[data-tour='clip-btn']"), do the next lines.
+This closes the block above.
 
-    clipBtn.dataset.tour = "clip-btn";
-Set clipBtn.dataset.tour to "clip-btn".
 
-  }
   box.querySelector(".point-menu").dataset.id = note.id;
 This line continues the step above.
 
@@ -574,6 +585,8 @@ This line continues the step above.
 Hand back box.
 
 }
+This closes the block above.
+
 
 function measurePointHeights() {
 This is the measurePointHeights function. It measures how tall each point card is after the text is shown.
@@ -581,38 +594,48 @@ This is the measurePointHeights function. It measures how tall each point card i
   var areas = document.querySelectorAll(".point-input");
 Find every point box and save the list as areas.
 
+
   for (var i = 0; i < areas.length; i++) {
 Loop through areas. i is the position, starting at 0.
 
     var area = areas[i];
 Make area and set it to areas[i].
 
+
     area.style.height = "auto";
 Set area.style.height to "auto".
 
-    var textHeight = Math.max(24, area.scrollHeight);
-Make textHeight and set it to Math.max(24, area.scrollHeight).
+    var textHeight = Math.max(20, area.scrollHeight);
+Measure the text scroll height, with a minimum of 20 pixels.
 
     area.style.height = textHeight + "px";
 Set area.style.height to textHeight + "px".
 
-    var parentBox = area.parentElement;
-Copy area.parentElement into parentBox.
 
-    parentBox.style.height = "auto";
+    var parentBox = area.closest(".point");
+Find the parent note card element.
+
+    if (parentBox) {
+If the parent card element exists, do the next lines.
+
+      parentBox.style.height = "auto";
 Set parentBox.style.height to "auto".
 
-    var boxHeight = Math.max(44, parentBox.scrollHeight);
-Make boxHeight and set it to Math.max(44, parentBox.scrollHeight).
+      var boxHeight = Math.max(58, parentBox.offsetHeight || parentBox.scrollHeight);
+Measure the total card box height, with a minimum of 58 pixels.
 
-    state.heights[area.dataset.id] = boxHeight;
+      state.heights[area.dataset.id] = boxHeight;
 Set state.heights[area.dataset.id] to boxHeight.
 
-    parentBox.style.height = boxHeight + "px";
-Set parentBox.style.height to boxHeight + "px".
+    }
+This closes the block above.
 
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 function applyPointPositions(width) {
 This is the applyPointPositions function. It moves each point card to its saved top position.
@@ -620,86 +643,79 @@ This is the applyPointPositions function. It moves each point card to its saved 
   var caseSide = getOpenCaseSide();
 Make caseSide and set it to getOpenCaseSide().
 
-  var view = getVisibleSpeeches(state.round, caseSide);
-Make view and set it to getVisibleSpeeches(state.round, caseSide).
+  var layout = calculateCaseFlowLayout(state.round, caseSide, state.heights);
+Calculate the vertical layout, card positions, and reply slots for this case.
 
-  if (!width) {
-If width is empty or missing, do the next lines.
 
-    var scroller = document.getElementById("scroll-box");
-Find the flow scroll area box (id scroll-box) and save it as scroller.
+  var canvases = document.querySelectorAll(".column-area");
+Find all speech column drawing canvas elements.
 
-    width = calculateColumnWidth(scroller, view.visible.length);
-Set width to calculateColumnWidth(scroller, view.visible.length).
-
-  }
-  var contentionIds = state.round.cases[caseSide].contentionIds;
-Make contentionIds and set it to state.round.cases[caseSide].contentionIds.
-
-  for (var i = 0; i < contentionIds.length; i++) {
-Loop through contentionIds. i is the position, starting at 0.
-
-    var contention = state.round.contentions[contentionIds[i]];
-Make contention and set it to state.round.contentions[contentionIds[i]].
-
-    if (!contention || contention.collapsed) continue;
-If !contention || contention.collapsed, skip to the next loop turn.
-
-    var layout = calculateContentionLayout(state.round, contention, caseSide, state.heights);
-Make layout and set it to calculateContentionLayout(state.round, contention, caseSide, state.heights).
-
-    var canvases = document.querySelectorAll('.column-area[data-group="' + contentionIds[i] + '"]');
-Find every page piece matching '.column-area[data-group="' + contentionIds[i] + '"]' and save the list as canvases.
-
-    for (var c = 0; c < canvases.length; c++) {
+  for (var c = 0; c < canvases.length; c++) {
 Loop through canvases. c is the position, starting at 0.
 
-      canvases[c].style.height = layout.height + "px";
+    canvases[c].style.height = layout.height + "px";
 Set canvases[c].style.height to layout.height + "px".
 
-    }
-    var posKeys = Object.keys(layout.positions);
+  }
+This closes the block above.
+
+
+  var posKeys = Object.keys(layout.positions);
 Get the saved ids from layout.positions and save them as posKeys.
 
-    for (var p = 0; p < posKeys.length; p++) {
+  for (var p = 0; p < posKeys.length; p++) {
 Loop through posKeys. p is the position, starting at 0.
 
-      if (posKeys[p] === "_threads") continue;
+    if (posKeys[p] === "_threads") continue;
 If posKeys[p] === "_threads", skip to the next loop turn.
 
-      var pointElement = document.querySelector('.point[data-id="' + posKeys[p] + '"]');
+
+    var pointElement = document.querySelector('.point[data-id="' + posKeys[p] + '"]');
 Find the first page piece matching '.point[data-id="' + posKeys[p] + '"]' and save it as pointElement.
 
-      if (pointElement) {
+    if (pointElement) {
 If pointElement, do the next lines.
 
-        pointElement.style.top = layout.positions[posKeys[p]].top + "px";
+      pointElement.style.top = layout.positions[posKeys[p]].top + "px";
 Set pointElement.style.top to layout.positions[posKeys[p]].top + "px".
 
-        pointElement.style.height = layout.positions[posKeys[p]].height + "px";
-Set pointElement.style.height to layout.positions[posKeys[p]].height + "px".
+      pointElement.style.minHeight = layout.positions[posKeys[p]].height + "px";
+Set the minimum height of the card to match its flow layout row height.
 
-      }
+      pointElement.style.height = "auto";
+Allow the card height to adjust automatically based on content.
+
     }
-    for (var s = 0; s < layout.slots.length; s++) {
+This closes the block above.
+
+  }
+This closes the block above.
+
+
+  for (var s = 0; s < layout.slots.length; s++) {
 Loop through layout.slots. s is the position, starting at 0.
 
-      var slot = layout.slots[s];
+    var slot = layout.slots[s];
 Make slot and set it to layout.slots[s].
 
-      var slotElement = document.querySelector('.reply-box[data-parent="' + slot.parentId + '"][data-speech="' + slot.speechId + '"]');
-Find the first page piece matching '.reply-box[data-parent="' + slot.parentId + '"][data-speech="' + slot.speechId + '"]' and save it as slotElement.
+    var slotElement = document.querySelector('.reply-slot-btn[data-parent="' + slot.parentId + '"][data-speech="' + slot.speechId + '"]');
+Find the matching reply slot button element by parent and speech ID.
 
-      if (slotElement) {
+    if (slotElement) {
 If slotElement, do the next lines.
 
-        slotElement.style.top = slot.top + "px";
+      slotElement.style.top = slot.top + "px";
 Set slotElement.style.top to slot.top + "px".
 
-      }
     }
+This closes the block above.
+
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 function renderEvidencePanel() {
 This is the renderEvidencePanel function. It draws the evidence panel for the selected point.
@@ -707,11 +723,9 @@ This is the renderEvidencePanel function. It draws the evidence panel for the se
   var list = document.querySelector(".proof-list");
 Find the first page piece matching ".proof-list" and save it as list.
 
-  var crumb = document.querySelector(".proof-path");
-Find the first page piece matching ".proof-path" and save it as crumb.
-
   if (!list || !state.round) return;
 If !list || !state.round, stop here.
+
 
   var selected = state.round.notes[state.selectedId];
 Make selected and set it to state.round.notes[state.selectedId].
@@ -719,11 +733,9 @@ Make selected and set it to state.round.notes[state.selectedId].
   clearElement(list);
 Empty list.
 
+
   if (!selected) {
 If selected is empty or missing, do the next lines.
-
-    hideElement(crumb);
-Hide crumb.
 
     var emptyTemplate = document.getElementById("ev-empty");
 Find the empty evidence message box (id ev-empty) and save it as emptyTemplate.
@@ -735,154 +747,28 @@ If emptyTemplate, do the next lines.
 Put cloneTemplate("ev-empty") inside this box.
 
     }
+This closes the block above.
+
     return;
 Stop this function here.
 
   }
-  showElement(crumb);
-Show crumb.
+This closes the block above.
 
-  var contention = state.round.contentions[selected.contentionId];
-Make contention and set it to state.round.contentions[selected.contentionId].
 
-  var summaryText = selected.text;
-Copy selected.text into summaryText.
-
-  if (!summaryText) {
-If summaryText is empty or missing, do the next lines.
-
-    summaryText = "Point";
-Set summaryText to "Point".
-
-  }
-  summaryText = summaryText.split("\n")[0];
-Set summaryText to summaryText.split("\n")[0].
-
-  if (summaryText.length > 25) {
-If summaryText.length > 25, do the next lines.
-
-    summaryText = summaryText.slice(0, 25) + "...";
-Set summaryText to summaryText.slice(0, 25) + "...".
-
-  }
-  var contentionName = "Contention";
-Make contentionName and set it to "Contention".
-
-  if (contention) {
-If contention, do the next lines.
-
-    contentionName = contention.name;
-Set contentionName to contention.name.
-
-  }
-  document.getElementById("crumb-contention").textContent = contentionName;
-Find the evidence contention name box (id crumb-contention) and set its text to contentionName.
-
-  document.getElementById("crumb-point").textContent = summaryText;
-Find the evidence point name box (id crumb-point) and set its text to summaryText.
-
-  var allNotes = getEvidencePointsList(selected.contentionId, getOpenCaseSide());
-Make allNotes and set it to getEvidencePointsList(selected.contentionId, getOpenCaseSide()).
-
-  var found = false;
-Copy false into found.
-
-  for (var i = 0; i < allNotes.length; i++) {
-Loop through allNotes. i is the position, starting at 0.
-
-    var hasProof = allNotes[i].evidenceId && state.round.evidence[allNotes[i].evidenceId] && state.round.evidence[allNotes[i].evidenceId].plain;
-Make hasProof and set it to allNotes[i].evidenceId && state.round.evidence[allNotes[i].evidenceId] && state.round.evidence[allNotes[i].evidenceId].plain.
-
-    if (!hasProof && allNotes[i].id !== selected.id) {
-If !hasProof && allNotes[i].id !== selected.id, do the next lines.
-
-      continue;
-This line continues the step above.
-
-    }
-    found = true;
-Set found to true.
-
-    list.appendChild(renderEvidenceCard(allNotes[i], allNotes[i].id === selected.id));
-Put renderEvidenceCard(allNotes[i], allNotes[i].id === selected.id) inside this box.
-
-  }
-  if (!found) {
-If found is empty or missing, do the next lines.
-
-    list.appendChild(renderEvidenceCard(selected, true));
+  list.appendChild(renderEvidenceCard(selected, true));
 Put renderEvidenceCard(selected, true) inside this box.
 
-  }
-  var currentCard = list.querySelector(".current");
-Make currentCard and set it to list.querySelector(".current").
-
-  if (currentCard) {
-If currentCard, do the next lines.
-
-    list.scrollTop = Math.max(0, currentCard.offsetTop - 12);
-Set list.scrollTop to Math.max(0, currentCard.offsetTop - 12).
-
-  }
 }
+This closes the block above.
 
-function getEvidencePointsList(contentionId, caseSide) {
-This is the getEvidencePointsList function. It lists the points in a contention in reading order.
-
-  var contention = state.round.contentions[contentionId];
-Make contention and set it to state.round.contentions[contentionId].
-
-  var ordered = [];
-Make ordered and set it to [].
-
-  function walk(note) {
-This is the walk function. It does one job for the page.
-
-    ordered.push(note);
-Add note to the list.
-
-    var later = getSpeechesAfter(state.round, caseSide, note.speechId);
-Make later and set it to getSpeechesAfter(state.round, caseSide, note.speechId).
-
-    for (var i = 0; i < later.length; i++) {
-Loop through later. i is the position, starting at 0.
-
-      var replies = getRepliesInColumn(state.round, note.id, later[i]);
-Make replies and set it to getRepliesInColumn(state.round, note.id, later[i]).
-
-      for (var r = 0; r < replies.length; r++) {
-Loop through replies. r is the position, starting at 0.
-
-        walk(replies[r]);
-Run walk, passing replies[r].
-
-      }
-    }
-  }
-  for (var j = 0; j < contention.startingPointIds.length; j++) {
-Loop through contention.startingPointIds. j is the position, starting at 0.
-
-    var startNote = state.round.notes[contention.startingPointIds[j]];
-Make startNote and set it to state.round.notes[contention.startingPointIds[j]].
-
-    if (startNote) {
-If startNote, do the next lines.
-
-      walk(startNote);
-Run walk, passing startNote.
-
-    }
-  }
-  return ordered;
-Hand back ordered.
-
-}
 
 function renderEvidenceCard(note, current) {
 This is the renderEvidenceCard function. It draws one evidence card.
 
   var card = cloneTemplate("ev-card");
 Copy a hidden sample from the page and save it as card.
+
 
   if (current) {
 If current, do the next lines.
@@ -891,27 +777,15 @@ If current, do the next lines.
 Run card.classList.add, passing "current".
 
   }
-  var firstLine = note.text;
-Copy note.text into firstLine.
+This closes the block above.
 
-  if (!firstLine) {
-If firstLine is empty or missing, do the next lines.
-
-    firstLine = "Empty point";
-Set firstLine to "Empty point".
-
-  }
-  firstLine = firstLine.split("\n")[0];
-Set firstLine to firstLine.split("\n")[0].
-
-  card.querySelector(".proof-place").textContent = firstLine + " · " + getSpeechName(note.speechId, true);
-This line continues the step above.
 
   var body = card.querySelector(".proof-text");
 Make body and set it to card.querySelector(".proof-text").
 
   body.dataset.evidence = note.id;
 Set body.dataset.evidence to note.id.
+
 
   var stored = note.evidenceId && state.round.evidence[note.evidenceId];
 Make stored and set it to note.evidenceId && state.round.evidence[note.evidenceId].
@@ -923,36 +797,16 @@ If stored, do the next lines.
 Set body.innerHTML to cleanPastedHtml(stored.html).html.
 
   }
-  if (!document.querySelector("[data-tour='proof-panel']")) {
-If !document.querySelector("[data-tour='proof-panel']"), do the next lines.
+This closes the block above.
 
-    body.dataset.tour = "proof-panel";
-Set body.dataset.tour to "proof-panel".
-
-  }
-  var notice = card.querySelector(".proof-note");
-Make notice and set it to card.querySelector(".proof-note").
-
-  notice.dataset.notice = note.id;
-Set notice.dataset.notice to note.id.
-
-  var noticeText = "";
-Make noticeText and set it to "".
-
-  if (stored && stored.notice) {
-If stored && stored.notice, do the next lines.
-
-    noticeText = stored.notice;
-Set noticeText to stored.notice.
-
-  }
-  notice.textContent = noticeText;
-Set notice.textContent to noticeText.
 
   return card;
 Hand back card.
 
 }
+This closes the block above.
+
+
 
 function selectPointCard(id, openEvidence) {
 This is the selectPointCard function. It marks one point as selected, and can open its evidence.
@@ -960,8 +814,10 @@ This is the selectPointCard function. It marks one point as selected, and can op
   var points = document.querySelectorAll(".point");
 Find every page piece matching ".point" and save the list as points.
 
+
   state.selectedId = id;
 Set state.selectedId to id.
+
 
   for (var i = 0; i < points.length; i++) {
 Loop through points. i is the position, starting at 0.
@@ -970,6 +826,9 @@ Loop through points. i is the position, starting at 0.
 This line continues the step above.
 
   }
+This closes the block above.
+
+
   if (openEvidence) {
 If openEvidence, do the next lines.
 
@@ -977,11 +836,15 @@ If openEvidence, do the next lines.
 Set state.evidenceOpen to true.
 
   }
+This closes the block above.
+
+
   if (state.evidenceOpen) {
 If state.evidenceOpen, do the next lines.
 
     var shell = document.querySelector(".workspace");
 Find the first page piece matching ".workspace" and save it as shell.
+
 
     if (shell) {
 If shell, do the next lines.
@@ -990,11 +853,18 @@ If shell, do the next lines.
 Run shell.classList.add, passing "proof-open".
 
     }
+This closes the block above.
+
+
     renderEvidencePanel();
 Draw the evidence panel again.
 
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 function savePointFormatting(area) {
 This is the savePointFormatting function. It saves the point text, including bold and highlight.
@@ -1003,10 +873,12 @@ This is the savePointFormatting function. It saves the point text, including bol
 Find the saved point for this box and save it as note.
 
   if (!note) return;
-If !note, stop here.
+If note is missing, stop here.
+
 
   var cleaned = cleanPastedHtml(area.innerHTML);
 Clean the box contents and save them as cleaned.
+
 
   note.text = cleaned.plain;
 Save the plain words on the point.
@@ -1017,6 +889,7 @@ Save the bold and highlight on the point.
 }
 This closes the block above.
 
+
 function focusPointInput(id, caret) {
 This is the focusPointInput function. It puts the cursor in a point box.
 
@@ -1026,6 +899,7 @@ Find this point's box and save it as area.
   if (!area) return;
 If area is missing, stop here.
 
+
   area.focus();
 Run area.focus.
 
@@ -1034,6 +908,7 @@ Read the current text selection and save it as selection.
 
   var range = document.createRange();
 Make a caret range and save it as range.
+
 
   if (caret === 0) {
 If the caret should be at the start, do the next lines.
@@ -1054,6 +929,9 @@ Select everything in the box.
 Move the caret to the end of that selection.
 
   }
+This closes the block above.
+
+
   selection.removeAllRanges();
 Clear any old selection.
 
@@ -1061,6 +939,8 @@ Clear any old selection.
 Place the caret where the range says.
 
 }
+This closes the block above.
+
 
 function createReplyFromInput(slot, text) {
 This is the createReplyFromInput function. It saves the text typed into a response box as a new reply.
@@ -1071,6 +951,7 @@ Store an undo step before this change.
   var replyText = text;
 Copy text into replyText.
 
+
   if (!replyText) {
 If replyText is empty or missing, do the next lines.
 
@@ -1078,14 +959,18 @@ If replyText is empty or missing, do the next lines.
 Set replyText to "".
 
   }
+This closes the block above.
+
+
   var note = addReplyPoint(state.round, slot.dataset.parent, slot.dataset.speech, replyText);
 Make note and set it to addReplyPoint(state.round, slot.dataset.parent, slot.dataset.speech, replyText).
 
   note.html = cleanPastedHtml(slot.innerHTML).html;
 Save the response box formatting on the new reply.
 
+
   saveRoundAfterAMoment(true);
-Save after a short wait, or save now if the flag says so.
+Save the round data immediately to browser storage.
 
   state.selectedId = note.id;
 Set state.selectedId to note.id.
@@ -1096,6 +981,7 @@ Draw the speeches and contentions again.
   var caretPlace = 0;
 Copy 0 into caretPlace.
 
+
   if (replyText) {
 If replyText, do the next lines.
 
@@ -1103,10 +989,15 @@ If replyText, do the next lines.
 Set caretPlace to replyText.length.
 
   }
+This closes the block above.
+
+
   focusPointInput(note.id, caretPlace);
 Put the cursor in this point box.
 
 }
+This closes the block above.
+
 
 function createNewPointFromInput(starter) {
 This is the createNewPointFromInput function. It saves the text typed into New point as a new main point.
@@ -1120,6 +1011,7 @@ Copy starter.dataset.speech into speech.
   if (!text) return;
 If text is missing, stop here.
 
+
   if (state.round.isPreflow && speech !== state.round.preflowSide + "-constructive") {
 If state.round.isPreflow && speech !== state.round.preflowSide + "-constructive", do the next lines.
 
@@ -1127,6 +1019,9 @@ If state.round.isPreflow && speech !== state.round.preflowSide + "-constructive"
 Stop this function here.
 
   }
+This closes the block above.
+
+
   saveUndoBeforeChange();
 Store an undo step before this change.
 
@@ -1136,11 +1031,12 @@ Make note and set it to addMainPoint(state.round, starter.dataset.starter, start
   note.html = cleanPastedHtml(starter.innerHTML).html;
 Save the new-point box formatting on the new point.
 
+
   starter.innerHTML = "";
 Clear the new-point box.
 
   saveRoundAfterAMoment(true);
-Save after a short wait, or save now if the flag says so.
+Save the round data immediately to browser storage.
 
   state.selectedId = note.id;
 Set state.selectedId to note.id.
@@ -1152,6 +1048,8 @@ Draw the speeches and contentions again.
 Put the cursor in this point box.
 
 }
+This closes the block above.
+
 
 function splitPointOnEnter(area) {
 This is the splitPointOnEnter function. It splits a point at the cursor when Enter is pressed.
@@ -1162,14 +1060,17 @@ Make note and set it to state.round.notes[area.dataset.id].
   if (!note) return;
 If note is missing, stop here.
 
+
   var selection = window.getSelection();
 Read the current text selection and save it as selection.
 
   if (!selection || !selection.rangeCount || !area.contains(selection.anchorNode)) return;
 If there is no caret inside this box, stop here.
 
+
   var range = selection.getRangeAt(0);
 Read the caret range and save it as range.
+
 
   range.deleteContents();
 Delete any text that was selected.
@@ -1177,14 +1078,17 @@ Delete any text that was selected.
   var afterRange = range.cloneRange();
 Copy the caret range and save it as afterRange.
 
+
   afterRange.selectNodeContents(area);
 Extend the copy so it covers the whole box.
 
   afterRange.setStart(range.endContainer, range.endOffset);
 Start that copy at the caret, so it holds only the text after the split.
 
+
   var afterHost = document.createElement("div");
 Make a temporary box and save it as afterHost.
+
 
   afterHost.appendChild(afterRange.extractContents());
 Move the text after the caret into afterHost.
@@ -1195,11 +1099,13 @@ Clean the text left in the original box and save it as beforeClean.
   var afterClean = cleanPastedHtml(afterHost.innerHTML);
 Clean the text that was after the caret and save it as afterClean.
 
+
   if (!beforeClean.plain.trim() && !afterClean.plain.trim()) {
 If both sides are empty, do the next lines.
 
     var next = area.closest(".speech-column").querySelector(".new-box");
 Make next and set it to area.closest(".speech-column").querySelector(".new-box").
+
 
     if (next) {
 If next, do the next lines.
@@ -1208,10 +1114,16 @@ If next, do the next lines.
 Run next.focus.
 
     }
+This closes the block above.
+
+
     return;
 Stop this function here.
 
   }
+This closes the block above.
+
+
   saveUndoBeforeChange();
 Store an undo step before this change.
 
@@ -1221,8 +1133,10 @@ Keep the words before the caret on this point.
   note.html = beforeClean.html;
 Keep the formatting before the caret on this point.
 
+
   var created;
 Make an empty variable named created.
+
 
   if (note.parentId) {
 If note.parentId, do the next lines.
@@ -1237,11 +1151,14 @@ Otherwise, do the next lines.
 Add the text after the caret as a new point and save it as created.
 
   }
+This closes the block above.
+
+
   created.html = afterClean.html;
 Copy the formatting after the caret onto the new point.
 
   saveRoundAfterAMoment(true);
-Save after a short wait, or save now if the flag says so.
+Save the round data immediately to browser storage.
 
   state.selectedId = created.id;
 Set state.selectedId to created.id.
@@ -1253,6 +1170,8 @@ Draw the speeches and contentions again.
 Put the cursor in this point box.
 
 }
+This closes the block above.
+
 
 function saveEvidenceText(body, pasteNotice) {
 This is the saveEvidenceText function. It saves the evidence box into the round.
@@ -1263,11 +1182,13 @@ Make note and set it to state.round.notes[body.dataset.evidence].
   if (!note) return;
 If note is missing, stop here.
 
+
   var cleaned = cleanPastedHtml(body.innerHTML);
 Make cleaned and set it to cleanPastedHtml(body.innerHTML).
 
   var previousNotice = "";
 Make previousNotice and set it to "".
+
 
   if (note.evidenceId && state.round.evidence[note.evidenceId] && state.round.evidence[note.evidenceId].notice) {
 If note.evidenceId && state.round.evidence[note.evidenceId] && state.round.evidence[note.evidenceId].notice, do the next lines.
@@ -1276,8 +1197,12 @@ If note.evidenceId && state.round.evidence[note.evidenceId] && state.round.evide
 Set previousNotice to state.round.evidence[note.evidenceId].notice.
 
   }
+This closes the block above.
+
+
   var shownNotice = pasteNotice;
 Copy pasteNotice into shownNotice.
+
 
   if (!shownNotice) {
 If shownNotice is empty or missing, do the next lines.
@@ -1286,6 +1211,9 @@ If shownNotice is empty or missing, do the next lines.
 Set shownNotice to cleaned.notice.
 
   }
+This closes the block above.
+
+
   if (!shownNotice) {
 If shownNotice is empty or missing, do the next lines.
 
@@ -1293,6 +1221,9 @@ If shownNotice is empty or missing, do the next lines.
 Set shownNotice to previousNotice.
 
   }
+This closes the block above.
+
+
   if (!shownNotice) {
 If shownNotice is empty or missing, do the next lines.
 
@@ -1300,8 +1231,12 @@ If shownNotice is empty or missing, do the next lines.
 Set shownNotice to "".
 
   }
+This closes the block above.
+
+
   var noticeElement = document.querySelector('[data-notice="' + note.id + '"]');
 Find the first page piece matching '[data-notice="' + note.id + '"]' and save it as noticeElement.
+
 
   if (noticeElement) {
 If noticeElement, do the next lines.
@@ -1310,6 +1245,9 @@ If noticeElement, do the next lines.
 Set noticeElement.textContent to shownNotice.
 
   }
+This closes the block above.
+
+
   if (!cleaned.plain.trim()) {
 If !cleaned.plain.trim(), do the next lines.
 
@@ -1320,6 +1258,9 @@ If note.evidenceId, do the next lines.
 This line continues the step above.
 
     }
+This closes the block above.
+
+
     note.evidenceId = null;
 Set note.evidenceId to null.
 
@@ -1327,6 +1268,9 @@ Set note.evidenceId to null.
 Stop this function here.
 
   }
+This closes the block above.
+
+
   if (!note.evidenceId || !state.round.evidence[note.evidenceId]) {
 If !note.evidenceId || !state.round.evidence[note.evidenceId], do the next lines.
 
@@ -1352,9 +1296,15 @@ On this object, plain is "".
 On this object, notice is "".
 
     };
+This closes the block above.
+
   }
+This closes the block above.
+
+
   var record = state.round.evidence[note.evidenceId];
 Make record and set it to state.round.evidence[note.evidenceId].
+
 
   record.html = cleaned.html;
 Set record.html to cleaned.html.
@@ -1369,6 +1319,8 @@ Set record.notice to shownNotice.
 Set record.noteId to note.id.
 
 }
+This closes the block above.
+
 
 function openPointActionsMenu(anchor, noteId) {
 This is the openPointActionsMenu function. It opens the point menu. The menu has Delete.
@@ -1379,14 +1331,17 @@ Make note and set it to state.round.notes[noteId].
   var menu = document.getElementById("note-menu");
 Find the box with id note-menu and save it as menu.
 
+
   clearElement(menu);
 Empty menu.
+
 
   function addItem(label, run) {
 This is the addItem function. It does one job for the page.
 
     var button = cloneTemplate("menu-btn-sample");
 Copy a hidden sample from the page and save it as button.
+
 
     button.textContent = label;
 Set button.textContent to label.
@@ -1401,10 +1356,15 @@ Run closeDropdownMenu.
 Run run.
 
     });
+This closes the block above.
+
     menu.appendChild(button);
 Put button inside this box.
 
   }
+This closes the block above.
+
+
   addItem("Delete", function () {
 This line continues the step above.
 
@@ -1412,19 +1372,25 @@ This line continues the step above.
 Run confirmDeletePoint, passing note.
 
   });
+This closes the block above.
+
+
   showDropdownMenu(anchor, menu);
 Run showDropdownMenu, passing anchor, menu.
 
 }
+This closes the block above.
+
 
 function confirmDeletePoint(note) {
 This is the confirmDeletePoint function. It asks before deleting a point that has text, evidence, or replies.
 
   var noteIds = Object.keys(state.round.notes);
-Get the saved ids from state.round.notes and save them as noteIds.
+Get the list of all note IDs in the round.
 
   var children = [];
 Make children and set it to [].
+
 
   for (var i = 0; i < noteIds.length; i++) {
 Loop through noteIds. i is the position, starting at 0.
@@ -1436,7 +1402,12 @@ If state.round.notes[noteIds[i]].parentId === note.id, do the next lines.
 Add noteIds[i] to the list.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   var executeDelete = function () {
 This line continues the step above.
 
@@ -1450,11 +1421,14 @@ If state.selectedId === note.id, do the next lines.
 Set state.selectedId to null.
 
     }
+This closes the block above.
+
+
     deletePoint(state.round, note.id);
 Delete this point.
 
     saveRoundAfterAMoment(true);
-Save after a short wait, or save now if the flag says so.
+Save the round data immediately to browser storage.
 
     buildFlowSheet();
 Draw the speeches and contentions again.
@@ -1463,6 +1437,9 @@ Draw the speeches and contentions again.
 Draw the evidence panel again.
 
   };
+This closes the block above.
+
+
   if (!note.text && !note.evidenceId && children.length === 0) {
 If !note.text && !note.evidenceId && children.length === 0, do the next lines.
 
@@ -1473,8 +1450,12 @@ Run executeDelete.
 Stop this function here.
 
   }
+This closes the block above.
+
+
   var confirmMessage = "This removes the point and its evidence.";
 Make confirmMessage and set it to "This removes the point and its evidence.".
+
 
   if (children.length) {
 If children.length, do the next lines.
@@ -1483,10 +1464,15 @@ If children.length, do the next lines.
 Set confirmMessage to "This removes the point and its evidence. Responses stay, with their text and evidence unchanged.".
 
   }
+This closes the block above.
+
+
   askConfirm("Delete this point?", confirmMessage, "Delete", executeDelete);
 Ask the person to confirm before continuing.
 
 }
+This closes the block above.
+
 
 function switchDebateSide(side) {
 This is the switchDebateSide function. It switches the page between Pro and Con.
@@ -1494,14 +1480,17 @@ This is the switchDebateSide function. It switches the page between Pro and Con.
   if (!state.round || state.round.isPreflow) return;
 If !state.round || state.round.isPreflow, stop here.
 
+
   if (state.caseSide === side) return;
 If state.caseSide === side, stop here.
+
 
   finishTypingUndo();
 Run finishTypingUndo.
 
   var scroller = document.getElementById("scroll-box");
 Find the flow scroll area box (id scroll-box) and save it as scroller.
+
 
   if (scroller) {
 If scroller, do the next lines.
@@ -1510,6 +1499,9 @@ If scroller, do the next lines.
 Set state.round.scroll[state.caseSide] to scroller.scrollTop.
 
   }
+This closes the block above.
+
+
   state.caseSide = side;
 Set state.caseSide to side.
 
@@ -1520,189 +1512,15 @@ Set state.selectedId to null.
 Set state.evidenceOpen to false.
 
   saveRoundAfterAMoment(true);
-Save after a short wait, or save now if the flag says so.
+Save the round data immediately to browser storage.
 
   render();
 Draw the page again.
 
 }
+This closes the block above.
 
-function renderTourStep() {
-This is the renderTourStep function. It shows the current feature-tour step.
 
-  var highlightedElements = document.querySelectorAll(".highlight");
-Find every page piece matching ".highlight" and save the list as highlightedElements.
-
-  for (var h = 0; h < highlightedElements.length; h++) {
-Loop through highlightedElements. h is the position, starting at 0.
-
-    highlightedElements[h].classList.remove("highlight");
-This line continues the step above.
-
-  }
-  if (state.tourStep < 0 || state.tourStep >= TOUR.length) return;
-If state.tourStep < 0 || state.tourStep >= TOUR.length, stop here.
-
-  var step = TOUR[state.tourStep];
-Make step and set it to TOUR[state.tourStep].
-
-  var needsMenu = window.innerWidth <= 899 && (step.target.indexOf("cases") !== -1 || step.target.indexOf("notes") !== -1 || step.target.indexOf("jumps") !== -1);
-Make needsMenu and set it to window.innerWidth <= 899 && (step.target.indexOf("cases") !== -1 || step.target.indexOf("notes") !== -1 || step.target.indexOf("jumps") !== -1).
-
-  state.navOpen = needsMenu;
-Set state.navOpen to needsMenu.
-
-  updateSideMenu();
-Run updateSideMenu.
-
-  if (state.tourStep === 5) {
-If state.tourStep === 5, do the next lines.
-
-    var notes = getListFromObject(state.round.notes);
-Make notes and set it to getListFromObject(state.round.notes).
-
-    var withEvidence = null;
-Copy null into withEvidence.
-
-    for (var i = 0; i < notes.length; i++) {
-Loop through notes. i is the position, starting at 0.
-
-      if (notes[i].evidenceId) {
-If notes[i].evidenceId, do the next lines.
-
-        withEvidence = notes[i];
-Set withEvidence to notes[i].
-
-        break;
-This line continues the step above.
-
-      }
-    }
-    if (withEvidence) {
-If withEvidence, do the next lines.
-
-      state.selectedId = withEvidence.id;
-Set state.selectedId to withEvidence.id.
-
-      state.evidenceOpen = true;
-Set state.evidenceOpen to true.
-
-      var shell = document.querySelector(".workspace");
-Find the first page piece matching ".workspace" and save it as shell.
-
-      if (shell) {
-If shell, do the next lines.
-
-        shell.classList.add("proof-open");
-Run shell.classList.add, passing "proof-open".
-
-      }
-      renderEvidencePanel();
-Draw the evidence panel again.
-
-    }
-  }
-  var targetElement = document.querySelector(step.target);
-Find the first page piece matching step.target and save it as targetElement.
-
-  if (targetElement) {
-If targetElement, do the next lines.
-
-    targetElement.classList.add("highlight");
-Run targetElement.classList.add, passing "highlight".
-
-    if (targetElement.scrollIntoView) {
-If targetElement.scrollIntoView, do the next lines.
-
-      targetElement.scrollIntoView({ block: "nearest", inline: "nearest" });
-Run targetElement.scrollIntoView, passing { block: "nearest", inline: "nearest" }.
-
-    }
-  }
-  document.getElementById("tour-step").textContent = "Step " + (state.tourStep + 1) + " of " + TOUR.length;
-Find the box with id tour-step and set its text to "Step " + (state.tourStep + 1) + " of " + TOUR.length.
-
-  document.getElementById("tour-text").textContent = step.text;
-Find the box with id tour-text and set its text to step.text.
-
-  if (state.tourStep > 0) {
-If state.tourStep > 0, do the next lines.
-
-    showElement(document.getElementById("tour-back"));
-Show the tour Back button box (id tour-back).
-
-  } else {
-Otherwise, do the next lines.
-
-    hideElement(document.getElementById("tour-back"));
-Hide the tour Back button box (id tour-back).
-
-  }
-  if (state.tourStep < TOUR.length - 1) {
-If state.tourStep < TOUR.length - 1, do the next lines.
-
-    showElement(document.getElementById("tour-next"));
-Show the tour Next button box (id tour-next).
-
-  } else {
-Otherwise, do the next lines.
-
-    hideElement(document.getElementById("tour-next"));
-Hide the tour Next button box (id tour-next).
-
-  }
-  showElement(document.getElementById("tour"));
-Show the feature tour box (id tour).
-
-  sessionStorage.setItem("tourStep", String(state.tourStep));
-Run sessionStorage.setItem, passing "tourStep", String(state.tourStep).
-
-}
-
-function closeFeatureTour() {
-This is the closeFeatureTour function. It closes the tour and returns to the round, or to home.
-
-  var back = sessionStorage.getItem("tourReturn");
-Make back and set it to sessionStorage.getItem("tourReturn").
-
-  sessionStorage.removeItem("tourDemo");
-Run sessionStorage.removeItem, passing "tourDemo".
-
-  sessionStorage.removeItem("tourRound");
-Run sessionStorage.removeItem, passing "tourRound".
-
-  sessionStorage.removeItem("tourStep");
-Run sessionStorage.removeItem, passing "tourStep".
-
-  sessionStorage.removeItem("tourReturn");
-Run sessionStorage.removeItem, passing "tourReturn".
-
-  state.tourStep = -1;
-Set state.tourStep to -1.
-
-  state.demo = false;
-Set state.demo to false.
-
-  if (back && db.rounds[back]) {
-If back && db.rounds[back], do the next lines.
-
-    sessionStorage.setItem("openRoundId", back);
-Run sessionStorage.setItem, passing "openRoundId", back.
-
-    window.location.href = "workspace.html";
-Set window.location.href to "workspace.html".
-
-  } else {
-Otherwise, do the next lines.
-
-    sessionStorage.removeItem("openRoundId");
-Run sessionStorage.removeItem, passing "openRoundId".
-
-    window.location.href = "index.html";
-Set window.location.href to "index.html".
-
-  }
-}
 
 function openEditRoundDetails() {
 This is the openEditRoundDetails function. It opens the Edit details box.
@@ -1710,103 +1528,160 @@ This is the openEditRoundDetails function. It opens the Edit details box.
   var round = state.round;
 Copy state.round into round.
 
-  document.getElementById("edit-title").value = round.title;
-Find the edit Title box (id edit-title) and put round.title in it.
+  if (!round) return;
+If no round or preflow is currently open, stop here.
 
-  var topicValue = round.topic;
-Copy round.topic into topicValue.
 
-  if (!topicValue) {
-If topicValue is empty or missing, do the next lines.
+  var isPreflow = Boolean(round.isPreflow);
+Check whether this open document is a preflow rather than a round.
 
-    topicValue = "";
-Set topicValue to "".
+  var editBox = document.getElementById("edit-box");
+Find the Edit details popup modal element.
 
-  }
-  var tournamentValue = round.tournament;
-Copy round.tournament into tournamentValue.
+  var editHeading = editBox ? editBox.querySelector("h2") : null;
+Find the heading element of the edit details dialog.
 
-  if (!tournamentValue) {
-If tournamentValue is empty or missing, do the next lines.
+  if (editHeading) {
+If the heading element exists, do the next lines.
 
-    tournamentValue = "";
-Set tournamentValue to "".
+    editHeading.textContent = isPreflow ? "Edit preflow details" : "Edit details";
+Set heading to "Edit preflow details" or "Edit details".
 
   }
-  var roundLabelValue = round.roundLabel;
-Copy round.roundLabel into roundLabelValue.
+This closes the block above.
 
-  if (!roundLabelValue) {
-If roundLabelValue is empty or missing, do the next lines.
 
-    roundLabelValue = "";
-Set roundLabelValue to "".
+  document.getElementById("edit-title").value = round.title || "";
+Set the title input box to the round or preflow title.
 
-  }
-  var opponentValue = round.opponent;
-Copy round.opponent into opponentValue.
+  document.getElementById("edit-topic").value = round.topic || "";
+Set the topic input box to the round or preflow topic.
 
-  if (!opponentValue) {
-If opponentValue is empty or missing, do the next lines.
 
-    opponentValue = "";
-Set opponentValue to "".
+  var tournamentWrap = document.getElementById("edit-tournament") ? document.getElementById("edit-tournament").closest(".form-line") : null;
+Find the form row for the Tournament field.
 
-  }
-  document.getElementById("edit-topic").value = topicValue;
-Find the edit Topic box (id edit-topic) and put topicValue in it.
+  var roundLabelWrap = document.getElementById("edit-round-label") ? document.getElementById("edit-round-label").closest(".form-line") : null;
+Find the form row for the Round Number field.
 
-  document.getElementById("edit-tournament").value = tournamentValue;
-Find the edit Tournament box (id edit-tournament) and put tournamentValue in it.
-
-  document.getElementById("edit-round-label").value = roundLabelValue;
-Find the edit Round Number box (id edit-round-label) and put roundLabelValue in it.
-
-  document.getElementById("edit-opponent").value = opponentValue;
-Find the edit Opponent box (id edit-opponent) and put opponentValue in it.
-
-  document.getElementById("edit-side").value = round.yourSide;
-Find the edit Your side box (id edit-side) and put round.yourSide in it.
-
-  var locked = checkIfRoundHasContent(round);
-Make locked and set it to checkIfRoundHasContent(round).
-
-  var lockNote = "Who speaks first sets the speech order.";
-Make lockNote and set it to "Who speaks first sets the speech order.".
-
-  if (locked) {
-If locked, do the next lines.
-
-    lockNote = "Who speaks first is locked because notes already follow this order. Start a new round for a different order.";
-Set lockNote to "Who speaks first is locked because notes already follow this order. Start a new round for a different order.".
-
-  }
-  document.getElementById("edit-lock-note").textContent = lockNote;
-Find the speaking-order note box (id edit-lock-note) and set its text to lockNote.
+  var opponentWrap = document.getElementById("edit-opponent") ? document.getElementById("edit-opponent").closest(".form-line") : null;
+Find the form row for the Opponent field.
 
   var firstWrap = document.getElementById("edit-first-wrap");
 Find the first-speaking box (id edit-first-wrap) and save it as firstWrap.
 
-  if (locked) {
-If locked, do the next lines.
+  var lockNote = document.getElementById("edit-lock-note");
+Find the explanation note for locked speaking order.
 
-    hideElement(firstWrap);
-Hide firstWrap.
+  var sideSelect = document.getElementById("edit-side");
+Find the debate side dropdown select element.
+
+  var obsOption = sideSelect ? sideSelect.querySelector('option[value="observer"]') : null;
+Find the Observer option in the side dropdown.
+
+
+  if (isPreflow) {
+If editing a preflow, do the next lines.
+
+    if (tournamentWrap) hideElement(tournamentWrap);
+Hide the tournament field since preflows do not have tournaments.
+
+    if (roundLabelWrap) hideElement(roundLabelWrap);
+Hide the round number field since preflows do not have round numbers.
+
+    if (opponentWrap) hideElement(opponentWrap);
+Hide the opponent field since preflows do not have opponents.
+
+    if (firstWrap) hideElement(firstWrap);
+Hide the first speaking side row for preflows.
+
+    if (lockNote) hideElement(lockNote);
+Hide the locked order note for preflows.
+
+    if (obsOption) hideElement(obsOption);
+Hide the Observer choice because preflows must be Aff or Neg.
+
+    if (sideSelect) sideSelect.value = round.preflowSide || round.yourSide || "pro";
+Set the side dropdown to Aff or Neg for this preflow.
 
   } else {
 Otherwise, do the next lines.
 
-    showElement(firstWrap);
+    if (tournamentWrap) showElement(tournamentWrap);
+Show the tournament field for debate rounds.
+
+    if (roundLabelWrap) showElement(roundLabelWrap);
+Show the round number field for debate rounds.
+
+    if (opponentWrap) showElement(opponentWrap);
+Show the opponent team field for debate rounds.
+
+    if (obsOption) showElement(obsOption);
+Show the Observer option for debate rounds.
+
+    if (lockNote) showElement(lockNote);
+Show the speaking order note for debate rounds.
+
+
+    document.getElementById("edit-tournament").value = round.tournament || "";
+Fill the tournament field with saved tournament text.
+
+    document.getElementById("edit-round-label").value = round.roundLabel || "";
+Fill the round number field with saved label text.
+
+    document.getElementById("edit-opponent").value = round.opponent || "";
+Fill the opponent field with saved opponent name.
+
+    if (sideSelect) sideSelect.value = round.yourSide || "pro";
+Set the debate side dropdown to the saved side.
+
+
+    var locked = checkIfRoundHasContent(round);
+Make locked and set it to checkIfRoundHasContent(round).
+
+    var noteMsg = "Who speaks first sets the speech order.";
+Set default explanation note about speech order.
+
+    if (locked) {
+If locked, do the next lines.
+
+      noteMsg = "Who speaks first is locked because notes already follow this order. Start a new round for a different order.";
+Explain that speaking order is locked because notes have already been entered.
+
+      if (firstWrap) hideElement(firstWrap);
+Hide the first speaking side row for preflows.
+
+    } else {
+Otherwise, do the next lines.
+
+      if (firstWrap) {
+If the first speaking side container exists, do the next lines.
+
+        showElement(firstWrap);
 Show firstWrap.
 
-    document.getElementById("edit-first").value = round.firstSide;
-Find the edit First speaking side box (id edit-first) and put round.firstSide in it.
+        document.getElementById("edit-first").value = round.firstSide || "pro";
+Set first speaking side dropdown to the saved first side.
+
+      }
+This closes the block above.
+
+    }
+This closes the block above.
+
+    if (lockNote) lockNote.textContent = noteMsg;
+Update the speaking order explanation text.
 
   }
-  showElement(document.getElementById("edit-box"));
-Show the Edit details box (id edit-box).
+This closes the block above.
+
+
+  showElement(editBox);
+Display the edit details popup modal.
 
 }
+This closes the block above.
+
 
 function saveEditRoundDetails() {
 This is the saveEditRoundDetails function. It saves the Edit details form onto the open round.
@@ -1814,497 +1689,567 @@ This is the saveEditRoundDetails function. It saves the Edit details form onto t
   var round = state.round;
 Copy state.round into round.
 
-  var locked = checkIfRoundHasContent(round);
-Make locked and set it to checkIfRoundHasContent(round).
+  if (!round) return;
+If no round or preflow is currently open, stop here.
+
+
+  var isPreflow = Boolean(round.isPreflow);
+Check whether this open document is a preflow rather than a round.
 
   var nextTitle = document.getElementById("edit-title").value.trim();
 Read the edit Title box (id edit-title), trim the spaces, and save it as nextTitle.
 
+  var nextTopic = document.getElementById("edit-topic").value.trim();
+Read and trim the topic text from the topic input box.
+
+
   if (!nextTitle) {
 If nextTitle is empty or missing, do the next lines.
 
-    nextTitle = "Untitled round";
-Set nextTitle to "Untitled round".
+    nextTitle = nextTopic || (isPreflow ? "Untitled preflow" : "Untitled round");
+Default title to topic, or Untitled preflow / Untitled round.
 
   }
+This closes the block above.
+
+
   round.title = nextTitle;
 Set round.title to nextTitle.
 
-  round.topic = document.getElementById("edit-topic").value.trim();
-Set round.topic to document.getElementById("edit-topic").value.trim().
+  round.topic = nextTopic;
+Save the updated topic on the round or preflow object.
 
-  round.tournament = document.getElementById("edit-tournament").value.trim();
-Set round.tournament to document.getElementById("edit-tournament").value.trim().
 
-  round.roundLabel = document.getElementById("edit-round-label").value.trim();
-Set round.roundLabel to document.getElementById("edit-round-label").value.trim().
+  if (isPreflow) {
+If editing a preflow, do the next lines.
 
-  round.opponent = document.getElementById("edit-opponent").value.trim();
-Set round.opponent to document.getElementById("edit-opponent").value.trim().
+    var nextSide = document.getElementById("edit-side").value;
+Read the chosen debate side from the dropdown.
 
-  var side = document.getElementById("edit-side").value;
-Read the edit Your side box (id edit-side) and save it as side.
+    if (nextSide !== "con") nextSide = "pro";
+Ensure the preflow side is either pro (Aff) or con (Neg).
 
-  if (side !== "pro" && side !== "con" && side !== "observer") {
-If side !== "pro" && side !== "con" && side !== "observer", do the next lines.
 
-    side = "pro";
-Set side to "pro".
+    var oldSide = round.preflowSide || round.yourSide || "pro";
+Remember the previous side of the preflow.
 
-  }
-  round.yourSide = side;
-Set round.yourSide to side.
+    if (oldSide !== nextSide) {
+If the debate side changed between Aff and Neg, do the next lines.
 
-  if (!locked) {
-If locked is empty or missing, do the next lines.
+      round.preflowSide = nextSide;
+Update the preflow side to the newly chosen side.
 
-    var first = document.getElementById("edit-first").value;
-Read the edit First speaking side box (id edit-first) and save it as first.
+      round.yourSide = nextSide;
+Update yourSide to the new debate side.
 
-    if (first !== "con") {
-If first !== "con", do the next lines.
+      round.firstSide = nextSide;
+Update firstSide to match the new debate side.
 
-      first = "pro";
-Set first to "pro".
+
+      if (round.notes) {
+If notes exist on this preflow, do the next lines.
+
+        var noteKeys = Object.keys(round.notes);
+Get the list of all note IDs.
+
+        for (var nk = 0; nk < noteKeys.length; nk++) {
+Loop through all note IDs.
+
+          var nItem = round.notes[noteKeys[nk]];
+Get the individual note object.
+
+          if (nItem.speechId === oldSide + "-constructive") {
+If this note belongs to the old constructive speech, do the next lines.
+
+            nItem.speechId = nextSide + "-constructive";
+Update the speech association to the new constructive speech.
+
+          }
+This closes the block above.
+
+        }
+This closes the block above.
+
+      }
+This closes the block above.
+
+
+      if (round.cases && round.cases[oldSide] && round.cases[nextSide]) {
+If contention case mappings exist, do the next lines.
+
+        round.cases[nextSide].contentionIds = round.cases[oldSide].contentionIds.slice();
+Transfer contention IDs to the new case side.
+
+        round.cases[oldSide].contentionIds = [];
+Clear contention IDs from the old case side.
+
+      }
+This closes the block above.
+
+
+      round.timers = createNewTimer(nextSide, getDefaultSpeechTimes());
+Reset the timer sequence for the new speaking side.
 
     }
-    round.firstSide = first;
+This closes the block above.
+
+
+    if (db.preflows[round.id]) {
+If this preflow exists in the database, do the next lines.
+
+      var pre = db.preflows[round.id];
+Retrieve the preflow record from the database.
+
+      pre.title = round.title;
+Save updated title to the preflow record.
+
+      pre.topic = round.topic;
+Save updated topic to the preflow record.
+
+      pre.side = round.preflowSide;
+Save updated side to the preflow record.
+
+      pre.contentions = round.contentions;
+Save contention tree to the preflow record.
+
+      pre.contentionIds = round.cases[round.preflowSide].contentionIds;
+Save contention IDs to the preflow record.
+
+      pre.notes = round.notes;
+Save argument notes to the preflow record.
+
+      pre.evidence = round.evidence;
+Save evidence research cards to the preflow record.
+
+      pre.updatedAt = new Date().toISOString();
+Record current timestamp on the preflow record.
+
+    }
+This closes the block above.
+
+  } else {
+Otherwise, do the next lines.
+
+    var locked = checkIfRoundHasContent(round);
+Make locked and set it to checkIfRoundHasContent(round).
+
+    round.tournament = document.getElementById("edit-tournament").value.trim();
+Set round.tournament to document.getElementById("edit-tournament").value.trim().
+
+    round.roundLabel = document.getElementById("edit-round-label").value.trim();
+Set round.roundLabel to document.getElementById("edit-round-label").value.trim().
+
+    round.opponent = document.getElementById("edit-opponent").value.trim();
+Set round.opponent to document.getElementById("edit-opponent").value.trim().
+
+
+    var side = document.getElementById("edit-side").value;
+Read the edit Your side box (id edit-side) and save it as side.
+
+    if (side !== "pro" && side !== "con" && side !== "observer") {
+If side !== "pro" && side !== "con" && side !== "observer", do the next lines.
+
+      side = "pro";
+Set side to "pro".
+
+    }
+This closes the block above.
+
+    round.yourSide = side;
+Set round.yourSide to side.
+
+
+    if (!locked) {
+If locked is empty or missing, do the next lines.
+
+      var first = document.getElementById("edit-first").value;
+Read the edit First speaking side box (id edit-first) and save it as first.
+
+      if (first !== "con") {
+If first !== "con", do the next lines.
+
+        first = "pro";
+Set first to "pro".
+
+      }
+This closes the block above.
+
+      round.firstSide = first;
 Set round.firstSide to first.
 
-    round.timers = createNewTimer(round.firstSide, db.settings.durations);
+      round.timers = createNewTimer(round.firstSide, db.settings.durations);
 Set round.timers to createNewTimer(round.firstSide, db.settings.durations).
 
+    }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   closePopups();
 Close the open dialogs.
 
   saveRoundAfterAMoment(true);
-Save after a short wait, or save now if the flag says so.
+Save the round data immediately to browser storage.
 
   render();
 Draw the page again.
 
 }
+This closes the block above.
 
-function preparePrintLayout(includeEvidence) {
-This is the preparePrintLayout function. It fills the print view of the round.
 
-  var round = state.round;
-Copy state.round into round.
+// preparePrintLayout and downloadPdfReport are defined in common.js
+This is a comment describing the code below.
 
-  var printTitle = round.title;
-Copy round.title into printTitle.
 
-  if (!printTitle) {
-If printTitle is empty or missing, do the next lines.
+function isCaretAtBeginning(el) {
+This is the isCaretAtBeginning helper. It checks if the text cursor is at the very start of a box.
 
-    printTitle = "Debate Round";
-Set printTitle to "Debate Round".
+  var sel = window.getSelection();
+Get the current user selection or cursor position from the window.
 
-  }
-  document.getElementById("print-title").textContent = printTitle;
-Find the print title box (id print-title) and set its text to printTitle.
+  if (!sel || !sel.rangeCount) return true;
+If there is no selection or range available, consider it at the beginning.
 
-  var topicLine = "";
-Make topicLine and set it to "".
+  var range = sel.getRangeAt(0);
+Get the active selection range.
 
-  if (round.topic) {
-If round.topic, do the next lines.
+  if (!range.collapsed) return false;
+If text is highlighted (not a collapsed blinking cursor), return false.
 
-    topicLine = "Topic / Resolution: " + round.topic;
-Set topicLine to "Topic / Resolution: " + round.topic.
+  var preRange = document.createRange();
+Create a new range spanning from the beginning of the element to the cursor.
 
-  }
-  setElementText(document.getElementById("print-topic"), topicLine);
-Write text into document.getElementById("print-topic"), topicLine.
+  preRange.selectNodeContents(el);
+Select the entire contents of the text element.
 
-  var tournamentLine = "";
-Make tournamentLine and set it to "".
+  preRange.setEnd(range.startContainer, range.startOffset);
+Set the end of the range to the current cursor position.
 
-  if (round.tournament) {
-If round.tournament, do the next lines.
-
-    tournamentLine = "Tournament: " + round.tournament;
-Set tournamentLine to "Tournament: " + round.tournament.
-
-  }
-  var roundNumberLine = "";
-Make roundNumberLine and set it to "".
-
-  if (round.roundLabel) {
-If round.roundLabel, do the next lines.
-
-    roundNumberLine = "Round Number: " + round.roundLabel;
-Set roundNumberLine to "Round Number: " + round.roundLabel.
-
-  }
-  var opponentLine = "";
-Make opponentLine and set it to "".
-
-  if (round.opponent) {
-If round.opponent, do the next lines.
-
-    opponentLine = "vs " + round.opponent;
-Set opponentLine to "vs " + round.opponent.
-
-  }
-  var firstSideLine = "";
-Make firstSideLine and set it to "".
-
-  if (round.firstSide) {
-If round.firstSide, do the next lines.
-
-    firstSideLine = formatSideName(round.firstSide) + " speaks first";
-Set firstSideLine to formatSideName(round.firstSide) + " speaks first".
-
-  }
-  var metaLine = joinFilledText([
-This line continues the step above.
-
-    tournamentLine,
-This line continues the step above.
-
-    roundNumberLine,
-This line continues the step above.
-
-    opponentLine,
-This line continues the step above.
-
-    "Your Side: " + formatSideName(round.yourSide),
-This line continues the step above.
-
-    firstSideLine
-This line continues the step above.
-
-  ], "   |   ");
-This line continues the step above.
-
-  setElementText(document.getElementById("print-meta"), metaLine);
-Write text into document.getElementById("print-meta"), metaLine.
-
-  var body = document.getElementById("print-body");
-Find the print body box (id print-body) and save it as body.
-
-  clearElement(body);
-Empty body.
-
-  var sides = ["pro", "con"];
-Make sides and set it to ["pro", "con"].
-
-  for (var sideIndex = 0; sideIndex < sides.length; sideIndex++) {
-Loop through sides. sideIndex is the position, starting at 0.
-
-    var caseSide = sides[sideIndex];
-Make caseSide and set it to sides[sideIndex].
-
-    var section = cloneTemplate("print-case-sample");
-Copy a hidden sample from the page and save it as section.
-
-    if (sideIndex === 1) {
-If sideIndex === 1, do the next lines.
-
-      section.classList.add("new-page");
-Run section.classList.add, passing "new-page".
-
-    }
-    var caseTitle = "CON CASE";
-Make caseTitle and set it to "CON CASE".
-
-    if (caseSide === "pro") {
-If caseSide === "pro", do the next lines.
-
-      caseTitle = "PRO CASE";
-Set caseTitle to "PRO CASE".
-
-    }
-    section.querySelector(".print-case-name").textContent = caseTitle + " FLOW";
-This line continues the step above.
-
-    var speeches = getSpeechesForSide(round, caseSide);
-Make speeches and set it to getSpeechesForSide(round, caseSide).
-
-    var groupIds = round.cases[caseSide].contentionIds;
-Make groupIds and set it to round.cases[caseSide].contentionIds.
-
-    for (var g = 0; g < groupIds.length; g++) {
-Loop through groupIds. g is the position, starting at 0.
-
-      var contention = round.contentions[groupIds[g]];
-Make contention and set it to round.contentions[groupIds[g]].
-
-      if (!contention) continue;
-If contention is empty or missing, skip to the next loop turn.
-
-      var block = cloneTemplate("print-cont");
-Copy a hidden sample from the page and save it as block.
-
-      block.querySelector(".print-group-name").textContent = contention.name;
-This line continues the step above.
-
-      var headRow = block.querySelector("thead tr");
-Make headRow and set it to block.querySelector("thead tr").
-
-      for (var s = 0; s < speeches.length; s++) {
-Loop through speeches. s is the position, starting at 0.
-
-        var th = cloneTemplate("print-th");
-Copy a hidden sample from the page and save it as th.
-
-        th.textContent = SPEECHES[speeches[s]].short;
-Set th.textContent to SPEECHES[speeches[s]].short.
-
-        th.classList.add(SPEECHES[speeches[s]].team);
-Run th.classList.add, passing SPEECHES[speeches[s]].team.
-
-        headRow.appendChild(th);
-Put th inside this box.
-
-      }
-      var tbody = block.querySelector("tbody");
-Make tbody and set it to block.querySelector("tbody").
-
-      for (var p = 0; p < contention.startingPointIds.length; p++) {
-Loop through contention.startingPointIds. p is the position, starting at 0.
-
-        var startId = contention.startingPointIds[p];
-Make startId and set it to contention.startingPointIds[p].
-
-        var family = getAllChildPoints(round, startId, []);
-Make family and set it to getAllChildPoints(round, startId, []).
-
-        var tr = cloneTemplate("print-tr");
-Copy a hidden sample from the page and save it as tr.
-
-        for (var sp = 0; sp < speeches.length; sp++) {
-Loop through speeches. sp is the position, starting at 0.
-
-          var td = cloneTemplate("print-td");
-Copy a hidden sample from the page and save it as td.
-
-          var noteList = getListFromObject(round.notes);
-Make noteList and set it to getListFromObject(round.notes).
-
-          for (var n = 0; n < noteList.length; n++) {
-Loop through noteList. n is the position, starting at 0.
-
-            var item = noteList[n];
-Make item and set it to noteList[n].
-
-            if (item.contentionId !== groupIds[g] || item.speechId !== speeches[sp]) continue;
-If item.contentionId !== groupIds[g] || item.speechId !== speeches[sp], skip to the next loop turn.
-
-            if (family.indexOf(item.id) === -1) continue;
-If family.indexOf(item.id) === -1, skip to the next loop turn.
-
-            var card = cloneTemplate("print-card");
-Copy a hidden sample from the page and save it as card.
-
-            var marker = card.querySelector(".print-tag");
-Make marker and set it to card.querySelector(".print-tag").
-
-            if (item.marker) {
-If item.marker, do the next lines.
-
-              marker.textContent = getMarkerLabel(item.marker);
-Set marker.textContent to getMarkerLabel(item.marker).
-
-            } else {
-Otherwise, do the next lines.
-
-              hideElement(marker);
-Hide marker.
-
-            }
-            var pointWords = item.text;
-Copy item.text into pointWords.
-
-            if (!pointWords) {
-If pointWords is empty or missing, do the next lines.
-
-              pointWords = "";
-Set pointWords to "".
-
-            }
-            card.querySelector(".print-words").textContent = pointWords;
-This line continues the step above.
-
-            var evBox = card.querySelector(".print-proof");
-Make evBox and set it to card.querySelector(".print-proof").
-
-            if (includeEvidence && item.evidenceId && round.evidence[item.evidenceId]) {
-If includeEvidence && item.evidenceId && round.evidence[item.evidenceId], do the next lines.
-
-              var proofText = round.evidence[item.evidenceId].plain;
-Make proofText and set it to round.evidence[item.evidenceId].plain.
-
-              if (!proofText) {
-If proofText is empty or missing, do the next lines.
-
-                proofText = "";
-Set proofText to "".
-
-              }
-              evBox.textContent = "Proof: " + proofText;
-Set evBox.textContent to "Proof: " + proofText.
-
-            } else {
-Otherwise, do the next lines.
-
-              hideElement(evBox);
-Hide evBox.
-
-            }
-            td.appendChild(card);
-Put card inside this box.
-
-          }
-          tr.appendChild(td);
-Put td inside this box.
-
-        }
-        tbody.appendChild(tr);
-Put tr inside this box.
-
-      }
-      section.appendChild(block);
-Put block inside this box.
-
-    }
-    body.appendChild(section);
-Put section inside this box.
-
-  }
-  var extra = cloneTemplate("print-cx");
-Copy a hidden sample from the page and save it as extra.
-
-  extra.classList.add("new-page");
-Run extra.classList.add, passing "new-page".
-
-  var extraNotes = [
-This line continues the step above.
-
-    ["First Crossfire", round.crossNotes.firstCrossfire],
-This line continues the step above.
-
-    ["Second Crossfire", round.crossNotes.secondCrossfire],
-This line continues the step above.
-
-    ["Grand Crossfire", round.crossNotes.grandCrossfire],
-This line continues the step above.
-
-    ["Reflections & Decision", round.crossNotes.reflections]
-This line continues the step above.
-
-  ];
-This line continues the step above.
-
-  for (var e = 0; e < extraNotes.length; e++) {
-Loop through extraNotes. e is the position, starting at 0.
-
-    if (extraNotes[e][1] && extraNotes[e][1].trim()) {
-If extraNotes[e][1] && extraNotes[e][1].trim(), do the next lines.
-
-      var cxCard = cloneTemplate("print-cx-card");
-Copy a hidden sample from the page and save it as cxCard.
-
-      cxCard.querySelector(".print-note-name").textContent = extraNotes[e][0];
-This line continues the step above.
-
-      cxCard.querySelector(".print-note-words").textContent = extraNotes[e][1];
-This line continues the step above.
-
-      extra.appendChild(cxCard);
-Put cxCard inside this box.
-
-    }
-  }
-  body.appendChild(extra);
-Put extra inside this box.
+  return preRange.toString().length === 0;
+Return true if the preceding text length is 0 (cursor is at the start).
 
 }
+This closes the block above.
 
-function navigatePointsWithArrows(id, key) {
-This is the navigatePointsWithArrows function. It moves the selection to a nearby point with the arrow keys.
 
-  var current = document.querySelector('.point[data-id="' + id + '"]');
-Find the first page piece matching '.point[data-id="' + id + '"]' and save it as current.
+function isCaretAtEnd(el) {
+This is the isCaretAtEnd helper. It checks if the text cursor is at the very end of a box.
+
+  var sel = window.getSelection();
+Get the current user selection or cursor position from the window.
+
+  if (!sel || !sel.rangeCount) return true;
+If there is no selection or range available, consider it at the beginning.
+
+  var range = sel.getRangeAt(0);
+Get the active selection range.
+
+  if (!range.collapsed) return false;
+If text is highlighted (not a collapsed blinking cursor), return false.
+
+  var postRange = document.createRange();
+Create a new range spanning from the cursor to the end of the element.
+
+  postRange.selectNodeContents(el);
+Select the entire contents of the text element.
+
+  postRange.setStart(range.endContainer, range.endOffset);
+Set the start of the range to the current cursor position.
+
+  return postRange.toString().length === 0;
+Return true if the following text length is 0 (cursor is at the end).
+
+}
+This closes the block above.
+
+
+function navigatePointsWithArrows(from, key) {
+This is the navigatePointsWithArrows function. It handles moving focus between cards and columns using keyboard arrow keys.
+
+  var current = null;
+Initialize the current focused element reference.
+
+  if (typeof from === "string") {
+If from is an argument note ID string, do the next lines.
+
+    current = document.querySelector('.point[data-id="' + from + '"]');
+Find the note card DOM element by ID.
+
+  } else if (from && from.nodeType) {
+Otherwise if from is a DOM node element, do the next lines.
+
+    current = from.closest(".point, .reply-box, .new-box");
+Find the closest card or slot container.
+
+  }
+This closes the block above.
 
   if (!current) return;
-If current is missing, stop here.
+If no card or slot was found, stop here.
 
-  var rect = current.getBoundingClientRect();
-Make rect and set it to current.getBoundingClientRect().
 
-  var nodes = document.querySelectorAll(".point, .reply-box");
-Find every page piece matching ".point, .reply-box" and save the list as nodes.
+  var currentPoint = current.classList.contains("point") ? current : null;
+Reference the card if the current element is a note point card.
+
+  var currentPointId = currentPoint ? currentPoint.dataset.id : null;
+Get the note ID of the active card.
+
+  var currentNote = currentPointId && state.round ? state.round.notes[currentPointId] : null;
+Get the active note data from the round.
+
+
+  var currentColumn = current.closest(".speech-column");
+Find the speech column container for the active element.
+
+  if (!currentColumn) return;
+If the element is not inside a speech column, stop here.
+
 
   var best = null;
-Copy null into best.
+Initialize variable to hold the best candidate element to receive focus next.
 
-  var bestDist = -1;
-Make bestDist and set it to -1.
 
-  for (var i = 0; i < nodes.length; i++) {
-Loop through nodes. i is the position, starting at 0.
+  if (key === "ArrowRight") {
+When navigating right with the right arrow key, do the next lines.
 
-    if (nodes[i] === current) continue;
-If nodes[i] === current, skip to the next loop turn.
+    if (currentPointId) {
+If the current element is an argument card, do the next lines.
 
-    var box = nodes[i].getBoundingClientRect();
-Make box and set it to nodes[i].getBoundingClientRect().
+      var childPoint = document.querySelector('.point[data-parent="' + currentPointId + '"]');
+Look for an existing direct reply card in the next column.
 
-    var dx = box.left - rect.left;
-Make dx and set it to box.left - rect.left.
+      if (childPoint) {
+If a direct reply card exists, do the next lines.
 
-    var dy = box.top - rect.top;
-Make dy and set it to box.top - rect.top.
+        best = childPoint;
+Choose that reply card as the target.
 
-    var ok = (key === "ArrowRight" && dx > 20) ||
-This line continues the step above.
+      } else {
+Otherwise, do the next lines.
 
-             (key === "ArrowLeft" && dx < -20) ||
-This line continues the step above.
+        var directSlot = document.querySelector('.reply-slot-btn[data-parent="' + currentPointId + '"]');
+Look for an open reply slot button for this argument card.
 
-             (key === "ArrowDown" && dy > 8 && Math.abs(dx) < 40) ||
-This line continues the step above.
+        if (directSlot) {
+If an open reply slot exists, do the next lines.
 
-             (key === "ArrowUp" && dy < -8 && Math.abs(dx) < 40);
-This line continues the step above.
+          best = directSlot;
+Choose that reply slot as the target.
 
-    var dist = Math.abs(dx) + Math.abs(dy);
-Make dist and set it to Math.abs(dx) + Math.abs(dy).
+        }
+This closes the block above.
 
-    if (ok && (bestDist < 0 || dist < bestDist)) {
-If ok && (bestDist < 0 || dist < bestDist), do the next lines.
-
-      best = nodes[i];
-Set best to nodes[i].
-
-      bestDist = dist;
-Set bestDist to dist.
+      }
+This closes the block above.
 
     }
+This closes the block above.
+
+
+    if (!best) {
+If no direct reply or slot exists, do the next lines.
+
+      var nextCol = currentColumn.nextElementSibling;
+Look up the next speech column to the right.
+
+      if (nextCol && nextCol.classList.contains("speech-column")) {
+If a valid speech column exists to the right, do the next lines.
+
+        var targets = nextCol.querySelectorAll(".point, .reply-slot-btn, .col-add-btn");
+Collect all selectable cards, slots, and add buttons in that column.
+
+        var currentRect = current.getBoundingClientRect();
+Get the screen coordinates of the current element.
+
+        var bestDist = -1;
+Initialize shortest vertical distance tracker.
+
+        for (var i = 0; i < targets.length; i++) {
+Loop through candidate elements in the adjacent column.
+
+          var r = targets[i].getBoundingClientRect();
+Get the screen coordinates of the candidate target.
+
+          var dist = Math.abs(r.top - currentRect.top);
+Calculate vertical distance from the current element.
+
+          if (bestDist < 0 || dist < bestDist) {
+If this element is vertically closer than previous candidates, do the next lines.
+
+            best = targets[i];
+Select this candidate as the best target so far.
+
+            bestDist = dist;
+Update shortest vertical distance.
+
+          }
+This closes the block above.
+
+        }
+This closes the block above.
+
+      }
+This closes the block above.
+
+    }
+This closes the block above.
+
+
+  } else if (key === "ArrowLeft") {
+When navigating left with the left arrow key, do the next lines.
+
+    if (currentNote && currentNote.parentId) {
+If this note has a parent argument it is replying to, do the next lines.
+
+      var parentEl = document.querySelector('.point[data-id="' + currentNote.parentId + '"]');
+Find the parent argument card in the previous column.
+
+      if (parentEl) {
+If the parent argument card element exists, do the next lines.
+
+        best = parentEl;
+Choose the parent argument card as the target.
+
+      }
+This closes the block above.
+
+    }
+This closes the block above.
+
+
+    if (!best) {
+If no direct reply or slot exists, do the next lines.
+
+      var prevCol = currentColumn.previousElementSibling;
+Look up the previous speech column to the left.
+
+      if (prevCol && prevCol.classList.contains("speech-column")) {
+If a valid speech column exists to the left, do the next lines.
+
+        var prevTargets = prevCol.querySelectorAll(".point, .reply-slot-btn, .col-add-btn");
+Collect all selectable elements in that column.
+
+        var pCurrentRect = current.getBoundingClientRect();
+Get the screen coordinates of the current element.
+
+        var pBestDist = -1;
+Initialize shortest distance tracker.
+
+        for (var p = 0; p < prevTargets.length; p++) {
+Loop through candidate elements in the previous column.
+
+          var pr = prevTargets[p].getBoundingClientRect();
+Get the screen coordinates of the candidate target.
+
+          var pDist = Math.abs(pr.top - pCurrentRect.top);
+Calculate vertical distance.
+
+          if (pBestDist < 0 || pDist < pBestDist) {
+If closer than previous candidates, do the next lines.
+
+            best = prevTargets[p];
+Select this candidate as the best target.
+
+            pBestDist = pDist;
+Update shortest distance.
+
+          }
+This closes the block above.
+
+        }
+This closes the block above.
+
+      }
+This closes the block above.
+
+    }
+This closes the block above.
+
+
+  } else if (key === "ArrowDown") {
+When navigating down within the same column, do the next lines.
+
+    var downBoxes = Array.prototype.slice.call(currentColumn.querySelectorAll(".point, .reply-slot-btn, .col-add-btn"));
+Collect all cards and buttons in this column from top to bottom.
+
+    var downIdx = downBoxes.indexOf(current);
+Find the index of the currently focused box.
+
+    if (downIdx >= 0 && downIdx < downBoxes.length - 1) {
+If there is another box below this one, do the next lines.
+
+      best = downBoxes[downIdx + 1];
+Select the next box below.
+
+    }
+This closes the block above.
+
+
+  } else if (key === "ArrowUp") {
+When navigating up within the same column, do the next lines.
+
+    var upBoxes = Array.prototype.slice.call(currentColumn.querySelectorAll(".point, .reply-slot-btn, .col-add-btn"));
+Collect all cards and buttons in this column from top to bottom.
+
+    var upIdx = upBoxes.indexOf(current);
+Find the index of the currently focused box.
+
+    if (upIdx > 0) {
+If there is a box above this one, do the next lines.
+
+      best = upBoxes[upIdx - 1];
+Select the box above.
+
+    }
+This closes the block above.
+
   }
+This closes the block above.
+
+
   if (!best) return;
-If best is missing, stop here.
+If no valid target was found in that direction, stop here.
+
 
   if (best.classList.contains("point")) {
-If best.classList.contains("point"), do the next lines.
+If the target is an argument point card, do the next lines.
 
     selectPointCard(best.dataset.id, state.evidenceOpen);
-Select this point.
+Select this card and update research evidence drawer.
 
-    best.focus();
-Run best.focus.
+    var input = best.querySelector(".point-input");
+Find the editable text area of the target card.
+
+    if (input) {
+If the text input area exists, do the next lines.
+
+      input.focus();
+Focus the text input cursor inside the card.
+
+    } else {
+Otherwise, do the next lines.
+
+      best.focus();
+Focus the target element.
+
+    }
+This closes the block above.
 
   } else {
 Otherwise, do the next lines.
 
     best.focus();
-Run best.focus.
+Focus the target element.
 
   }
+This closes the block above.
+
 }
+This closes the block above.
+
 
 window.renderCurrentPage = function () {
 This is the renderCurrentPage function for this page. The shared script calls it when the page should draw.
@@ -2312,25 +2257,23 @@ This is the renderCurrentPage function for this page. The shared script calls it
   renderWorkspace();
 Run renderWorkspace.
 
-  if (state.tourStep >= 0) {
-If state.tourStep >= 0, do the next lines.
-
-    renderTourStep();
-Run renderTourStep.
-
-  }
 };
+This closes the block above.
+
+
 document.addEventListener("click", function (event) {
 Listen on the page for a click. When it happens, run the steps below.
 
   var trigger = event.target.closest("[data-action]");
 Make trigger and set it to event.target.closest("[data-action]").
 
+
   if (!trigger) {
 If trigger is empty or missing, do the next lines.
 
     var point = event.target.closest(".point");
 Make point and set it to event.target.closest(".point").
+
 
     if (point && state.round) {
 If point && state.round, do the next lines.
@@ -2341,25 +2284,33 @@ Select this point.
       var editor = event.target.closest(".point-input, .reply-box, .new-box");
 Find the box that was tapped and save it as editor.
 
+
       if (editor && document.activeElement !== editor) {
 If that box is not already focused, do the next lines.
 
         editor.focus();
 Put the keyboard in that box.
 
-    }
+      }
+This closes the block above.
+
     }
 This closes the block above.
+
 
     return;
 Stop this function here.
 
   }
+This closes the block above.
+
+
   var action = trigger.dataset.action;
 Copy trigger.dataset.action into action.
 
   var id = trigger.dataset.id;
 Copy trigger.dataset.id into id.
+
 
   if (action === "case-pro") {
 If the clicked action is "case-pro", do the next lines.
@@ -2367,17 +2318,20 @@ If the clicked action is "case-pro", do the next lines.
     switchDebateSide("pro");
 Run switchDebateSide, passing "pro".
 
+
   } else if (action === "case-con") {
 Otherwise, if the clicked action is "case-con", do the next lines.
 
     switchDebateSide("con");
 Run switchDebateSide, passing "con".
 
+
   } else if (action === "jump-link") {
 Otherwise, if the clicked action is "jump-link", do the next lines.
 
     var contention = state.round.contentions[id];
 Make contention and set it to state.round.contentions[id].
+
 
     if (contention) {
 If contention, do the next lines.
@@ -2386,11 +2340,15 @@ If contention, do the next lines.
 Set contention.collapsed to false.
 
     }
+This closes the block above.
+
+
     buildFlowSheet();
 Draw the speeches and contentions again.
 
     var section = document.querySelector('.group[data-id="' + id + '"]');
 Find the first page piece matching '.group[data-id="' + id + '"]' and save it as section.
+
 
     if (section) {
 If section, do the next lines.
@@ -2399,6 +2357,9 @@ If section, do the next lines.
 Run section.scrollIntoView, passing { block: "start" }.
 
     }
+This closes the block above.
+
+
   } else if (action === "add-group") {
 Otherwise, if the clicked action is "add-group", do the next lines.
 
@@ -2408,14 +2369,16 @@ Store an undo step before this change.
     var created = addContention(state.round, getOpenCaseSide());
 Make created and set it to addContention(state.round, getOpenCaseSide()).
 
+
     saveRoundAfterAMoment(true);
-Save after a short wait, or save now if the flag says so.
+Save the round data immediately to browser storage.
 
     render();
 Draw the page again.
 
     var added = document.querySelector('.group[data-id="' + created.id + '"]');
 Find the first page piece matching '.group[data-id="' + created.id + '"]' and save it as added.
+
 
     if (added) {
 If added, do the next lines.
@@ -2424,11 +2387,15 @@ If added, do the next lines.
 Run added.scrollIntoView, passing { block: "start" }.
 
     }
+This closes the block above.
+
+
   } else if (action === "undo") {
 Otherwise, if the clicked action is "undo", do the next lines.
 
     undo();
 Run undo.
+
 
   } else if (action === "redo") {
 Otherwise, if the clicked action is "redo", do the next lines.
@@ -2436,17 +2403,20 @@ Otherwise, if the clicked action is "redo", do the next lines.
     redo();
 Run redo.
 
+
   } else if (action === "round-menu") {
 Otherwise, if the clicked action is "round-menu", do the next lines.
 
     showDropdownMenu(trigger, document.getElementById("round-menu"));
 Run showDropdownMenu, passing trigger, document.getElementById("round-menu").
 
+
   } else if (action === "opening-menu") {
 Otherwise, if the clicked action is "opening-menu", do the next lines.
 
     showDropdownMenu(trigger, document.getElementById("opening-menu"));
 Run showDropdownMenu, passing trigger, document.getElementById("opening-menu").
+
 
   } else if (action === "edit-details") {
 Otherwise, if the clicked action is "edit-details", do the next lines.
@@ -2457,6 +2427,7 @@ Run closeDropdownMenu.
     openEditRoundDetails();
 Run openEditRoundDetails.
 
+
   } else if (action === "export") {
 Otherwise, if the clicked action is "export", do the next lines.
 
@@ -2466,31 +2437,8 @@ Run closeDropdownMenu.
     downloadRoundAsJson(state.round || db.rounds[id]);
 Download state.round || db.rounds[id] as a JSON file.
 
-  } else if (action === "print") {
-Otherwise, if the clicked action is "print", do the next lines.
 
-    closeDropdownMenu();
-Run closeDropdownMenu.
 
-    showElement(document.getElementById("print-box"));
-Show the box with id print-box.
-
-  } else if (action === "do-print") {
-Otherwise, if the clicked action is "do-print", do the next lines.
-
-    closePopups();
-Close the open dialogs.
-
-    preparePrintLayout(document.getElementById("print-evidence").checked);
-Run preparePrintLayout, passing document.getElementById("print-evidence").checked.
-
-    setTimeout(function () {
-This line continues the step above.
-
-      window.print();
-Run window.print.
-
-    }, 100);
   } else if (action === "save-opening") {
 Otherwise, if the clicked action is "save-opening", do the next lines.
 
@@ -2499,6 +2447,7 @@ Run closeDropdownMenu.
 
     var preflow = convertCaseToPreflow(state.round, getOpenCaseSide(), state.round.title + " preflow");
 Make preflow and set it to convertCaseToPreflow(state.round, getOpenCaseSide(), state.round.title + " preflow").
+
 
     db.preflows[preflow.id] = preflow;
 Set db.preflows[preflow.id] to preflow.
@@ -2512,11 +2461,13 @@ Set state.saveState to "Saved in this browser".
     updateSaveLabel();
 Run updateSaveLabel.
 
+
   } else if (action === "save-details") {
 Otherwise, if the clicked action is "save-details", do the next lines.
 
     saveEditRoundDetails();
 Run saveEditRoundDetails.
+
 
   } else if (action === "fold-group") {
 Otherwise, if the clicked action is "fold-group", do the next lines.
@@ -2525,13 +2476,14 @@ Otherwise, if the clicked action is "fold-group", do the next lines.
 Set state.round.contentions[id].collapsed to !state.round.contentions[id].collapsed.
 
     saveRoundAfterAMoment(true);
-Save after a short wait, or save now if the flag says so.
+Save the round data immediately to browser storage.
 
     buildFlowSheet();
 Draw the speeches and contentions again.
 
     renderContentionJumpLinks();
 Run renderContentionJumpLinks.
+
 
   } else if (action === "group-up") {
 Otherwise, if the clicked action is "group-up", do the next lines.
@@ -2543,13 +2495,14 @@ Store an undo step before this change.
 Run moveContention, passing state.round, id, -1.
 
     saveRoundAfterAMoment(true);
-Save after a short wait, or save now if the flag says so.
+Save the round data immediately to browser storage.
 
     buildFlowSheet();
 Draw the speeches and contentions again.
 
     renderContentionJumpLinks();
 Run renderContentionJumpLinks.
+
 
   } else if (action === "group-down") {
 Otherwise, if the clicked action is "group-down", do the next lines.
@@ -2561,13 +2514,14 @@ Store an undo step before this change.
 Run moveContention, passing state.round, id, 1.
 
     saveRoundAfterAMoment(true);
-Save after a short wait, or save now if the flag says so.
+Save the round data immediately to browser storage.
 
     buildFlowSheet();
 Draw the speeches and contentions again.
 
     renderContentionJumpLinks();
 Run renderContentionJumpLinks.
+
 
   } else if (action === "delete-group") {
 Otherwise, if the clicked action is "delete-group", do the next lines.
@@ -2587,13 +2541,16 @@ Store an undo step before this change.
       if (!deleteContention(state.round, id)) return;
 If !deleteContention(state.round, id), stop here.
 
+
       saveRoundAfterAMoment(true);
-Save after a short wait, or save now if the flag says so.
+Save the round data immediately to browser storage.
 
       render();
 Draw the page again.
 
     };
+This closes the block above.
+
     if (cSide && state.round.cases[cSide].contentionIds.length < 2) {
 If cSide && state.round.cases[cSide].contentionIds.length < 2, do the next lines.
 
@@ -2614,6 +2571,7 @@ This line continues the step above.
 
       );
 This line continues the step above.
+
 
     } else if (!nonempty) {
 Otherwise, if nonempty is empty or missing, do the next lines.
@@ -2643,6 +2601,9 @@ This line continues the step above.
 This line continues the step above.
 
     }
+This closes the block above.
+
+
   } else if (action === "note-menu") {
 Otherwise, if the clicked action is "note-menu", do the next lines.
 
@@ -2651,6 +2612,7 @@ Set state.selectedId to id.
 
     openPointActionsMenu(trigger, id);
 Run openPointActionsMenu, passing trigger, id.
+
 
   } else if (action === "add-evidence") {
 Otherwise, if the clicked action is "add-evidence", do the next lines.
@@ -2664,6 +2626,7 @@ Set state.evidenceOpen to true.
     var shell = document.querySelector(".workspace");
 Find the first page piece matching ".workspace" and save it as shell.
 
+
     if (shell) {
 If shell, do the next lines.
 
@@ -2671,6 +2634,9 @@ If shell, do the next lines.
 Run shell.classList.add, passing "proof-open".
 
     }
+This closes the block above.
+
+
     selectPointCard(id, true);
 Select this point.
 
@@ -2680,6 +2646,7 @@ This line continues the step above.
       var body = document.querySelector('.proof-text[data-evidence="' + id + '"]');
 Find the first page piece matching '.proof-text[data-evidence="' + id + '"]' and save it as body.
 
+
       if (body) {
 If body, do the next lines.
 
@@ -2687,7 +2654,12 @@ If body, do the next lines.
 Run body.focus.
 
       }
+This closes the block above.
+
     }, 30);
+Execute the statement above.
+
+
   } else if (action === "close-btn") {
 Otherwise, if the clicked action is "close-btn", do the next lines.
 
@@ -2697,6 +2669,7 @@ Set state.evidenceOpen to false.
     var openShell = document.querySelector(".workspace");
 Find the first page piece matching ".workspace" and save it as openShell.
 
+
     if (openShell) {
 If openShell, do the next lines.
 
@@ -2704,132 +2677,90 @@ If openShell, do the next lines.
 Remove option number "proof-open", so old choices do not pile up. Option 0 stays.
 
     }
-  } else if (action === "tour-next") {
-Otherwise, if the clicked action is "tour-next", do the next lines.
+This closes the block above.
 
-    state.tourStep += 1;
-This line continues the step above.
 
-    if (state.tourStep === 3) {
-If state.tourStep === 3, do the next lines.
+  } else if (action === "add-reply") {
+Otherwise, if the clicked action is "add-reply", do the next lines.
 
-      state.caseSide = "pro";
-Set state.caseSide to "pro".
+    var parentId = trigger.dataset.parent;
+Read the parent argument ID from the clicked button dataset.
 
-    }
-    render();
-Draw the page again.
+    var speechId = trigger.dataset.speech;
+Read the speech ID from the clicked button dataset.
 
-  } else if (action === "tour-back") {
-Otherwise, if the clicked action is "tour-back", do the next lines.
+    saveUndoBeforeChange();
+Store an undo step before this change.
 
-    state.tourStep -= 1;
-This line continues the step above.
+    var newReply = addReplyPoint(state.round, parentId, speechId, "");
+Create a new blank reply card linked to the parent point.
 
-    renderTourStep();
-Run renderTourStep.
+    saveRoundAfterAMoment(true);
+Save the round data immediately to browser storage.
 
-  } else if (action === "tour-close") {
-Otherwise, if the clicked action is "tour-close", do the next lines.
+    state.selectedId = newReply.id;
+Select the newly created reply card.
 
-    closeFeatureTour();
-Run closeFeatureTour.
+    buildFlowSheet();
+Draw the speeches and contentions again.
+
+    focusPointInput(newReply.id, 0);
+Move the typing focus into the new reply card.
+
+
+  } else if (action === "add-main-point") {
+Otherwise, if the clicked action is "add-main-point", do the next lines.
+
+    var starterId = trigger.dataset.starter;
+Read the contention ID from the clicked button dataset.
+
+    var spId = trigger.dataset.speech;
+Read the speech ID from the clicked button dataset.
+
+    saveUndoBeforeChange();
+Store an undo step before this change.
+
+    var newPoint = addMainPoint(state.round, starterId, spId, "");
+Create a new constructive main argument point.
+
+    saveRoundAfterAMoment(true);
+Save the round data immediately to browser storage.
+
+    state.selectedId = newPoint.id;
+Select the newly created main point.
+
+    buildFlowSheet();
+Draw the speeches and contentions again.
+
+    focusPointInput(newPoint.id, 0);
+Move the typing focus into the new main point.
 
   }
+This closes the block above.
+
 });
+This closes the block above.
+
+
 document.addEventListener("keydown", function (event) {
 Listen on the page for a key press. When it happens, run the steps below.
 
-  if (state.tourStep >= 0 && event.key === "Escape") {
-If state.tourStep >= 0 && event.key === "Escape", do the next lines.
-
-    closeFeatureTour();
-Run closeFeatureTour.
-
-    return;
-Stop this function here.
-
-  }
   var target = event.target;
 Copy event.target into target.
 
-  if (target.classList && target.classList.contains("point-input")) {
-If target.classList && target.classList.contains("point-input"), do the next lines.
 
-    if (event.key === "Enter" && !event.shiftKey && !state.composing && !event.isComposing) {
-If event.key === "Enter" && !event.shiftKey && !state.composing && !event.isComposing, do the next lines.
+  var isZ = event.key && event.key.toLowerCase() === "z";
+Check if the pressed key is "z" or "Z".
 
-      event.preventDefault();
-Run event.preventDefault.
+  var isY = event.key && event.key.toLowerCase() === "y";
+Check if the pressed key is "y" or "Y".
 
-      splitPointOnEnter(target);
-Run splitPointOnEnter, passing target.
+  var isModifier = event.ctrlKey || event.metaKey;
+Check if Control or Command (Cmd) modifier key is held.
 
-    } else if (event.key === "Escape") {
-Otherwise, if event.key === "Escape", do the next lines.
 
-      target.blur();
-Run target.blur.
-
-      var point = target.closest(".point");
-Make point and set it to target.closest(".point").
-
-      if (point) {
-If point, do the next lines.
-
-        point.focus();
-Run point.focus.
-
-      }
-    } else if (event.key === "Tab") {
-Otherwise, if event.key === "Tab", do the next lines.
-
-      event.preventDefault();
-Run event.preventDefault.
-
-      var foundBoxes = document.querySelectorAll(".point, .reply-box, .new-box");
-Find every page piece matching ".point, .reply-box, .new-box" and save the list as foundBoxes.
-
-      var boxes = [];
-Make boxes and set it to [].
-
-      for (var b = 0; b < foundBoxes.length; b++) {
-Loop through foundBoxes. b is the position, starting at 0.
-
-        boxes.push(foundBoxes[b]);
-Add foundBoxes[b] to the list.
-
-      }
-      var index = boxes.indexOf(target.closest(".point"));
-Make index and set it to boxes.indexOf(target.closest(".point")).
-
-      var step = 1;
-Copy 1 into step.
-
-      if (event.shiftKey) {
-If event.shiftKey, do the next lines.
-
-        step = -1;
-Set step to -1.
-
-      }
-      var next = boxes[index + step];
-Make next and set it to boxes[index + step].
-
-      if (next) {
-If next, do the next lines.
-
-        next.focus();
-Run next.focus.
-
-      }
-    }
-    return;
-Stop this function here.
-
-  }
-  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z" && target.tagName !== "TEXTAREA" && !target.isContentEditable) {
-If (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z" && target.tagName !== "TEXTAREA" && !target.isContentEditable, do the next lines.
+  if (isModifier && isZ) {
+If Ctrl+Z or Cmd+Z is pressed, do the next lines.
 
     event.preventDefault();
 Run event.preventDefault.
@@ -2847,8 +2778,17 @@ Otherwise, do the next lines.
 Run undo.
 
     }
-  } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "y" && target.tagName !== "TEXTAREA") {
-Otherwise, if (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "y" && target.tagName !== "TEXTAREA", do the next lines.
+This closes the block above.
+
+    return;
+Stop this function here.
+
+  }
+This closes the block above.
+
+
+  if (isModifier && isY) {
+If Ctrl+Y or Cmd+Y is pressed, do the next lines.
 
     event.preventDefault();
 Run event.preventDefault.
@@ -2856,11 +2796,298 @@ Run event.preventDefault.
     redo();
 Run redo.
 
-  } else if (target.classList && target.classList.contains("point") && !event.target.classList.contains("point-input")) {
-Otherwise, if target.classList && target.classList.contains("point") && !event.target.classList.contains("point-input"), do the next lines.
+    return;
+Stop this function here.
 
-    var pointId = target.dataset.id;
+  }
+This closes the block above.
+
+
+  if (target.classList && target.classList.contains("point-input")) {
+If target.classList && target.classList.contains("point-input"), do the next lines.
+
+    if (event.key === "Enter" && !event.shiftKey && !state.composing && !event.isComposing) {
+If event.key === "Enter" && !event.shiftKey && !state.composing && !event.isComposing, do the next lines.
+
+      event.preventDefault();
+Run event.preventDefault.
+
+      splitPointOnEnter(target);
+Run splitPointOnEnter, passing target.
+
+      return;
+Stop this function here.
+
+    }
+This closes the block above.
+
+
+    if (event.key === "Enter" && event.shiftKey && !state.composing && !event.isComposing) {
+If Shift+Enter is pressed while typing in a point, do the next lines.
+
+      event.preventDefault();
+Run event.preventDefault.
+
+      var pointId = target.dataset.id;
 Copy target.dataset.id into pointId.
+
+      var replySlot = document.querySelector('.reply-slot-btn[data-parent="' + pointId + '"]');
+Look for an open reply slot in the next column.
+
+      if (replySlot) {
+If a reply slot exists, do the next lines.
+
+        var pId = replySlot.dataset.parent;
+Read the parent ID from the slot dataset.
+
+        var spId = replySlot.dataset.speech;
+Read the speech ID from the slot dataset.
+
+        saveUndoBeforeChange();
+Store an undo step before this change.
+
+        var note = addReplyPoint(state.round, pId, spId, "");
+Create a new reply point in that column.
+
+        saveRoundAfterAMoment(true);
+Save the round data immediately to browser storage.
+
+        state.selectedId = note.id;
+Set state.selectedId to note.id.
+
+        buildFlowSheet();
+Draw the speeches and contentions again.
+
+        focusPointInput(note.id, 0);
+Move typing focus into the newly created reply point.
+
+      } else {
+Otherwise, do the next lines.
+
+        var currentCol = target.closest(".speech-column");
+Find the current speech column.
+
+        var nextCol = currentCol ? currentCol.nextElementSibling : null;
+Find the next speech column to the right.
+
+        if (nextCol && nextCol.dataset.speech) {
+If there is a valid next speech column, do the next lines.
+
+          saveUndoBeforeChange();
+Store an undo step before this change.
+
+          var note = addReplyPoint(state.round, pointId, nextCol.dataset.speech, "");
+Add a reply point into that speech column.
+
+          saveRoundAfterAMoment(true);
+Save the round data immediately to browser storage.
+
+          buildFlowSheet();
+Draw the speeches and contentions again.
+
+          focusPointInput(note.id, 0);
+Move typing focus into the newly created reply point.
+
+        }
+This closes the block above.
+
+      }
+This closes the block above.
+
+      return;
+Stop this function here.
+
+    }
+This closes the block above.
+
+
+    if (event.key === "Escape") {
+If the Escape key is pressed, do the next lines.
+
+      target.blur();
+Run target.blur.
+
+      var point = target.closest(".point");
+Make point and set it to target.closest(".point").
+
+      if (point) {
+If point, do the next lines.
+
+        point.focus();
+Run point.focus.
+
+      }
+This closes the block above.
+
+      return;
+Stop this function here.
+
+    }
+This closes the block above.
+
+
+    if (event.key === "Tab") {
+If the Tab key is pressed to navigate between cards, do the next lines.
+
+      event.preventDefault();
+Run event.preventDefault.
+
+      var foundBoxes = Array.prototype.slice.call(document.querySelectorAll(".point, .reply-slot-btn, .col-add-btn"));
+Collect all selectable elements across the flowsheet.
+
+      var currentCard = target.closest(".point");
+Find the active note card.
+
+      var index = foundBoxes.indexOf(currentCard);
+Find its position index in the list.
+
+      var step = event.shiftKey ? -1 : 1;
+Move backwards if Shift is held, otherwise move forward.
+
+      var next = foundBoxes[index + step];
+Get the next element in tab sequence.
+
+      if (next) {
+If next, do the next lines.
+
+        if (next.classList.contains("point")) {
+If the next element is a note card, do the next lines.
+
+          selectPointCard(next.dataset.id, state.evidenceOpen);
+Select the next note card.
+
+          var nextInput = next.querySelector(".point-input");
+Find the text input area of the next card.
+
+          if (nextInput) {
+If the input area exists, do the next lines.
+
+            nextInput.focus();
+Focus the text cursor in the next card.
+
+          } else {
+Otherwise, do the next lines.
+
+            next.focus();
+Run next.focus.
+
+          }
+This closes the block above.
+
+        } else {
+Otherwise, do the next lines.
+
+          next.focus();
+Run next.focus.
+
+        }
+This closes the block above.
+
+      }
+This closes the block above.
+
+      return;
+Stop this function here.
+
+    }
+This closes the block above.
+
+
+    if (event.key.indexOf("Arrow") === 0) {
+If any arrow key was pressed, do the next lines.
+
+      var shouldNavigate = event.altKey;
+Check if the Alt key is held for immediate navigation.
+
+      if (!shouldNavigate) {
+If Alt is not held, check if caret is at the boundary.
+
+        if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
+If moving up or left, do the next lines.
+
+          shouldNavigate = isCaretAtBeginning(target);
+Navigate only if the cursor has reached the start of the text.
+
+        } else if (event.key === "ArrowDown" || event.key === "ArrowRight") {
+If moving down or right, do the next lines.
+
+          shouldNavigate = isCaretAtEnd(target);
+Navigate only if the cursor has reached the end of the text.
+
+        }
+This closes the block above.
+
+      }
+This closes the block above.
+
+      if (shouldNavigate) {
+If cursor boundary or Alt modifier indicates navigation, do the next lines.
+
+        event.preventDefault();
+Run event.preventDefault.
+
+        navigatePointsWithArrows(target, event.key);
+Navigate focus in the direction of the pressed arrow key.
+
+      }
+This closes the block above.
+
+      return;
+Stop this function here.
+
+    }
+This closes the block above.
+
+
+    return;
+Stop this function here.
+
+  }
+This closes the block above.
+
+
+  if (target.classList && (target.classList.contains("reply-slot-btn") || target.classList.contains("col-add-btn"))) {
+If a reply slot or add button currently has keyboard focus, do the next lines.
+
+    if (event.key === "Enter" || event.key === " ") {
+If Enter or Spacebar is pressed on the button, do the next lines.
+
+      event.preventDefault();
+Run event.preventDefault.
+
+      target.click();
+Trigger the button click to create the point.
+
+      return;
+Stop this function here.
+
+    }
+This closes the block above.
+
+    if (event.key.indexOf("Arrow") === 0) {
+If any arrow key was pressed, do the next lines.
+
+      event.preventDefault();
+Run event.preventDefault.
+
+      navigatePointsWithArrows(target, event.key);
+Navigate focus in the direction of the pressed arrow key.
+
+      return;
+Stop this function here.
+
+    }
+This closes the block above.
+
+  }
+This closes the block above.
+
+
+  if (target.classList && target.classList.contains("point") && !target.classList.contains("point-input")) {
+If keyboard focus is on the card container rather than inside its text editor, do the next lines.
+
+    var pId = target.dataset.id;
+Read the note card ID from the dataset.
 
     if (event.key === "Enter") {
 If event.key === "Enter", do the next lines.
@@ -2875,23 +3102,33 @@ If area, do the next lines.
 Run area.focus.
 
       }
+This closes the block above.
+
     } else if (event.key.indexOf("Arrow") === 0) {
 Otherwise, if event.key.indexOf("Arrow") === 0, do the next lines.
 
       event.preventDefault();
 Run event.preventDefault.
 
-      navigatePointsWithArrows(pointId, event.key);
-Run navigatePointsWithArrows, passing pointId, event.key.
+      navigatePointsWithArrows(pId, event.key);
+Navigate between cards using arrow keys.
 
     }
+This closes the block above.
+
   }
+This closes the block above.
+
 });
+This closes the block above.
+
+
 document.addEventListener("compositionstart", function () { state.composing = true; });
 Listen on the page for the start of a special keyboard composition. When it happens, run the steps below.
 
 document.addEventListener("compositionend", function () { state.composing = false; });
 Listen on the page for the end of a special keyboard composition. When it happens, run the steps below.
+
 
 document.addEventListener("input", function (event) {
 Listen on the page for typing in a box. When it happens, run the steps below.
@@ -2901,6 +3138,7 @@ Copy event.target into target.
 
   if (!state.round) return;
 If state.round is missing, stop here.
+
 
   if (target.dataset.field === "title-input") {
 If target.dataset.field === "title-input", do the next lines.
@@ -2915,6 +3153,9 @@ Save after a short wait, or save now if the flag says so.
 Stop this function here.
 
   }
+This closes the block above.
+
+
   if (target.dataset.field === "group-name") {
 If target.dataset.field === "group-name", do the next lines.
 
@@ -2924,6 +3165,7 @@ Start one undo step for this burst of typing.
     var contentionName = target.value;
 Copy target.value into contentionName.
 
+
     if (!contentionName) {
 If contentionName is empty or missing, do the next lines.
 
@@ -2931,11 +3173,15 @@ If contentionName is empty or missing, do the next lines.
 Set contentionName to "Contention".
 
     }
+This closes the block above.
+
+
     state.round.contentions[target.dataset.id].name = contentionName;
 Set state.round.contentions[target.dataset.id].name to contentionName.
 
     var jump = document.querySelector('.jump-link[data-id="' + target.dataset.id + '"] .link-name');
 Find the first page piece matching '.jump-link[data-id="' + target.dataset.id + '"] .link-name' and save it as jump.
+
 
     if (jump) {
 If jump, do the next lines.
@@ -2944,6 +3190,9 @@ If jump, do the next lines.
 Set jump.textContent to contentionName.
 
     }
+This closes the block above.
+
+
     saveRoundAfterAMoment(false);
 Save after a short wait, or save now if the flag says so.
 
@@ -2951,6 +3200,9 @@ Save after a short wait, or save now if the flag says so.
 Stop this function here.
 
   }
+This closes the block above.
+
+
   if (target.dataset.field === "font-size") {
 If target.dataset.field === "font-size", do the next lines.
 
@@ -2963,6 +3215,7 @@ Save the data in this browser.
     var boxes = document.querySelectorAll(".point-input, .reply-box, .new-box");
 Find every page piece matching ".point-input, .reply-box, .new-box" and save the list as boxes.
 
+
     for (var i = 0; i < boxes.length; i++) {
 Loop through boxes. i is the position, starting at 0.
 
@@ -2970,6 +3223,9 @@ Loop through boxes. i is the position, starting at 0.
 Set boxes[i].style.fontSize to target.value + "px".
 
     }
+This closes the block above.
+
+
     measurePointHeights();
 Run measurePointHeights.
 
@@ -2980,6 +3236,9 @@ Run applyPointPositions.
 Stop this function here.
 
   }
+This closes the block above.
+
+
   if (target.classList.contains("point-input")) {
 If target.classList.contains("point-input"), do the next lines.
 
@@ -2995,6 +3254,7 @@ Find every page piece matching '.reply-box[data-parent="' + target.dataset.id + 
     var plain = state.round.notes[target.dataset.id].text;
 Read the saved plain text and save it as plain.
 
+
     for (var s = 0; s < slots.length; s++) {
 Loop through slots. s is the position, starting at 0.
 
@@ -3002,6 +3262,9 @@ Loop through slots. s is the position, starting at 0.
 Label each response box with the point it answers.
 
     }
+This closes the block above.
+
+
     measurePointHeights();
 Run measurePointHeights.
 
@@ -3015,6 +3278,9 @@ Save after a short wait, or save now if the flag says so.
 Stop this function here.
 
   }
+This closes the block above.
+
+
   if (target.dataset.slot && (target.innerText || "").replace(/\u00a0/g, " ").trim()) {
 If this is a response box and it has text, do the next lines.
 
@@ -3025,6 +3291,9 @@ Turn that response text into a reply point.
 Stop this function here.
 
   }
+This closes the block above.
+
+
   if (target.dataset.starter && (target.innerText || "").replace(/\u00a0/g, " ").trim()) {
 If this is a new-point box and it has text, do the next lines.
 
@@ -3035,6 +3304,9 @@ Run createNewPointFromInput, passing target.
 Stop this function here.
 
   }
+This closes the block above.
+
+
   if (target.dataset.evidence || (target.classList && target.classList.contains("proof-text"))) {
 If target.dataset.evidence || (target.classList && target.classList.contains("proof-text")), do the next lines.
 
@@ -3048,12 +3320,18 @@ Run saveEvidenceText, passing target.
 Save after a short wait, or save now if the flag says so.
 
   }
+This closes the block above.
+
 });
+This closes the block above.
+
+
 document.addEventListener("paste", function (event) {
 Listen on the page for a paste. When it happens, run the steps below.
 
   var body = null;
 Copy null into body.
+
 
   if (event.target.closest) {
 If event.target.closest, do the next lines.
@@ -3062,8 +3340,12 @@ If event.target.closest, do the next lines.
 Set body to event.target.closest(".proof-text").
 
   }
+This closes the block above.
+
+
   if (!body) return;
 If body is missing, stop here.
+
 
   event.preventDefault();
 Run event.preventDefault.
@@ -3077,6 +3359,7 @@ Make text and set it to event.clipboardData.getData("text/plain").
   var cleaned = { html: convertLinesToHtml(text), plain: text, notice: "" };
 Make cleaned and set it to { html: convertLinesToHtml(text), plain: text, notice: "" }.
 
+
   if (html) {
 If html, do the next lines.
 
@@ -3084,11 +3367,15 @@ If html, do the next lines.
 Set cleaned to cleanPastedHtml(html).
 
   }
+This closes the block above.
+
+
   if ((cleaned.plain || "").length > 60000) {
 If (cleaned.plain || "").length > 60000, do the next lines.
 
     var cut = cleaned.plain.slice(0, 60000);
 Make cut and set it to cleaned.plain.slice(0, 60000).
+
 
     cleaned = {
 This line continues the step above.
@@ -3103,7 +3390,12 @@ On this object, plain is cut.
 On this object, notice is "Kept the first part of the paste. A full open-ev file won't fit in this browser — one card at a time.".
 
     };
+This closes the block above.
+
   }
+This closes the block above.
+
+
   insertHtmlAtCursor(cleaned.html);
 Run insertHtmlAtCursor, passing cleaned.html.
 
@@ -3117,6 +3409,9 @@ Run saveEvidenceText, passing body, cleaned.notice.
 Save after a short wait, or save now if the flag says so.
 
 });
+This closes the block above.
+
+
 document.addEventListener("focusout", function (event) {
 Listen on the page for leaving a box. When it happens, run the steps below.
 
@@ -3133,7 +3428,12 @@ Save after a short wait, or save now if the flag says so.
 Set state.history.typing to false.
 
   }
+This closes the block above.
+
 });
+This closes the block above.
+
+
 document.addEventListener("scroll", function (event) {
 Listen on the page for scrolling. When it happens, run the steps below.
 
@@ -3144,7 +3444,12 @@ If event.target.id === "scroll-box" && state.round, do the next lines.
 This line continues the step above.
 
   }
+This closes the block above.
+
 }, true);
+Execute the statement above.
+
+
 document.addEventListener("change", function (event) {
 Listen on the page for a change in a dropdown. When it happens, run the steps below.
 
@@ -3153,6 +3458,7 @@ Copy event.target into target.
 
   if (!target || !target.dataset || !state.round) return;
 If !target || !target.dataset || !state.round, stop here.
+
 
   if (target.dataset.field === "font-size") {
 If target.dataset.field === "font-size", do the next lines.
@@ -3164,9 +3470,15 @@ Set db.settings.fontSize to Number(target.value).
 Save the data in this browser.
 
   }
+This closes the block above.
+
 });
+This closes the block above.
+
+
 var layoutWidth = window.innerWidth;
 Remember the page width. The phone keyboard changes height, not this width.
+
 
 window.addEventListener("resize", function () {
 Listen on the window for the window changing size. When it happens, run the steps below.
@@ -3186,6 +3498,7 @@ Read the box that has the keyboard and save it as focused.
     var typing = focused && focused.closest && focused.closest("input, textarea, select, [contenteditable='true']");
 Set typing when the keyboard is in a text box.
 
+
     if (width > 899 && state.navOpen && !typing) {
 If the page is wide, the menu is open, and nobody is typing, do the next lines.
 
@@ -3196,8 +3509,12 @@ Set state.navOpen to false.
 Run updateSideMenu.
 
     }
+This closes the block above.
+
+
     if (typing || Math.abs(width - layoutWidth) < 48) return;
 If someone is typing, or the width barely changed, stop here so the keyboard stays open.
+
 
     layoutWidth = width;
 Remember this width for the next resize.
@@ -3206,4 +3523,7 @@ Remember this width for the next resize.
 Draw the speeches and contentions again.
 
   }, 120);
+Execute the statement above.
+
 });
+This closes the block above.
