@@ -229,16 +229,19 @@
   flex: 1;
   min-width: 0;
   overflow: auto;
-  padding: 16px 16px 80px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .flow-paper {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 0;
   width: max-content;
   min-width: 100%;
   min-height: 100%;
+  flex: 1;
 }
 
 .speech-top {
@@ -246,50 +249,48 @@
   position: sticky;
   top: 0;
   z-index: 8;
-  gap: 20px;
+  gap: 0;
   width: max-content;
   min-width: 100%;
-  padding: 4px 0 8px;
+  padding: 0;
   background-color: #fffcfb;
+  border-bottom: 2px solid #e2e8f0;
 }
 
 .speech-title {
   box-sizing: border-box;
   flex-shrink: 0;
   margin: 0;
-  padding: 10px 14px 8px;
-  border-radius: 12px;
+  padding: 10px 8px;
+  text-align: center;
+  border-radius: 0;
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
 }
 
 .speech-name {
   color: #121326;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
-}
-
-.speech-small {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 4px;
-  color: #121326;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.speech-time {
-  font-weight: 400;
-  color: #625968;
+  letter-spacing: 0.5px;
+  text-align: center;
 }
 
 .speech-title.pro {
   background-color: #e5dfff;
   color: #121326;
+  border-bottom: 3px solid #8e79ef;
+  border-right: 1px solid #d4ccfc;
 }
 
 .speech-title.con {
   background-color: #fddced;
   color: #121326;
+  border-bottom: 3px solid #f472b6;
+  border-right: 1px solid #f8cce2;
 }
 
 .group {
@@ -416,46 +417,59 @@
 .flow-grid {
   display: flex;
   align-items: stretch;
-  gap: 14px;
+  gap: 0;
   width: max-content;
   min-width: 100%;
-  padding: 8px 0 60px;
+  flex: 1;
+  min-height: calc(100vh - 120px);
+  padding: 0;
 }
 
 .speech-column {
   box-sizing: border-box;
   position: relative;
   flex-shrink: 0;
-  padding: 8px 8px 24px;
-  border-radius: 8px;
+  padding: 4px 0 160px;
+  border-radius: 0;
+  border: none;
+  border-right: 1px solid #ebe5fa;
   background-color: #ffffff;
-  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
 }
 
-.speech-column.alt-column {
-  background-color: #fbfbfe;
+.speech-column.pro {
+  background-color: #f7f4ff;
+  border-right: 1px solid #ebe5fa;
+}
+
+.speech-column.con {
+  background-color: #fdf3f8;
+  border-right: 1px solid #fbe5f0;
 }
 
 .column-area {
   position: relative;
-  min-height: 120px;
+  min-height: calc(100vh - 160px);
+  flex: 1;
 }
 
 .point {
   box-sizing: border-box;
   position: absolute;
-  left: 6px;
-  width: calc(100% - 12px);
-  min-height: 56px;
-  padding: 8px 10px 8px;
+  left: 4px;
+  width: calc(100% - 8px);
+  min-height: 32px;
+  padding: 5px 8px;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   background-color: #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
   z-index: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
@@ -465,8 +479,14 @@
 
 .point.picked,
 .point:focus-within {
-  border: 2px solid #8060d6;
-  box-shadow: 0 0 0 3px rgba(128, 96, 214, 0.15);
+  border: 1.5px solid #8e79ef;
+  box-shadow: 0 0 0 2px rgba(142, 121, 239, 0.2);
+}
+
+.speech-column.con .point.picked,
+.speech-column.con .point:focus-within {
+  border-color: #f472b6;
+  box-shadow: 0 0 0 2px rgba(244, 114, 182, 0.2);
 }
 
 .point-input {
@@ -474,6 +494,7 @@
   width: 100%;
   min-height: 20px;
   padding: 0;
+  padding-right: 58px;
   border: 0;
   background-color: transparent;
   color: #1e293b;
@@ -531,11 +552,20 @@
 }
 
 .point-bottom {
-  display: flex;
+  display: none;
   align-items: center;
-  justify-content: space-between;
-  margin-top: 6px;
-  flex-shrink: 0;
+  justify-content: flex-end;
+  gap: 3px;
+  position: absolute;
+  right: 4px;
+  top: 5px;
+  z-index: 2;
+}
+
+.point:hover .point-bottom,
+.point:focus-within .point-bottom,
+.point.has-ev .point-bottom {
+  display: flex;
 }
 
 .clip-btn {
@@ -605,17 +635,18 @@
 .reply-slot-btn {
   box-sizing: border-box;
   position: absolute;
-  left: 6px;
-  width: calc(100% - 12px);
-  height: 38px;
+  left: 4px;
+  width: calc(100% - 8px);
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 1px dashed transparent;
-  border-radius: 6px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
   background-color: transparent;
-  color: #94a3b8;
-  font-size: 22px;
+  color: transparent;
+  font-size: 20px;
   font-weight: 300;
   cursor: pointer;
   padding: 0;
@@ -624,10 +655,16 @@
 
 .reply-slot-btn:hover,
 .reply-slot-btn:focus {
-  background-color: rgba(241, 245, 249, 0.9);
-  border-color: #cbd5e1;
-  color: #6366f1;
+  background-color: rgba(255, 255, 255, 0.85);
+  border: 1px dashed #8e79ef;
+  color: #8e79ef;
   outline: none;
+}
+
+.speech-column.con .reply-slot-btn:hover,
+.speech-column.con .reply-slot-btn:focus {
+  border-color: #f472b6;
+  color: #f472b6;
 }
 
 .col-add-btn {
@@ -635,13 +672,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: calc(100% - 12px);
+  width: calc(100% - 8px);
   height: 32px;
-  margin: 6px;
-  border: 1px dashed #cbd5e1;
-  border-radius: 6px;
+  margin: 4px auto;
+  border: 1px dashed transparent;
+  border-radius: 4px;
   background-color: transparent;
-  color: #94a3b8;
+  color: transparent;
   font-size: 20px;
   font-weight: 300;
   cursor: pointer;
@@ -651,8 +688,27 @@
 
 .col-add-btn:hover,
 .col-add-btn:focus {
-  background-color: #f8fafc;
-  border-color: #6366f1;
-  color: #6366f1;
+  background-color: rgba(255, 255, 255, 0.85);
+  border-color: #8e79ef;
+  color: #8e79ef;
   outline: none;
+}
+
+.speech-top > .speech-title:first-child {
+  padding-left: 14px;
+}
+
+.flow-grid > .speech-column:first-child .point {
+  left: 14px;
+  width: calc(100% - 18px);
+}
+
+.flow-grid > .speech-column:first-child .reply-slot-btn {
+  left: 14px;
+  width: calc(100% - 18px);
+}
+
+.flow-grid > .speech-column:first-child .col-add-btn {
+  margin-left: 14px;
+  width: calc(100% - 18px);
 }

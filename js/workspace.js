@@ -71,19 +71,13 @@ function buildFlowSheet() {
 
     speechChip.classList.add(speechInfo.team);
     speechChip.style.width = colWidth + "px";
-    speechChip.querySelector(".speech-name").textContent = speechInfo.full;
+    speechChip.querySelector(".speech-name").textContent = speechInfo.code || speechInfo.short || speechInfo.full;
 
-    var orderNumber = view.all.indexOf(speechId) + 1;
-    var kindName = shortNames[speechInfo.type] || speechInfo.short;
-
-    speechChip.querySelector(".speech-number").textContent = orderNumber + ". " + kindName;
-
-    var seconds = 240;
-    if (db.settings.durations && db.settings.durations[speechInfo.type]) {
-      seconds = db.settings.durations[speechInfo.type];
+    var small = speechChip.querySelector(".speech-small");
+    if (small) {
+      small.remove();
     }
 
-    speechChip.querySelector(".speech-time").textContent = Math.round(seconds / 60) + " min";
     headerRow.appendChild(speechChip);
   }
 
@@ -110,10 +104,14 @@ function buildFlowSheet() {
 
   for (var s = 0; s < view.visible.length; s++) {
     var speechId = view.visible[s];
+    var speechInfo = SPEECHES[speechId];
     var colElement = cloneTemplate("col-sample");
 
     colElement.style.width = colWidth + "px";
     colElement.dataset.speech = speechId;
+    if (speechInfo && speechInfo.team) {
+      colElement.classList.add(speechInfo.team);
+    }
     if (s % 2 === 1) {
       colElement.classList.add("alt-column");
     }
@@ -207,6 +205,7 @@ function renderPointCard(note) {
   var num = clipBtn.querySelector(".clip-number");
   if (note.evidenceId && state.round.evidence && state.round.evidence[note.evidenceId]) {
     clipBtn.classList.add("has-proof", "has-ev");
+    box.classList.add("has-ev");
     clipBtn.setAttribute("aria-label", "Open evidence");
     if (num) {
       num.textContent = "1";
@@ -214,6 +213,7 @@ function renderPointCard(note) {
     }
   } else {
     clipBtn.classList.remove("has-proof", "has-ev");
+    box.classList.remove("has-ev");
     clipBtn.setAttribute("aria-label", "Add evidence");
     if (num) {
       num.textContent = "";
@@ -238,7 +238,7 @@ function measurePointHeights() {
     var parentBox = area.closest(".point");
     if (parentBox) {
       parentBox.style.height = "auto";
-      var boxHeight = Math.max(58, parentBox.offsetHeight || parentBox.scrollHeight);
+      var boxHeight = Math.max(30, parentBox.offsetHeight || parentBox.scrollHeight);
       state.heights[area.dataset.id] = boxHeight;
     }
   }
@@ -428,16 +428,6 @@ function splitPointOnEnter(area) {
   afterHost.appendChild(afterRange.extractContents());
   var beforeClean = cleanPastedHtml(area.innerHTML);
   var afterClean = cleanPastedHtml(afterHost.innerHTML);
-
-  if (!beforeClean.plain.trim() && !afterClean.plain.trim()) {
-    var next = area.closest(".speech-column").querySelector(".new-box");
-
-    if (next) {
-      next.focus();
-    }
-
-    return;
-  }
 
   saveUndoBeforeChange();
   note.text = beforeClean.plain;

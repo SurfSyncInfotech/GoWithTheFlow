@@ -13,11 +13,11 @@
   <link rel="stylesheet" href="css/page.css?v=32">
   <link rel="stylesheet" href="css/buttons.css?v=31">
   <link rel="stylesheet" href="css/home.css?v=31">
-  <link rel="stylesheet" href="css/sidebar.css?v=31">
-  <link rel="stylesheet" href="css/workspace.css?v=65">
+  <link rel="stylesheet" href="css/sidebar.css?v=34">
+  <link rel="stylesheet" href="css/workspace.css?v=81">
   <link rel="stylesheet" href="css/evidence.css?v=32">
-  <link rel="stylesheet" href="css/popups.css?v=31">
-  <link rel="stylesheet" href="css/phone.css?v=65">
+  <link rel="stylesheet" href="css/popups.css?v=35">
+  <link rel="stylesheet" href="css/phone.css?v=67">
   <link rel="stylesheet" href="css/print.css?v=70">
 </head>
 <body class="page" data-page="workspace">
@@ -33,8 +33,8 @@
       </a>
       <button type="button" class="btn back-btn" data-action="home">Back to rounds</button>
       <div id="case-links">
-        <button type="button" class="menu-link" id="link-pro" data-action="case-pro">Aff Flow</button>
-        <button type="button" class="menu-link" id="link-con" data-action="case-con">Neg Flow</button>
+        <button type="button" class="menu-link pro-link" id="link-pro" data-action="case-pro"><span class="flow-plus">+</span> aff</button>
+        <button type="button" class="menu-link con-link" id="link-con" data-action="case-con"><span class="flow-plus">+</span> neg</button>
       </div>
       <p class="gray-text hide" id="preflow-label"></p>
       <div class="push-down"></div>
@@ -65,8 +65,8 @@
       </div>
 
       <div class="side-bar" id="side-bar">
-        <button type="button" class="side-btn" id="switch-pro" data-action="case-pro">Aff Flow</button>
-        <button type="button" class="side-btn" id="switch-con" data-action="case-con">Neg Flow</button>
+        <button type="button" class="side-btn pro-link" id="switch-pro" data-action="case-pro"><span class="flow-plus">+</span> aff</button>
+        <button type="button" class="side-btn con-link" id="switch-con" data-action="case-con"><span class="flow-plus">+</span> neg</button>
       </div>
 
       <div class="tool-bar">
@@ -113,21 +113,32 @@
   </div>
   <div id="note-menu" class="drop-menu hide"></div>
 
-  <div id="timer-popover" class="small-popup timer-top-right hide">
-    <div class="timer-pop-header">
-      <h2>Timer</h2>
-      <button type="button" class="close-btn" data-action="close-dialog">×</button>
+  <div id="timer-popover" class="timer-card hide">
+    <div class="timer-card-header" id="timer-drag-handle">
+      <span class="timer-card-title">Timer</span>
+      <button type="button" class="close-btn" data-action="close-dialog" aria-label="Close">✕</button>
     </div>
-    <p id="popover-clock">0:00</p>
-    <label class="form-line"><span>Minutes</span><input id="timer-minutes" type="number" min="0" value="4"></label>
-    <label class="form-line"><span>Seconds</span><input id="timer-seconds" type="number" min="0" max="59" value="0"></label>
-    <div class="button-row">
+    <div class="timer-clock-line">
+      <span id="popover-clock">5:00</span>
+    </div>
+    <div class="timer-input-line">
+      <div class="timer-input-box">
+        <input id="timer-minutes" type="number" min="0" value="4">
+        <span>m</span>
+      </div>
+      <span class="timer-sep">:</span>
+      <div class="timer-input-box">
+        <input id="timer-seconds" type="number" min="0" max="59" value="0">
+        <span>s</span>
+      </div>
+    </div>
+    <div class="button-row timer-btn-row">
       <button type="button" class="btn main" id="timer-start-btn" data-action="timer-start">Start</button>
       <button type="button" class="btn" data-action="timer-reset">Reset</button>
     </div>
   </div>
 
-  <div id="edit-box" class="popup-cover hide">
+    <div id="edit-box" class="popup-cover hide">
     <div class="popup">
       <h2>Edit details</h2>
       <div class="popup-body">
@@ -203,10 +214,6 @@
   <div class="hide" id="speech-chip">
     <div class="speech-title">
       <div class="speech-name"></div>
-      <div class="speech-small">
-        <span class="speech-number"></span>
-        <span class="speech-time"></span>
-      </div>
     </div>
   </div>
   <div class="hide" id="cont-block">
@@ -285,7 +292,7 @@
   </div>
 
   <script src="js/html2pdf.bundle.min.js"></script>
-  <script src="js/common.js?v=70"></script>
-  <script src="js/workspace.js?v=71"></script>
+  <script src="js/common.js?v=80"></script>
+  <script src="js/workspace.js?v=79"></script>
 </body>
 </html>

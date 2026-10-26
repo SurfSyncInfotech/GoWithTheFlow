@@ -1,4 +1,4 @@
-var CACHE_NAME = "go-with-the-flow-v10";
+var CACHE_NAME = "go-with-the-flow-v24";
 
 var APP_FILES = [
   "index.html",

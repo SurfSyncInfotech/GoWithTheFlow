@@ -4,7 +4,7 @@
 
 @media (max-width: 1199px) {
   .sidebar {
-    width: 210px;
+    width: 170px;
   }
 
   .proof-panel {
@@ -157,6 +157,14 @@
     font-weight: 700;
     cursor: pointer;
   }
+
+  .side-btn .flow-plus {
+    font-size: 16px;
+    font-weight: 400;
+    margin-right: 2px;
+  }
+  .side-btn.pro-link .flow-plus { color: #8e79ef; }
+  .side-btn.con-link .flow-plus { color: #f472b6; }
 
   .side-btn.active {
     background-color: #ffffff;

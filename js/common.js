@@ -1,12 +1,12 @@
 var SPEECHES = {
-  "pro-constructive": { team: "pro", type: "constructive", short: "Aff Constr.", full: "Aff Constructive" },
-  "con-constructive": { team: "con", type: "constructive", short: "Neg Constr.", full: "Neg Constructive" },
-  "pro-rebuttal": { team: "pro", type: "rebuttal", short: "Aff Reb.", full: "Aff Rebuttal" },
-  "con-rebuttal": { team: "con", type: "rebuttal", short: "Neg Reb.", full: "Neg Rebuttal" },
-  "pro-summary": { team: "pro", type: "summary", short: "Aff Sum.", full: "Aff Summary" },
-  "con-summary": { team: "con", type: "summary", short: "Neg Sum.", full: "Neg Summary" },
-  "pro-final": { team: "pro", type: "final", short: "Aff FF", full: "Aff Final Focus" },
-  "con-final": { team: "con", type: "final", short: "Neg FF", full: "Neg Final Focus" }
+  "pro-constructive": { team: "pro", type: "constructive", short: "1AC", code: "1AC", full: "1AC" },
+  "con-constructive": { team: "con", type: "constructive", short: "1NC", code: "1NC", full: "1NC" },
+  "pro-rebuttal": { team: "pro", type: "rebuttal", short: "2AC", code: "2AC", full: "2AC" },
+  "con-rebuttal": { team: "con", type: "rebuttal", short: "2NC/1NR", code: "2NC/1NR", full: "2NC/1NR" },
+  "pro-summary": { team: "pro", type: "summary", short: "1AR", code: "1AR", full: "1AR" },
+  "con-summary": { team: "con", type: "summary", short: "2NR", code: "2NR", full: "2NR" },
+  "pro-final": { team: "pro", type: "final", short: "2AR", code: "2AR", full: "2AR" },
+  "con-final": { team: "con", type: "final", short: "2NR", code: "2NR", full: "2NR" }
 };
 
 var MARKERS = [
@@ -1321,14 +1321,14 @@ function calculateCardHeight(note, heights) {
   var visual = 0;
 
   for (var i = 0; i < lines.length; i++) {
-    visual += Math.max(1, Math.ceil((lines[i].length || 1) / 28));
+    visual += Math.max(1, Math.ceil((lines[i].length || 1) / 22));
   }
 
   if (!visual) {
     visual = 1;
   }
 
-  return Math.max(58, visual * 20 + 38);
+  return Math.max(32, visual * 20 + 12 + (note.marker ? 18 : 0));
 }
 
 function getRepliesInColumn(round, parentId, speechId) {
@@ -1365,7 +1365,7 @@ function calculateSpaceForPoint(round, note, caseSide, heights, saved) {
     for (var i = 0; i < siblings.length; i++) {
       stack += calculateSpaceForPoint(round, siblings[i], caseSide, heights, saved);
       if (i < siblings.length - 1) {
-        stack += 8;
+        stack += 2;
       }
     }
 
@@ -1378,6 +1378,35 @@ function calculateSpaceForPoint(round, note, caseSide, heights, saved) {
   return saved[note.id];
 }
 
+function placePointReplies(round, parentNote, parentTop, caseSide, heights, positions, colTops) {
+  var later = getSpeechesAfter(round, caseSide, parentNote.speechId);
+
+  for (var s = 0; s < later.length; s++) {
+    var speechId = later[s];
+    var siblings = getRepliesInColumn(round, parentNote.id, speechId);
+    if (!siblings.length) continue;
+
+    var curY = Math.max(parentTop, colTops[speechId] || 0);
+
+    for (var i = 0; i < siblings.length; i++) {
+      var sibNote = siblings[i];
+      var sibHeight = calculateCardHeight(sibNote, heights);
+
+      positions[sibNote.id] = {
+        top: curY,
+        height: sibHeight,
+        speechId: speechId
+      };
+
+      colTops[speechId] = curY + sibHeight + 2;
+      var thisTop = curY;
+      curY += sibHeight + 2;
+
+      placePointReplies(round, sibNote, thisTop, caseSide, heights, positions, colTops);
+    }
+  }
+}
+
 function calculatePointPosition(round, note, top, caseSide, heights, saved, positions) {
   var own = calculateCardHeight(note, heights);
   var later = getSpeechesAfter(round, caseSide, note.speechId);
@@ -1385,7 +1414,7 @@ function calculatePointPosition(round, note, top, caseSide, heights, saved, posi
   positions[note.id] = {
     top: top,
     height: own,
-    reserved: saved[note.id],
+    reserved: own,
     speechId: note.speechId
   };
   for (var s = 0; s < later.length; s++) {
@@ -1394,7 +1423,7 @@ function calculatePointPosition(round, note, top, caseSide, heights, saved, posi
 
     for (var i = 0; i < siblings.length; i++) {
       calculatePointPosition(round, siblings[i], y, caseSide, heights, saved, positions);
-      y += saved[siblings[i].id] + 8;
+      y += calculateCardHeight(siblings[i], heights) + 2;
     }
   }
 }
@@ -1414,10 +1443,9 @@ function checkEarlierReplies(round, noteId, speechId, caseSide) {
 }
 
 function calculateCaseFlowLayout(round, caseSide, heights) {
-  var saved = {};
   var positions = {};
   var slots = [];
-  var y = 0;
+  var colTops = {};
 
   positions._threads = [];
 
@@ -1431,16 +1459,29 @@ function calculateCaseFlowLayout(round, caseSide, heights) {
       var note = round.notes[id];
       if (!note) continue;
 
-      calculateSpaceForPoint(round, note, caseSide, heights, saved);
-      calculatePointPosition(round, note, y, caseSide, heights, saved, positions);
-      var threadSpace = saved[note.id];
+      var own = calculateCardHeight(note, heights);
+      var speech = note.speechId;
+      var top = colTops[speech] || 0;
 
-      positions._threads.push({ id: note.id, top: y, reserved: threadSpace });
-      y += threadSpace + 12;
+      positions[note.id] = {
+        top: top,
+        height: own,
+        speechId: speech
+      };
+
+      positions._threads.push({ id: note.id, top: top, reserved: own });
+      colTops[speech] = top + own + 2;
+
+      placePointReplies(round, note, top, caseSide, heights, positions, colTops);
     }
   }
 
   var names = Object.keys(positions);
+  var slotTops = {};
+  var allSpeeches = getSpeechesForSide(round, caseSide);
+  for (var sp = 0; sp < allSpeeches.length; sp++) {
+    slotTops[allSpeeches[sp]] = colTops[allSpeeches[sp]] || 0;
+  }
 
   for (var j = 0; j < names.length; j++) {
     if (names[j] === "_threads") continue;
@@ -1456,19 +1497,27 @@ function calculateCaseFlowLayout(round, caseSide, heights) {
         continue;
       }
 
+      var sTop = Math.max(item.top, slotTops[speechId] || 0);
       slots.push({
         parentId: names[j],
         speechId: speechId,
-        top: item.top
+        top: sTop
       });
+      slotTops[speechId] = sTop + 34;
     }
   }
 
-  var bottom = y;
+  var bottom = 0;
+  for (var p = 0; p < names.length; p++) {
+    if (names[p] === "_threads") continue;
+    var pos = positions[names[p]];
+    if (pos && pos.top + pos.height > bottom) {
+      bottom = pos.top + pos.height;
+    }
+  }
 
   for (var k = 0; k < slots.length; k++) {
     var slot = slots[k];
-
     if (slot.top + 48 > bottom) {
       bottom = slot.top + 48;
     }
@@ -2719,9 +2768,6 @@ function openSimpleTimer(anchor) {
     startBtn.textContent = timers.running ? "Pause" : "Start";
   }
 
-  pop.style.top = "14px";
-  pop.style.right = "18px";
-  pop.style.left = "auto";
   showElement(pop);
   state.popover = pop;
 }
@@ -2846,12 +2892,12 @@ function calculateColumnWidth(pane, count) {
     count = 1;
   }
 
-  var gap = 20;
+  var gap = 0;
   var minWidth = 220;
   var columnsInView = count;
 
   if (window.innerWidth <= 899) {
-    gap = 12;
+    gap = 0;
     minWidth = 148;
     if (count < 2) {
       columnsInView = count;
@@ -3551,7 +3597,47 @@ function registerInstalledApp() {
   navigator.serviceWorker.register("sw.js");
 }
 
+
+function setupDraggableTimer() {
+  var pop = document.getElementById("timer-popover");
+  var handle = document.getElementById("timer-drag-handle");
+  if (!pop || !handle) return;
+
+  var dragging = false;
+  var startX = 0, startY = 0, startLeft = 0, startTop = 0;
+
+  handle.addEventListener("mousedown", function (e) {
+    if (e.target.closest("button, input")) return;
+    dragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    var rect = pop.getBoundingClientRect();
+    startLeft = rect.left;
+    startTop = rect.top;
+    pop.style.bottom = "auto";
+    pop.style.right = "auto";
+    pop.style.left = startLeft + "px";
+    pop.style.top = startTop + "px";
+    e.preventDefault();
+  });
+
+  window.addEventListener("mousemove", function (e) {
+    if (!dragging) return;
+    var dx = e.clientX - startX;
+    var dy = e.clientY - startY;
+    var newLeft = Math.max(10, Math.min(window.innerWidth - pop.offsetWidth - 10, startLeft + dx));
+    var newTop = Math.max(10, Math.min(window.innerHeight - pop.offsetHeight - 10, startTop + dy));
+    pop.style.left = newLeft + "px";
+    pop.style.top = newTop + "px";
+  });
+
+  window.addEventListener("mouseup", function () {
+    dragging = false;
+  });
+}
+
 function startApp() {
+  setupDraggableTimer();
   registerInstalledApp();
   setupInstallButton();
 
