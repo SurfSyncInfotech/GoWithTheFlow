@@ -3080,6 +3080,9 @@ function updateTopBarAndSidebar() {
   updateActiveSideLinks();
   updateRoundHeaderInfo();
   renderContentionJumpLinks();
+  if (typeof renderFlowVersionList === "function") {
+    renderFlowVersionList();
+  }
   var sizes = document.querySelector("[data-field='font-size']");
 
   if (sizes) {

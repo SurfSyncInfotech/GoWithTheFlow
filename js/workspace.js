@@ -50,16 +50,195 @@ function renderWorkspace() {
   }
 }
 
+
+function ensureRoundFlowSheets(round) {
+  if (!round) return;
+  if (!round.flowSheets || !Array.isArray(round.flowSheets) || round.flowSheets.length === 0) {
+    round.flowSheets = [];
+    var proContId = (round.cases && round.cases.pro && round.cases.pro.contentionIds && round.cases.pro.contentionIds[0]) || null;
+    if (!proContId) {
+      var addedPro = addContention(round, "pro", "Arguments");
+      proContId = addedPro.id;
+    }
+    round.flowSheets.push({
+      id: "flow_pro_default",
+      side: "pro",
+      name: "",
+      contentionId: proContId
+    });
+
+    var conContId = (round.cases && round.cases.con && round.cases.con.contentionIds && round.cases.con.contentionIds[0]) || null;
+    if (!conContId) {
+      var addedCon = addContention(round, "con", "Arguments");
+      conContId = addedCon.id;
+    }
+    round.flowSheets.push({
+      id: "flow_con_default",
+      side: "con",
+      name: "",
+      contentionId: conContId
+    });
+  }
+}
+
+function getActiveFlowSheet(round) {
+  if (!round) return null;
+  ensureRoundFlowSheets(round);
+  var sheet = null;
+  if (state.activeSheetId) {
+    for (var i = 0; i < round.flowSheets.length; i++) {
+      if (round.flowSheets[i].id === state.activeSheetId) {
+        sheet = round.flowSheets[i];
+        break;
+      }
+    }
+  }
+  if (!sheet && round.flowSheets.length > 0) {
+    var curSide = state.caseSide || "pro";
+    for (var j = 0; j < round.flowSheets.length; j++) {
+      if (round.flowSheets[j].side === curSide) {
+        sheet = round.flowSheets[j];
+        break;
+      }
+    }
+    if (!sheet) sheet = round.flowSheets[0];
+    state.activeSheetId = sheet.id;
+  }
+  return sheet;
+}
+
+function switchFlowSheet(sheetId) {
+  if (!state.round) return;
+  ensureRoundFlowSheets(state.round);
+  var target = null;
+  for (var i = 0; i < state.round.flowSheets.length; i++) {
+    if (state.round.flowSheets[i].id === sheetId) {
+      target = state.round.flowSheets[i];
+      break;
+    }
+  }
+  if (!target) return;
+  finishTypingUndo();
+  state.activeSheetId = target.id;
+  state.caseSide = target.side;
+  if (!state.round.cases[target.side]) {
+    state.round.cases[target.side] = { contentionIds: [] };
+  }
+  state.round.cases[target.side].contentionIds = [target.contentionId];
+  saveRoundAfterAMoment(false);
+  render();
+}
+
+function addNewFlowSheet(side) {
+  if (!state.round) return;
+  ensureRoundFlowSheets(state.round);
+  saveUndoBeforeChange();
+  var newCont = addContention(state.round, side, "Arguments");
+  var newSheet = {
+    id: createUniqueId("flow"),
+    side: side,
+    name: "",
+    contentionId: newCont.id
+  };
+  state.round.flowSheets.push(newSheet);
+  state.activeSheetId = newSheet.id;
+  state.caseSide = side;
+  if (!state.round.cases[side]) {
+    state.round.cases[side] = { contentionIds: [] };
+  }
+  state.round.cases[side].contentionIds = [newCont.id];
+  saveRoundAfterAMoment(true);
+  render();
+  var nameInput = document.querySelector(".flow-name-input");
+  if (nameInput) {
+    nameInput.focus();
+    nameInput.select();
+  }
+}
+
+function deleteFlowSheet(sheetId) {
+  if (!state.round) return;
+  ensureRoundFlowSheets(state.round);
+  if (state.round.flowSheets.length <= 1) return;
+
+  var idx = -1;
+  for (var i = 0; i < state.round.flowSheets.length; i++) {
+    if (state.round.flowSheets[i].id === sheetId) {
+      idx = i;
+      break;
+    }
+  }
+  if (idx === -1) return;
+
+  saveUndoBeforeChange();
+  var removed = state.round.flowSheets.splice(idx, 1)[0];
+  if (state.activeSheetId === sheetId) {
+    var nextIdx = Math.min(idx, state.round.flowSheets.length - 1);
+    state.activeSheetId = state.round.flowSheets[nextIdx].id;
+    state.caseSide = state.round.flowSheets[nextIdx].side;
+    state.round.cases[state.caseSide].contentionIds = [state.round.flowSheets[nextIdx].contentionId];
+  }
+  saveRoundAfterAMoment(true);
+  render();
+}
+
+function renderFlowVersionList() {
+  var list = document.getElementById("flow-version-list");
+  if (!list || !state.round) return;
+  ensureRoundFlowSheets(state.round);
+  clearElement(list);
+
+  var activeSheet = getActiveFlowSheet(state.round);
+  var activeId = activeSheet ? activeSheet.id : null;
+
+  for (var i = 0; i < state.round.flowSheets.length; i++) {
+    var sheet = state.round.flowSheets[i];
+    var tab = document.createElement("button");
+    tab.type = "button";
+    tab.className = "flow-version-tab " + (sheet.side || "pro") + (sheet.id === activeId ? " active" : "");
+    tab.dataset.action = "switch-flow";
+    tab.dataset.sheetId = sheet.id;
+
+    var titleSpan = document.createElement("span");
+    titleSpan.className = "flow-tab-title";
+    titleSpan.textContent = sheet.name && sheet.name.trim() ? sheet.name.trim() : "no name";
+    tab.appendChild(titleSpan);
+
+    if (state.round.flowSheets.length > 1) {
+      var delBtn = document.createElement("span");
+      delBtn.className = "flow-tab-del";
+      delBtn.dataset.action = "delete-flow";
+      delBtn.dataset.sheetId = sheet.id;
+      delBtn.setAttribute("title", "Delete this flow sheet");
+      delBtn.textContent = "×";
+      tab.appendChild(delBtn);
+    }
+
+    list.appendChild(tab);
+  }
+
+  var nameInput = document.querySelector(".flow-name-input");
+  if (nameInput) {
+    if (activeSheet) {
+      nameInput.value = activeSheet.name || "";
+      nameInput.placeholder = "type name here";
+    }
+  }
+}
+window.renderFlowVersionList = renderFlowVersionList;
+
 function buildFlowSheet() {
   var sheet = document.querySelector(".flow-paper");
   var scroller = document.getElementById("scroll-box");
   if (!sheet || !state.round) return;
 
-  var caseSide = getOpenCaseSide();
+  var activeSheet = getActiveFlowSheet(state.round);
+  var caseSide = activeSheet ? activeSheet.side : getOpenCaseSide();
   var view = getVisibleSpeeches(state.round, caseSide);
   var colWidth = calculateColumnWidth(scroller, view.visible.length);
 
   clearElement(sheet);
+  renderFlowVersionList();
 
   var headerRow = cloneTemplate("head-row");
   var shortNames = { constructive: "Constr.", rebuttal: "Reb.", summary: "Sum.", final: "FF" };
@@ -87,11 +266,16 @@ function buildFlowSheet() {
   var flowGrid = document.createElement("div");
   flowGrid.className = "flow-grid";
 
-  var primaryContentionId = (state.round.cases[caseSide] && state.round.cases[caseSide].contentionIds[0]) || null;
+  var primaryContentionId = (activeSheet && activeSheet.contentionId) || ((state.round.cases[caseSide] && state.round.cases[caseSide].contentionIds[0]) || null);
   if (!primaryContentionId) {
     var added = addContention(state.round, caseSide, "Arguments");
     primaryContentionId = added.id;
+    if (activeSheet) activeSheet.contentionId = added.id;
   }
+  if (!state.round.cases[caseSide]) {
+    state.round.cases[caseSide] = { contentionIds: [] };
+  }
+  state.round.cases[caseSide].contentionIds = [primaryContentionId];
 
   var contention = state.round.contentions[primaryContentionId];
   if (contention && contention.startingPointIds.length === 0 && view.visible.length > 0) {
@@ -847,6 +1031,8 @@ function navigatePointsWithArrows(from, key) {
     } else {
       best.focus();
     }
+  } else if (key === "ArrowRight" && best.classList.contains("reply-slot-btn")) {
+    best.click();
   } else {
     best.focus();
   }
@@ -877,11 +1063,26 @@ document.addEventListener("click", function (event) {
   var action = trigger.dataset.action;
   var id = trigger.dataset.id;
 
-  if (action === "case-pro") {
-    switchDebateSide("pro");
+  if (action === "switch-flow") {
+    var sId = trigger.dataset.sheetId;
+    if (sId) switchFlowSheet(sId);
+
+  } else if (action === "delete-flow") {
+    event.stopPropagation();
+    var sId = trigger.dataset.sheetId;
+    if (sId) deleteFlowSheet(sId);
+
+  } else if (action === "add-flow-pro") {
+    addNewFlowSheet("pro");
+
+  } else if (action === "add-flow-con") {
+    addNewFlowSheet("con");
+
+  } else if (action === "case-pro") {
+    addNewFlowSheet("pro");
 
   } else if (action === "case-con") {
-    switchDebateSide("con");
+    addNewFlowSheet("con");
 
   } else if (action === "jump-link") {
     var contention = state.round.contentions[id];
@@ -1184,6 +1385,38 @@ document.addEventListener("compositionend", function () { state.composing = fals
 document.addEventListener("input", function (event) {
   var target = event.target;
   if (!state.round) return;
+
+  if (target.dataset.field === "flow-name-input") {
+    var activeSheet = getActiveFlowSheet(state.round);
+    if (activeSheet) {
+      activeSheet.name = target.value;
+      if (state.round.contentions[activeSheet.contentionId]) {
+        state.round.contentions[activeSheet.contentionId].name = target.value;
+      }
+      saveRoundAfterAMoment(false);
+      var activeTab = document.querySelector('.flow-version-tab.active .flow-tab-title');
+      if (activeTab) {
+        activeTab.textContent = target.value.trim() || "no name";
+      }
+    }
+    return;
+  }
+
+  if (target.dataset.field === "flow-name-input") {
+    var activeSheet = getActiveFlowSheet(state.round);
+    if (activeSheet) {
+      activeSheet.name = target.value;
+      if (state.round.contentions[activeSheet.contentionId]) {
+        state.round.contentions[activeSheet.contentionId].name = target.value;
+      }
+      saveRoundAfterAMoment(false);
+      var activeTab = document.querySelector('.flow-version-tab.active .flow-tab-title');
+      if (activeTab) {
+        activeTab.textContent = target.value.trim() || "no name";
+      }
+    }
+    return;
+  }
 
   if (target.dataset.field === "title-input") {
     state.round.title = target.value;

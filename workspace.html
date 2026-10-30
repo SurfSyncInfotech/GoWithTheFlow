@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="css/page.css?v=32">
   <link rel="stylesheet" href="css/buttons.css?v=31">
   <link rel="stylesheet" href="css/home.css?v=31">
-  <link rel="stylesheet" href="css/sidebar.css?v=34">
+  <link rel="stylesheet" href="css/sidebar.css?v=35">
   <link rel="stylesheet" href="css/workspace.css?v=81">
   <link rel="stylesheet" href="css/evidence.css?v=32">
   <link rel="stylesheet" href="css/popups.css?v=35">
@@ -32,9 +32,10 @@
         <span class="logo-text">Go With the Flow</span>
       </a>
       <button type="button" class="btn back-btn" data-action="home">Back to rounds</button>
+      <div id="flow-version-list" class="flow-version-list"></div>
       <div id="case-links">
-        <button type="button" class="menu-link pro-link" id="link-pro" data-action="case-pro"><span class="flow-plus">+</span> aff</button>
-        <button type="button" class="menu-link con-link" id="link-con" data-action="case-con"><span class="flow-plus">+</span> neg</button>
+        <button type="button" class="menu-link pro-link" id="link-pro" data-action="add-flow-pro"><span class="flow-plus">+</span> aff</button>
+        <button type="button" class="menu-link con-link" id="link-con" data-action="add-flow-con"><span class="flow-plus">+</span> neg</button>
       </div>
       <p class="gray-text hide" id="preflow-label"></p>
       <div class="push-down"></div>
@@ -70,6 +71,7 @@
       </div>
 
       <div class="tool-bar">
+        <input type="text" class="flow-name-input" data-field="flow-name-input" placeholder="type name here" title="Flow sheet name">
         <button type="button" class="btn tool-btn" data-action="undo">Undo</button>
         <button type="button" class="btn tool-btn" data-action="redo">Redo</button>
         <button type="button" class="btn tool-btn bold-btn" data-action="make-bold">Bold</button>
@@ -292,7 +294,7 @@
   </div>
 
   <script src="js/html2pdf.bundle.min.js"></script>
-  <script src="js/common.js?v=80"></script>
-  <script src="js/workspace.js?v=79"></script>
+  <script src="js/common.js?v=81"></script>
+  <script src="js/workspace.js?v=80"></script>
 </body>
 </html>
