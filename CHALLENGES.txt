@@ -1,0 +1,42 @@
+Key Challenges Faced in Go With The Flow
+=========================================
+
+1. Column Alignment in Debate Flows
+- The issue: Adding multiple reply boxes in column 2 pushed column 1 down, breaking horizontal alignment between arguments and their replies.
+- The fix: Used a custom layout function (`calculateCaseFlowLayout`) with absolute coordinates (`top` and `height`) so replies stay aligned with their parent card without shifting neighboring columns.
+
+2. Columns Cutting Off Mid-Screen
+- The issue: Columns with fewer notes stopped halfway down the page, leaving an empty white space at the bottom.
+- The fix: Added `min-height: calc(100vh - 120px)` and flex properties so the purple and pink column backgrounds always run all the way to the bottom.
+
+3. Arrow Key Navigation in Text Boxes
+- The issue: Inside editable cards, arrow keys moved the text cursor instead of jumping between cards.
+- The fix: Checked if the cursor is at the very beginning or end of the text before triggering navigation. Pressing Right Arrow on an argument into an empty space also auto-creates the reply box immediately.
+
+4. Browser Cache Blocking Updates
+- The issue: Because this is an offline PWA, the Service Worker (`sw.js`) kept serving old cached CSS and JS files instead of fresh code.
+- The fix: Added version queries (`?v=...`) to all HTML asset tags and bumped `CACHE_NAME` in `sw.js` on every release.
+
+5. Mobile Bottom Buttons Crashing Together
+- The issue: On mobile screens, the toolbar buttons squished into zero width, causing text to overlap into "UndoRedoBoldHighligl".
+- The fix: Set the toolbar to smooth horizontal scroll (`overflow-x: auto`), prevented buttons from shrinking (`flex: 0 0 auto`), and gave each button a clean separate pill border.
+
+6. Mobile Column Headers Out of Line
+- The issue: An old mobile CSS rule added a 12px gap between header chips, causing headers to drift out of sync with columns below.
+- The fix: Removed the 12px gap on mobile so headers and column bodies align with zero drift.
+
+7. Adding Multiple Flow Sheets (Tabs)
+- The issue: Needed multiple Aff and Neg flow sheets with custom names without corrupting rounds already saved in localStorage.
+- The fix: Added a migration helper (`ensureRoundFlowSheets`) that safely creates tabs for older rounds on the fly without losing any data.
+
+8. Timer Popup Covering Column Names
+- The issue: The timer dropped down from the header and covered the `2NC/1NR` column.
+- The fix: Converted the timer into a floating card at the bottom right that users can drag anywhere on screen.
+
+9. Cluttered Cards
+- The issue: Showing `+`, `ev`, and `···` buttons on every single box made the screen look noisy.
+- The fix: Hid the buttons by default and only reveal them when hovering or typing inside that card.
+
+10. Smooth Auto-Saving Without Lag
+- The issue: Writing to localStorage on every single keystroke made the browser lag when typing fast.
+- The fix: Added a 300ms debounce timer so it waits for a brief pause in typing before writing to storage.

@@ -11,13 +11,13 @@
   <link rel="apple-touch-icon" href="images/icon-192.png">
   <title>Preflows — Go With the Flow</title>
   <link rel="stylesheet" href="css/page.css?v=32">
-  <link rel="stylesheet" href="css/buttons.css?v=31">
-  <link rel="stylesheet" href="css/home.css?v=31">
+  <link rel="stylesheet" href="css/buttons.css?v=35">
+  <link rel="stylesheet" href="css/home.css?v=35">
   <link rel="stylesheet" href="css/sidebar.css?v=31">
   <link rel="stylesheet" href="css/workspace.css?v=38">
   <link rel="stylesheet" href="css/evidence.css?v=32">
-  <link rel="stylesheet" href="css/popups.css?v=31">
-  <link rel="stylesheet" href="css/phone.css?v=39">
+  <link rel="stylesheet" href="css/popups.css?v=38">
+  <link rel="stylesheet" href="css/phone.css?v=70">
   <link rel="stylesheet" href="css/print.css?v=31">
 </head>
 <body class="page" data-page="preflows">
@@ -30,7 +30,8 @@
         <span class="logo-text">Go With the Flow</span>
       </a>
       <div class="top-menu">
-        <a class="btn plain" href="preflows.html">Preflows</a>
+        <button type="button" class="btn plain" data-action="open-help">Help</button>
+        <a class="btn plain" href="index.html">Rounds</a>
       </div>
     </div>
 
@@ -87,6 +88,153 @@
     </div>
   </div>
 
+  <div id="help-box" class="popup-cover hide">
+    <div class="popup help-popup">
+      <div class="help-header-row">
+        <div class="help-header-left">
+          <div class="help-icon-circle">
+            <svg class="help-svg-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+          </div>
+          <div>
+            <h2 class="help-title">How to use Go With the Flow</h2>
+            <p class="help-subtitle">Debate flowing guide, speeches & keyboard shortcuts</p>
+          </div>
+        </div>
+        <button type="button" class="close-btn help-close-btn" data-action="close-dialog" aria-label="Close">✕</button>
+      </div>
+
+      <div class="popup-body help-body">
+        <!-- Section 1: Overview & Getting Started -->
+        <div class="help-card">
+          <div class="help-card-tag">
+            <svg class="tag-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg>
+            Getting Started
+          </div>
+          <p class="help-card-text">
+            <strong>Flowing</strong> is how debaters track arguments across speeches. It shows which points were answered and which were dropped.
+          </p>
+          <div class="help-bullets-list">
+            <div class="help-bullet-item">
+              <span class="bullet-dot"></span>
+              <div><strong>Start a round:</strong> Click <span class="help-chip">New round</span>, type your debate topic or debater names, and begin flowing.</div>
+            </div>
+            <div class="help-bullet-item">
+              <span class="bullet-dot"></span>
+              <div><strong>100% Offline:</strong> Everything auto-saves in your browser instantly. No account, sign-in, or internet connection needed.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: Speech Structure & Pipeline -->
+        <div class="help-card">
+          <div class="help-card-tag">
+            <svg class="tag-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            Speeches & Flow Columns
+          </div>
+          <p class="help-card-text">Speeches advance horizontally from left to right in alternating constructive and rebuttal rounds:</p>
+          
+          <div class="help-speeches-track">
+            <span class="speech-pill aff" title="1st Affirmative Constructive">1AC</span>
+            <span class="speech-arrow">→</span>
+            <span class="speech-pill neg" title="1st Negative Constructive">1NC</span>
+            <span class="speech-arrow">→</span>
+            <span class="speech-pill aff" title="2nd Affirmative Constructive">2AC</span>
+            <span class="speech-arrow">→</span>
+            <span class="speech-pill neg" title="2nd Negative Constructive / 1st Negative Rebuttal">2NC/1NR</span>
+            <span class="speech-arrow">→</span>
+            <span class="speech-pill aff" title="1st Affirmative Rebuttal">1AR</span>
+            <span class="speech-arrow">→</span>
+            <span class="speech-pill neg" title="2nd Negative Rebuttal">2NR</span>
+            <span class="speech-arrow">→</span>
+            <span class="speech-pill aff" title="2nd Affirmative Rebuttal">2AR</span>
+          </div>
+
+          <div class="help-legend-row">
+            <span class="legend-badge aff">Affirmative (Purple)</span>
+            <span class="legend-desc">Starts round in 1AC, defends contentions</span>
+          </div>
+          <div class="help-legend-row">
+            <span class="legend-badge neg">Negative (Pink)</span>
+            <span class="legend-desc">Counters in 1NC, runs off-case arguments</span>
+          </div>
+        </div>
+
+        <!-- Section 3: Keyboard Shortcuts -->
+        <div class="help-card">
+          <div class="help-card-tag">
+            <svg class="tag-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect><line x1="6" y1="8" x2="6.01" y2="8"></line><line x1="10" y1="8" x2="10.01" y2="8"></line><line x1="14" y1="8" x2="14.01" y2="8"></line><line x1="18" y1="8" x2="18.01" y2="8"></line><line x1="8" y1="12" x2="8.01" y2="12"></line><line x1="12" y1="12" x2="12.01" y2="12"></line><line x1="16" y1="12" x2="16.01" y2="12"></line><line x1="7" y1="16" x2="17" y2="16"></line></svg>
+            Speed Flowing & Keyboard Shortcuts
+          </div>
+          <p class="help-card-text">Flow fast during rapid speeches without touching the mouse:</p>
+          <div class="help-shortcuts-grid">
+            <div class="shortcut-item">
+              <span class="shortcut-desc">New point underneath</span>
+              <kbd class="help-kbd">Enter</kbd>
+            </div>
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Reply in next speech column</span>
+              <span class="kbd-pair"><kbd class="help-kbd">→</kbd> <small>or</small> <kbd class="help-kbd">Shift+Enter</kbd></span>
+            </div>
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Move between argument cards</span>
+              <span class="kbd-pair"><kbd class="help-kbd">↑</kbd> <kbd class="help-kbd">↓</kbd> <kbd class="help-kbd">←</kbd> <kbd class="help-kbd">→</kbd></span>
+            </div>
+            <div class="shortcut-item">
+              <span class="shortcut-desc">Unfocus or close modal</span>
+              <kbd class="help-kbd">Esc</kbd>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 4: Features & Tools -->
+        <div class="help-card">
+          <div class="help-card-tag">
+            <svg class="tag-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            Features & Useful Tools
+          </div>
+          <div class="help-tools-grid">
+            <div class="tool-item">
+              <strong>
+                <svg class="inline-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                Multiple Flow Sheets:
+              </strong>
+              <p>Click <span class="help-chip-sm">+ aff</span> or <span class="help-chip-sm">+ neg</span> in the left sidebar to add extra flow sheets for advantages or off-case positions.</p>
+            </div>
+            <div class="tool-item">
+              <strong>
+                <svg class="inline-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                Floating Debate Timer:
+              </strong>
+              <p>Click <span class="help-chip-sm">Timer</span> in the top bar. Drag it anywhere across the screen—it stays visible and running while you flow.</p>
+            </div>
+            <div class="tool-item">
+              <strong>
+                <svg class="inline-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                Evidence Citations:
+              </strong>
+              <p>Click <span class="help-chip-sm">ev</span> on any card to attach evidence excerpts, author credentials, and citations directly to your argument.</p>
+            </div>
+            <div class="tool-item">
+              <strong>
+                <svg class="inline-svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Backup & Export:
+              </strong>
+              <p>Click <span class="help-chip-sm">···</span> in the top right to download a JSON backup file or generate a clean printable PDF flow sheet.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="popup-buttons help-footer">
+        <span class="help-footer-hint">Tip: Click outside or press <strong>Esc</strong> to close</span>
+        <button type="button" class="btn main" data-action="close-dialog">Got it</button>
+      </div>
+    </div>
+  </div>
+
   <div id="confirm-box" class="popup-cover hide">
     <div class="popup">
       <h2 id="confirm-title"></h2>
@@ -109,7 +257,7 @@
     </div>
   </div>
 
-  <script src="js/common.js?v=70"></script>
+  <script src="js/common.js?v=82"></script>
   <script src="js/preflows.js?v=40"></script>
 </body>
 </html>

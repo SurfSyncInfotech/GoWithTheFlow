@@ -92,7 +92,7 @@
 
   .page-body,
   .simple-page {
-    padding: 20px 16px 96px;
+    padding: 8px 16px 96px;
   }
 
   .page-body h1,
@@ -467,6 +467,35 @@
     flex-wrap: wrap;
   }
 
+
+  /* Responsive Help Modal on Mobile */
+  .help-popup {
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: 92vh !important;
+    border-radius: 20px 20px 0 0 !important;
+    padding: 16px 14px 14px !important;
+  }
+
+  .help-shortcuts-grid,
+  .help-tools-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .help-footer {
+    flex-direction: column-reverse !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+  }
+
+  .help-footer .btn {
+    width: 100% !important;
+  }
+
+  .help-footer-hint {
+    text-align: center !important;
+  }
+
   .title-note,
   .save-line {
     white-space: normal;
@@ -487,7 +516,10 @@
   }
 
   .empty-box {
-    padding: 28px 16px;
+    padding: 22px 16px 28px;
+    margin-top: 0;
+    border: 1px dashed #e5e1e6;
+    border-radius: 16px;
   }
 
   .empty-box h1 {

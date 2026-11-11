@@ -2742,8 +2742,8 @@ function openSimpleTimer(anchor) {
   var pop = document.getElementById("timer-popover");
   if (!pop) return;
 
-  if (state.popover === pop) {
-    closeDropdownMenu();
+  if (!pop.classList.contains("hide")) {
+    hideElement(pop);
     return;
   }
 
@@ -2769,7 +2769,6 @@ function openSimpleTimer(anchor) {
   }
 
   showElement(pop);
-  state.popover = pop;
 }
 
 function startOrPauseTimer() {
@@ -3479,6 +3478,15 @@ document.addEventListener("click", function (event) {
 
   } else if (action === "close-dialog") {
     closePopups();
+
+  } else if (action === "open-help") {
+    closeDropdownMenu();
+    var helpBox = document.getElementById("help-box");
+    if (helpBox) showElement(helpBox);
+
+  } else if (action === "close-timer") {
+    var timerPop = document.getElementById("timer-popover");
+    if (timerPop) hideElement(timerPop);
 
   } else if (action === "timer-toggle") {
     openSimpleTimer(trigger);

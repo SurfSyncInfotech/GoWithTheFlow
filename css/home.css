@@ -22,7 +22,38 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+}
+
+.top-menu .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  min-height: 32px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: #ffffff;
+  color: #4b5563;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.top-menu .btn:hover {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+  color: #121326;
+  text-decoration: none !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.top-menu .btn:active {
+  background-color: #f1f5f9;
+  transform: translateY(1px);
 }
 
 .page-body {
@@ -30,7 +61,7 @@
   width: 100%;
   max-width: 940px;
   margin: 0 auto;
-  padding: 32px 24px 64px;
+  padding: 8px 24px 64px;
   flex: 1;
 }
 
@@ -46,6 +77,7 @@
   justify-content: space-between;
   align-items: flex-end;
   gap: 16px;
+  margin-top: 16px;
   margin-bottom: 20px;
 }
 
@@ -123,7 +155,7 @@
   display: flex;
   justify-content: center;
   gap: 8px;
-  margin: 0 auto 18px;
+  margin: 0 auto 12px;
 }
 
 .sample-bar {
@@ -151,8 +183,8 @@
 
 .empty-box {
   text-align: center;
-  padding: 48px 24px;
-  margin-top: 16px;
+  padding: 28px 24px 32px;
+  margin-top: 0;
   background-color: #ffffff;
   border: 1px dashed #e5e1e6;
   border-radius: 16px;
@@ -168,4 +200,39 @@
   max-width: 460px;
   margin: 0 auto 20px;
   color: #676c7f;
+}
+
+
+/* Quick Onboarding Guide Card */
+.quick-guide-card {
+  text-align: left;
+  max-width: 480px;
+  margin: 20px auto 0;
+  padding: 14px 18px;
+  background-color: #faf8fc;
+  border: 1px solid #e9e2f1;
+  border-radius: 12px;
+}
+
+.quick-guide-card h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #4c1d95;
+}
+
+.quick-guide-card ol {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #4b5563;
+}
+
+.quick-guide-card li {
+  margin-bottom: 4px;
+}
+
+.quick-guide-card strong {
+  color: #1f2937;
 }
