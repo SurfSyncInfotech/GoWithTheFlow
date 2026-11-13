@@ -248,6 +248,20 @@ function displayRoundsList() {
 }
 
 window.renderCurrentPage = function () {
+  var sharedPayload = getSharedDataFromUrl();
+  if (sharedPayload) {
+    var importedRound = deserializeRoundFromUrl(sharedPayload);
+    if (importedRound && importedRound.title) {
+      if (!importedRound.id || db.rounds[importedRound.id]) {
+        importedRound.id = createUniqueId("round");
+      }
+      db.rounds[importedRound.id] = importedRound;
+      db.lastRoundId = importedRound.id;
+      saveToLocalStorage(db);
+      openRound(importedRound.id);
+      return;
+    }
+  }
   displayRoundsList();
 };
 
@@ -264,6 +278,12 @@ document.addEventListener("click", function (event) {
 
   } else if (action === "open-round") {
     openRound(id);
+
+  } else if (action === "share-round") {
+    var shareTargetRound = db.rounds[id];
+    if (shareTargetRound) {
+      openShareRoundModal(shareTargetRound);
+    }
 
   } else if (action === "create-round") {
     createRoundFromForm();

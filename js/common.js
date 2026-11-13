@@ -1823,6 +1823,118 @@ function downloadRoundAsJson(round) {
   }, 1000);
 }
 
+function serializeRoundToUrl(round) {
+  try {
+    var json = JSON.stringify(round);
+    var bytes = new TextEncoder().encode(json);
+    var bin = "";
+    for (var i = 0; i < bytes.length; i++) {
+      bin += String.fromCharCode(bytes[i]);
+    }
+    return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  } catch (err) {
+    console.error("Failed to serialize round:", err);
+    return "";
+  }
+}
+
+function deserializeRoundFromUrl(hashStr) {
+  try {
+    var b64 = hashStr.replace(/-/g, "+").replace(/_/g, "/");
+    while (b64.length % 4) {
+      b64 += "=";
+    }
+    var bin = atob(b64);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) {
+      bytes[i] = bin.charCodeAt(i);
+    }
+    var json = new TextDecoder().decode(bytes);
+    return JSON.parse(json);
+  } catch (err) {
+    console.error("Failed to deserialize round:", err);
+    return null;
+  }
+}
+
+function getSharedDataFromUrl() {
+  var full = (window.location.hash || "") + "&" + (window.location.search || "");
+  var match = full.match(/[#&?](?:data|share)=([^&]+)/);
+  if (match && match[1]) {
+    return decodeURIComponent(match[1]);
+  }
+  return null;
+}
+
+function getRoundShareUrl(round) {
+  if (!round) return "";
+  var base = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, "/");
+  var slug = encodeURIComponent((round.title || "round").trim().replace(/[\s\/?#]+/g, "-"));
+  var data = serializeRoundToUrl(round);
+  return base + "workspace.html#round=" + slug + "&data=" + data;
+}
+
+function openShareRoundModal(round) {
+  if (!round) return;
+  var shareBox = document.getElementById("share-box");
+  if (!shareBox) return;
+
+  var titleEl = document.getElementById("share-round-title");
+  if (titleEl) {
+    titleEl.textContent = 'Anyone with this link can view and edit "' + (round.title || "Round") + '"';
+  }
+
+  var urlInput = document.getElementById("share-url-input");
+  var shareUrl = getRoundShareUrl(round);
+  if (urlInput) {
+    urlInput.value = shareUrl;
+  }
+
+  var statusEl = document.getElementById("share-copy-status");
+  if (statusEl) {
+    statusEl.classList.add("hide");
+  }
+
+  shareBox.dataset.shareUrl = shareUrl;
+  shareBox.dataset.roundTitle = round.title || "Debate Round";
+
+  showElement(shareBox);
+}
+
+function copyShareUrlToClipboard() {
+  var urlInput = document.getElementById("share-url-input");
+  if (!urlInput) return;
+  urlInput.select();
+  urlInput.setSelectionRange(0, 99999);
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(urlInput.value);
+  } else {
+    document.execCommand("copy");
+  }
+
+  var statusEl = document.getElementById("share-copy-status");
+  if (statusEl) {
+    statusEl.classList.remove("hide");
+    setTimeout(function () {
+      statusEl.classList.add("hide");
+    }, 3000);
+  }
+}
+
+function openWhatsAppShare() {
+  var shareBox = document.getElementById("share-box");
+  var shareUrl = shareBox ? shareBox.dataset.shareUrl : "";
+  var title = shareBox ? shareBox.dataset.roundTitle : "Debate round";
+  if (!shareUrl) {
+    var urlInput = document.getElementById("share-url-input");
+    if (urlInput) shareUrl = urlInput.value;
+  }
+  var text = "Here is the debate flow for *" + title + "*:\n" + shareUrl;
+  var waUrl = "https://api.whatsapp.com/send?text=" + encodeURIComponent(text);
+  window.open(waUrl, "_blank");
+}
+
 var SAFE_TAGS = {
   B: true, STRONG: true, I: true, EM: true, U: true, S: true, STRIKE: true, DEL: true,
   BR: true, P: true, DIV: true, SPAN: true, UL: true, OL: true, LI: true, A: true,
@@ -2515,6 +2627,26 @@ function loadOpenRound() {
     sessionStorage.removeItem("tourReturn");
   } catch (error) {}
   state.demo = false;
+
+  // Check if opening via a shared link
+  var sharedPayload = getSharedDataFromUrl();
+  if (sharedPayload) {
+    var importedRound = deserializeRoundFromUrl(sharedPayload);
+    if (importedRound && importedRound.title) {
+      if (!importedRound.id || db.rounds[importedRound.id]) {
+        importedRound.id = createUniqueId("round");
+      }
+      db.rounds[importedRound.id] = importedRound;
+      db.lastRoundId = importedRound.id;
+      saveToLocalStorage(db);
+      state.round = importedRound;
+      rememberOpenRound();
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, "", "workspace.html");
+      }
+      return true;
+    }
+  }
 
   var id = null;
   var isPre = false;
@@ -3478,6 +3610,18 @@ document.addEventListener("click", function (event) {
 
   } else if (action === "close-dialog") {
     closePopups();
+
+  } else if (action === "share-round") {
+    closeDropdownMenu();
+    var rId = trigger.dataset.id || (trigger.closest("[data-id]") ? trigger.closest("[data-id]").dataset.id : null);
+    var targetRound = (rId && db.rounds[rId]) ? db.rounds[rId] : state.round;
+    openShareRoundModal(targetRound);
+
+  } else if (action === "copy-share-url") {
+    copyShareUrlToClipboard();
+
+  } else if (action === "open-whatsapp-share") {
+    openWhatsAppShare();
 
   } else if (action === "open-help") {
     closeDropdownMenu();

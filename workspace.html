@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="css/sidebar.css?v=35">
   <link rel="stylesheet" href="css/workspace.css?v=81">
   <link rel="stylesheet" href="css/evidence.css?v=32">
-  <link rel="stylesheet" href="css/popups.css?v=38">
+  <link rel="stylesheet" href="css/popups.css?v=39">
   <link rel="stylesheet" href="css/phone.css?v=70">
   <link rel="stylesheet" href="css/print.css?v=70">
 </head>
@@ -60,6 +60,7 @@
             <span class="save-text" id="save-text">Saved in this browser</span>
           </div>
           <button type="button" class="btn help-btn" data-action="open-help" title="Help & guide">Help</button>
+          <button type="button" class="btn share-btn" data-action="share-round" title="Share round link">Share</button>
           <button type="button" class="timer-btn" id="timer-btn" data-action="timer-toggle">Timer</button>
           <button type="button" class="btn dots-btn" id="dots-btn" data-action="round-menu">···</button>
           <button type="button" class="btn dots-btn hide" id="opening-menu-btn" data-action="opening-menu">···</button>
@@ -106,6 +107,8 @@
   </div>
 
   <div id="round-menu" class="drop-menu hide">
+    <button type="button" data-action="share-round">Share round</button>
+    <button type="button" data-action="export">Export JSON backup</button>
     <button type="button" data-action="edit-details">Edit details</button>
     <button type="button" data-action="home">Back to rounds</button>
   </div>
@@ -288,6 +291,51 @@
     </div>
   </div>
 
+  <div id="share-box" class="popup-cover hide">
+    <div class="popup share-popup">
+      <div class="help-header-row">
+        <div class="help-header-left">
+          <div class="help-icon-circle">
+            <svg class="help-svg-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </svg>
+          </div>
+          <div>
+            <h2 class="help-title">Share debate round</h2>
+            <p class="help-subtitle" id="share-round-title">Anyone with this link can view and edit this round</p>
+          </div>
+        </div>
+        <button type="button" class="close-btn help-close-btn" data-action="close-dialog" aria-label="Close">✕</button>
+      </div>
+
+      <div class="popup-body">
+        <label class="form-line">
+          <span>Shareable link</span>
+          <div class="share-input-row">
+            <input type="text" id="share-url-input" readonly spellcheck="false" class="share-url-field">
+            <button type="button" class="btn main" id="copy-share-btn" data-action="copy-share-url">Copy</button>
+          </div>
+        </label>
+        <p class="share-copy-status hide" id="share-copy-status">Link copied to clipboard!</p>
+        <div class="share-actions-row">
+          <button type="button" class="btn whatsapp-btn" data-action="open-whatsapp-share">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm0 18.15c-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.15 8.15 0 0 1-1.25-4.38c0-4.5 3.66-8.16 8.16-8.16 2.18 0 4.23.85 5.77 2.39a8.1 8.1 0 0 1 2.39 5.77c0 4.5-3.66 8.16-8.16 8.16zm4.47-6.11c-.25-.12-1.47-.72-1.7-.8-.23-.08-.39-.12-.56.12-.17.25-.64.8-.79.97-.14.17-.29.2-.54.07-.25-.12-1.05-.39-2-1.23-.74-.66-1.24-1.47-1.39-1.72-.14-.25-.02-.38.11-.5.11-.11.25-.29.37-.43.12-.14.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.34-.76-1.84-.2-.48-.4-.42-.56-.43h-.47c-.17 0-.43.06-.66.31-.22.25-.86.84-.86 2.05s.88 2.38 1 2.54c.12.17 1.73 2.64 4.19 3.7.59.25 1.05.41 1.41.52.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.14-1.18-.06-.12-.23-.19-.48-.31z"/>
+            </svg>
+            Share via WhatsApp
+          </button>
+        </div>
+      </div>
+      <div class="popup-buttons">
+        <button type="button" class="btn" data-action="close-dialog">Done</button>
+      </div>
+    </div>
+  </div>
+
     <div id="edit-box" class="popup-cover hide">
     <div class="popup">
       <h2>Edit details</h2>
@@ -442,7 +490,7 @@
   </div>
 
   <script src="js/html2pdf.bundle.min.js"></script>
-  <script src="js/common.js?v=82"></script>
+  <script src="js/common.js?v=83"></script>
   <script src="js/workspace.js?v=80"></script>
 </body>
 </html>

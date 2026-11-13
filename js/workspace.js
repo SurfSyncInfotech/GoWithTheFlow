@@ -1119,6 +1119,10 @@ document.addEventListener("click", function (event) {
   } else if (action === "round-menu") {
     showDropdownMenu(trigger, document.getElementById("round-menu"));
 
+  } else if (action === "share-round") {
+    closeDropdownMenu();
+    openShareRoundModal(state.round || db.rounds[id]);
+
   } else if (action === "opening-menu") {
     showDropdownMenu(trigger, document.getElementById("opening-menu"));
 
