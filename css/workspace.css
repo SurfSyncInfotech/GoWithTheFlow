@@ -637,34 +637,34 @@
   position: absolute;
   left: 4px;
   width: calc(100% - 8px);
-  height: 32px;
+  min-height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px dashed transparent;
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
-  border-radius: 4px;
-  background-color: transparent;
-  color: transparent;
-  font-size: 20px;
-  font-weight: 300;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: 6px;
+  background-color: rgba(255, 255, 255, 0.75);
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
-  padding: 0;
-  transition: all 0.15s;
+  padding: 4px 8px;
+  transition: all 0.15s ease-in-out;
 }
 
 .reply-slot-btn:hover,
 .reply-slot-btn:focus {
-  background-color: rgba(255, 255, 255, 0.85);
-  border: 1px dashed #8e79ef;
-  color: #8e79ef;
+  background-color: #ffffff;
+  border: 1.5px dashed #8e79ef;
+  color: #7c3aed;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   outline: none;
 }
 
 .speech-column.con .reply-slot-btn:hover,
 .speech-column.con .reply-slot-btn:focus {
-  border-color: #f472b6;
-  color: #f472b6;
+  border-color: #ec4899;
+  color: #db2777;
 }
 
 .col-add-btn {

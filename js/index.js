@@ -102,7 +102,7 @@ function openRenameModal(roundId) {
 
   box.dataset.id = roundId;
 
-  document.getElementById("rename-title").value = round.title || "";
+  document.getElementById("rename-title").value = round.topic || round.title || "";
   document.getElementById("rename-tournament").value = round.tournament || "";
   document.getElementById("rename-round-label").value = round.roundLabel || "";
   document.getElementById("rename-opponent").value = round.opponent || "";
@@ -198,7 +198,10 @@ function displayRoundsList() {
     var singleRound = sortedRounds[j];
     var card = cloneTemplate("sample-round");
 
-    card.querySelector(".card-name").textContent = singleRound.title;
+    var titleEl = card.querySelector(".card-name");
+    titleEl.textContent = singleRound.title;
+    titleEl.dataset.id = singleRound.id;
+    titleEl.dataset.action = "open-round";
 
     var sideTag = card.querySelector(".side-tag");
     var sideName = formatSideName(singleRound.yourSide);
@@ -247,6 +250,64 @@ function displayRoundsList() {
   }
 }
 
+var CAROUSEL_STEPS = [
+  {
+    caption: "Write a point",
+    svg: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>'
+  },
+  {
+    caption: "Reply in next column",
+    svg: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>'
+  },
+  {
+    caption: "Auto-saved offline",
+    svg: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>'
+  }
+];
+
+var currentCarouselStep = 0;
+
+function updateStepCarousel(stepIndex) {
+  currentCarouselStep = (stepIndex + CAROUSEL_STEPS.length) % CAROUSEL_STEPS.length;
+  var step = CAROUSEL_STEPS[currentCarouselStep];
+  var iconEl = document.getElementById("carousel-icon");
+  var captionEl = document.getElementById("carousel-caption");
+  var dotsContainer = document.getElementById("carousel-dots");
+  if (iconEl) iconEl.innerHTML = step.svg;
+  if (captionEl) captionEl.textContent = step.caption;
+  if (dotsContainer) {
+    var dots = dotsContainer.querySelectorAll(".dot");
+    for (var i = 0; i < dots.length; i++) {
+      if (i === currentCarouselStep) {
+        dots[i].classList.add("active");
+      } else {
+        dots[i].classList.remove("active");
+      }
+    }
+  }
+}
+
+function initStepCarousel() {
+  var nextBtn = document.getElementById("carousel-next-btn");
+  if (nextBtn && !nextBtn._bound) {
+    nextBtn._bound = true;
+    nextBtn.addEventListener("click", function () {
+      updateStepCarousel(currentCarouselStep + 1);
+    });
+  }
+  var dotsContainer = document.getElementById("carousel-dots");
+  if (dotsContainer && !dotsContainer._bound) {
+    dotsContainer._bound = true;
+    dotsContainer.addEventListener("click", function (e) {
+      var dot = e.target.closest(".dot");
+      if (dot && dot.dataset.index !== undefined) {
+        updateStepCarousel(parseInt(dot.dataset.index, 10));
+      }
+    });
+  }
+  updateStepCarousel(currentCarouselStep);
+}
+
 window.renderCurrentPage = function () {
   var sharedPayload = getSharedDataFromUrl();
   if (sharedPayload) {
@@ -263,6 +324,7 @@ window.renderCurrentPage = function () {
     }
   }
   displayRoundsList();
+  initStepCarousel();
 };
 
 document.addEventListener("click", function (event) {
@@ -303,6 +365,7 @@ document.addEventListener("click", function (event) {
       }
 
       existingRound.title = nextTitle;
+      existingRound.topic = nextTitle;
       existingRound.tournament = document.getElementById("rename-tournament").value.trim();
       existingRound.roundLabel = document.getElementById("rename-round-label").value.trim();
       existingRound.opponent = document.getElementById("rename-opponent").value.trim();

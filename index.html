@@ -12,7 +12,7 @@
   <title>Go With the Flow</title>
   <link rel="stylesheet" href="css/page.css?v=32">
   <link rel="stylesheet" href="css/buttons.css?v=35">
-  <link rel="stylesheet" href="css/home.css?v=35">
+  <link rel="stylesheet" href="css/home.css?v=36">
   <link rel="stylesheet" href="css/sidebar.css?v=31">
   <link rel="stylesheet" href="css/workspace.css?v=38">
   <link rel="stylesheet" href="css/evidence.css?v=32">
@@ -47,13 +47,28 @@
         <p class="gray-text">Rounds save in this browser. Export a copy to keep a record; editable rounds stay in this
           browser.</p>
         <button type="button" class="btn main big" data-action="new-round">New round</button>
-        <div class="quick-guide-card">
-          <h3>Quick Start</h3>
-          <ol>
-            <li><strong>Create a round:</strong> Click <em>New round</em> above to start your debate sheet.</li>
-            <li><strong>Write arguments:</strong> Type points in <em>1AC</em>, and press <em>Right Arrow</em> to reply in <em>1NC</em>.</li>
-            <li><strong>Auto-saved offline:</strong> Every round is saved in your browser—no account needed.</li>
-          </ol>
+        <div class="step-carousel" id="step-carousel">
+          <div class="carousel-content" id="carousel-content">
+            <div class="carousel-icon" id="carousel-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+              </svg>
+            </div>
+            <span class="carousel-caption" id="carousel-caption">Write a point</span>
+          </div>
+          <div class="carousel-controls">
+            <div class="carousel-dots" id="carousel-dots">
+              <button type="button" class="dot active" data-index="0" aria-label="Step 1"></button>
+              <button type="button" class="dot" data-index="1" aria-label="Step 2"></button>
+              <button type="button" class="dot" data-index="2" aria-label="Step 3"></button>
+            </div>
+            <button type="button" class="carousel-arrow" id="carousel-next-btn" aria-label="Next step">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -112,7 +127,7 @@
     <div class="popup">
       <h2>Edit round details</h2>
       <div class="popup-body">
-        <label class="form-line"><span>Title</span><input id="rename-title"></label>
+        <label class="form-line"><span>Topic</span><input id="rename-title"></label>
         <label class="form-line"><span>Tournament</span><input id="rename-tournament"></label>
         <label class="form-line"><span>Round Number</span><input id="rename-round-label"></label>
         <label class="form-line"><span>Opponent</span><input id="rename-opponent"></label>
@@ -351,7 +366,7 @@
   <div class="hide" id="sample-round">
     <div class="card">
       <div class="card-top">
-        <h2 class="card-name"></h2>
+        <h2 class="card-name clickable-title" data-action="open-round" title="Open round"></h2>
         <span class="side-tag"></span>
       </div>
       <p class="info-line card-line"></p>
@@ -369,8 +384,8 @@
     <option></option>
   </div>
 
-  <script src="js/common.js?v=83"></script>
-  <script src="js/index.js?v=41"></script>
+  <script src="js/common.js?v=84"></script>
+  <script src="js/index.js?v=43"></script>
 </body>
 
 </html>

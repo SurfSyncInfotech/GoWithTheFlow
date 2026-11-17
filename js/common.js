@@ -1,12 +1,12 @@
 var SPEECHES = {
-  "pro-constructive": { team: "pro", type: "constructive", short: "1AC", code: "1AC", full: "1AC" },
-  "con-constructive": { team: "con", type: "constructive", short: "1NC", code: "1NC", full: "1NC" },
-  "pro-rebuttal": { team: "pro", type: "rebuttal", short: "2AC", code: "2AC", full: "2AC" },
-  "con-rebuttal": { team: "con", type: "rebuttal", short: "2NC/1NR", code: "2NC/1NR", full: "2NC/1NR" },
-  "pro-summary": { team: "pro", type: "summary", short: "1AR", code: "1AR", full: "1AR" },
-  "con-summary": { team: "con", type: "summary", short: "2NR", code: "2NR", full: "2NR" },
-  "pro-final": { team: "pro", type: "final", short: "2AR", code: "2AR", full: "2AR" },
-  "con-final": { team: "con", type: "final", short: "2NR", code: "2NR", full: "2NR" }
+  "pro-constructive": { team: "pro", type: "constructive", short: "1AC", code: "1AC", full: "1AC", description: "1st Affirmative Constructive: Introduces the main arguments in favor of the topic." },
+  "con-constructive": { team: "con", type: "constructive", short: "1NC", code: "1NC", full: "1NC", description: "1st Negative Constructive: Responds to Affirmative arguments and presents Negative counter-case." },
+  "pro-rebuttal": { team: "pro", type: "rebuttal", short: "2AC", code: "2AC", full: "2AC", description: "2nd Affirmative Constructive: Answers Negative objections and defends Affirmative arguments." },
+  "con-rebuttal": { team: "con", type: "rebuttal", short: "2NC/1NR", code: "2NC/1NR", full: "2NC/1NR", description: "2nd Negative Constructive / 1st Negative Rebuttal: Attacks 2AC points and deepens key arguments." },
+  "pro-summary": { team: "pro", type: "summary", short: "1AR", code: "1AR", full: "1AR", description: "1st Affirmative Rebuttal: Responds to all Negative arguments across both cases." },
+  "con-summary": { team: "con", type: "summary", short: "2NR", code: "2NR", full: "2NR", description: "2nd Negative Rebuttal: Final summary of key winning arguments for the Negative." },
+  "pro-final": { team: "pro", type: "final", short: "2AR", code: "2AR", full: "2AR", description: "2nd Affirmative Rebuttal: Final speech summarizing why the Affirmative should win." },
+  "con-final": { team: "con", type: "final", short: "2NR", code: "2NR", full: "2NR", description: "2nd Negative Rebuttal: Final summary of key winning arguments for the Negative." }
 };
 
 var MARKERS = [

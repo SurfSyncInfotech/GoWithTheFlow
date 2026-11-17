@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="css/buttons.css?v=31">
   <link rel="stylesheet" href="css/home.css?v=32">
   <link rel="stylesheet" href="css/sidebar.css?v=35">
-  <link rel="stylesheet" href="css/workspace.css?v=81">
+  <link rel="stylesheet" href="css/workspace.css?v=82">
   <link rel="stylesheet" href="css/evidence.css?v=32">
   <link rel="stylesheet" href="css/popups.css?v=39">
   <link rel="stylesheet" href="css/phone.css?v=71">
@@ -34,8 +34,8 @@
       <button type="button" class="btn back-btn" data-action="home">Back to rounds</button>
       <div id="flow-version-list" class="flow-version-list"></div>
       <div id="case-links">
-        <button type="button" class="menu-link pro-link" id="link-pro" data-action="add-flow-pro"><span class="flow-plus">+</span> aff</button>
-        <button type="button" class="menu-link con-link" id="link-con" data-action="add-flow-con"><span class="flow-plus">+</span> neg</button>
+        <button type="button" class="menu-link pro-link" id="link-pro" data-action="add-flow-pro" title="Add another flow sheet for separate contentions. To reply to existing points, use the next column directly."><span class="flow-plus">+</span> aff</button>
+        <button type="button" class="menu-link con-link" id="link-con" data-action="add-flow-con" title="Add another flow sheet for separate contentions. To reply to existing points, use the next column directly."><span class="flow-plus">+</span> neg</button>
       </div>
       <p class="gray-text hide" id="preflow-label"></p>
       <div class="push-down"></div>
@@ -108,9 +108,7 @@
 
   <div id="round-menu" class="drop-menu hide">
     <button type="button" data-action="share-round">Share round</button>
-    <button type="button" data-action="export">Export JSON backup</button>
     <button type="button" data-action="edit-details">Edit details</button>
-    <button type="button" data-action="home">Back to rounds</button>
   </div>
   <div id="opening-menu" class="drop-menu hide">
     <button type="button" data-action="edit-details">Edit details</button>
@@ -340,7 +338,6 @@
     <div class="popup">
       <h2>Edit details</h2>
       <div class="popup-body">
-        <label class="form-line"><span>Title</span><input id="edit-title"></label>
         <label class="form-line"><span>Topic</span><input id="edit-topic"></label>
         <label class="form-line"><span>Tournament</span><input id="edit-tournament"></label>
         <label class="form-line"><span>Round Number</span><input id="edit-round-label"></label>
@@ -450,7 +447,7 @@
     </div>
   </div>
   <div class="hide" id="ans-slot">
-    <button type="button" class="reply-slot-btn" data-action="add-reply" aria-label="Add response">+</button>
+    <button type="button" class="reply-slot-btn" data-action="add-reply" aria-label="Add response">+ reply here</button>
   </div>
   <div class="hide" id="ev-card">
     <div class="proof-card">
@@ -490,7 +487,7 @@
   </div>
 
   <script src="js/html2pdf.bundle.min.js"></script>
-  <script src="js/common.js?v=83"></script>
-  <script src="js/workspace.js?v=80"></script>
+  <script src="js/common.js?v=84"></script>
+  <script src="js/workspace.js?v=82"></script>
 </body>
 </html>

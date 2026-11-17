@@ -251,6 +251,10 @@ function buildFlowSheet() {
     speechChip.classList.add(speechInfo.team);
     speechChip.style.width = colWidth + "px";
     speechChip.querySelector(".speech-name").textContent = speechInfo.code || speechInfo.short || speechInfo.full;
+    if (speechInfo.description) {
+      speechChip.title = speechInfo.description;
+      speechChip.setAttribute("title", speechInfo.description);
+    }
 
     var small = speechChip.querySelector(".speech-small");
     if (small) {
@@ -782,8 +786,10 @@ function openEditRoundDetails() {
     editHeading.textContent = isPreflow ? "Edit preflow details" : "Edit details";
   }
 
-  document.getElementById("edit-title").value = round.title || "";
-  document.getElementById("edit-topic").value = round.topic || "";
+  var editTitleEl = document.getElementById("edit-title");
+  if (editTitleEl) editTitleEl.value = round.title || "";
+  var editTopicEl = document.getElementById("edit-topic");
+  if (editTopicEl) editTopicEl.value = round.topic || round.title || "";
 
   var tournamentWrap = document.getElementById("edit-tournament") ? document.getElementById("edit-tournament").closest(".form-line") : null;
   var roundLabelWrap = document.getElementById("edit-round-label") ? document.getElementById("edit-round-label").closest(".form-line") : null;
@@ -835,15 +841,13 @@ function saveEditRoundDetails() {
   if (!round) return;
 
   var isPreflow = Boolean(round.isPreflow);
-  var nextTitle = document.getElementById("edit-title").value.trim();
-  var nextTopic = document.getElementById("edit-topic").value.trim();
-
-  if (!nextTitle) {
-    nextTitle = nextTopic || (isPreflow ? "Untitled preflow" : "Untitled round");
-  }
+  var editTitleEl = document.getElementById("edit-title");
+  var editTopicEl = document.getElementById("edit-topic");
+  var nextTopic = editTopicEl ? editTopicEl.value.trim() : "";
+  var nextTitle = editTitleEl && editTitleEl.value.trim() ? editTitleEl.value.trim() : (nextTopic || (isPreflow ? "Untitled preflow" : "Untitled round"));
 
   round.title = nextTitle;
-  round.topic = nextTopic;
+  round.topic = nextTopic || nextTitle;
 
   if (isPreflow) {
     var nextSide = document.getElementById("edit-side").value;
@@ -1424,6 +1428,7 @@ document.addEventListener("input", function (event) {
 
   if (target.dataset.field === "title-input") {
     state.round.title = target.value;
+    state.round.topic = target.value;
     saveRoundAfterAMoment(false);
     return;
   }

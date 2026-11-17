@@ -151,6 +151,16 @@
   font-weight: 700;
 }
 
+.card-name.clickable-title {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.card-name.clickable-title:hover {
+  color: #7c3aed;
+  text-decoration: underline;
+}
+
 .sample-flow {
   display: flex;
   justify-content: center;
@@ -203,36 +213,94 @@
 }
 
 
-/* Quick Onboarding Guide Card */
-.quick-guide-card {
-  text-align: left;
-  max-width: 480px;
-  margin: 20px auto 0;
-  padding: 14px 18px;
+/* Illustrated Step Carousel */
+.step-carousel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 440px;
+  width: 100%;
+  margin: 22px auto 0;
+  padding: 8px 14px;
   background-color: #faf8fc;
   border: 1px solid #e9e2f1;
-  border-radius: 12px;
+  border-radius: 999px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 
-.quick-guide-card h3 {
-  margin: 0 0 8px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #4c1d95;
+.carousel-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
 }
 
-.quick-guide-card ol {
-  margin: 0;
-  padding-left: 18px;
-  font-size: 13px;
-  line-height: 1.55;
-  color: #4b5563;
+.carousel-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #ede9fe;
+  color: #6d28d9;
+  flex-shrink: 0;
 }
 
-.quick-guide-card li {
-  margin-bottom: 4px;
-}
-
-.quick-guide-card strong {
+.carousel-caption {
+  font-size: 13.5px;
+  font-weight: 600;
   color: #1f2937;
+  white-space: nowrap;
+}
+
+.carousel-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.carousel-dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.carousel-dots .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #cbd5e1;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.carousel-dots .dot.active {
+  width: 16px;
+  border-radius: 4px;
+  background-color: #7c3aed;
+}
+
+.carousel-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.carousel-arrow:hover {
+  background-color: #f3e8ff;
+  border-color: #ddd6fe;
+  color: #6d28d9;
+  transform: translateX(1px);
 }
